@@ -31,6 +31,14 @@ from ai_engine.allocator.hybrid_quantum import (
     HybridOptimizationBenchmark,
     HybridQuantumAllocator,
 )
+from ai_engine.allocator.hybrid_clustering import (
+    ClusteredRouteResult,
+    HybridClusterRouter,
+)
+from ai_engine.allocator.adaptive_allocator import (
+    AdaptiveRoutingResult,
+    AdaptiveRouteAllocator,
+)
 
 __all__ = [
     "MedicineBatch",
@@ -50,4 +58,8 @@ __all__ = [
     "ORToolsVRPSolver",
     "HybridOptimizationBenchmark",
     "HybridQuantumAllocator",
+    "ClusteredRouteResult",
+    "HybridClusterRouter",
+    "AdaptiveRoutingResult",
+    "AdaptiveRouteAllocator",
 ]

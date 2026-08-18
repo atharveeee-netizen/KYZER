@@ -76,11 +76,15 @@ def main():
     for rec in cr.recommended_interventions:
         print(f"  -> {rec}")
 
-    print("\n" + "=" * 80)
+    print("=" * 80)
     print("4. QUANTUM-CLASSICAL HYBRID ALLOCATION BENCHMARK (OR-Tools + QUBO)")
     print("=" * 80)
-    print(f"Convergence Speedup: +{summary.optimization_benchmark.convergence_speedup_pct:.1f}% faster convergence")
-    print(f"Quantum Hardware Ready: {summary.optimization_benchmark.quantum_hardware_ready} (D-Wave Advantage / Google Cirq compatible)")
+    if summary.adaptive_routes:
+        print(f"Adaptive Scale Tier:     [{summary.adaptive_routes.scale_tier}] ({summary.adaptive_routes.total_nodes} nodes)")
+        print(f"Algorithm Dispatched:    {summary.adaptive_routes.algorithm_executed}")
+        print(f"WHO Cold-Chain Status:   {'✅ COMPLIANT (<= 240 min)' if summary.adaptive_routes.cold_chain_compliant else '❌ EXCEEDS 4 HOURS'}")
+    print(f"Convergence Speedup:     +{summary.optimization_benchmark.convergence_speedup_pct:.1f}% faster convergence")
+    print(f"Quantum Hardware Ready:  {summary.optimization_benchmark.quantum_hardware_ready} (D-Wave Advantage / Google Cirq compatible)")
     print("\nBenchmark Master Table:")
     print(pd.DataFrame(summary.optimization_benchmark.benchmark_table).to_string(index=False))
 

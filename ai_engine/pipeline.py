@@ -24,6 +24,7 @@ from ai_engine.forecaster.lightgbm_model import MultiHorizonDemandForecaster, Qu
 from ai_engine.detector.isolation_forest import HealthInventoryAnomalyDetector, AnomalyDetectionResult
 from ai_engine.detector.cascade_detector import SystemicCascadeAnalyzer, CompoundFacilityRiskScore
 from ai_engine.allocator.hybrid_quantum import HybridQuantumAllocator, HybridOptimizationBenchmark
+from ai_engine.allocator.adaptive_allocator import AdaptiveRouteAllocator, AdaptiveRoutingResult
 from ai_engine.explainer.shap_explainer import HealthSHAPExplainer, DecisionExplanationReport
 from ai_engine.explainer.gemini_narrator import GeminiDecisionNarrator
 from ai_engine.forecaster.features import DemandFeatureEngineer
@@ -39,6 +40,7 @@ class PipelineExecutionSummary(BaseModel):
     anomaly_result: AnomalyDetectionResult
     compound_risk_score: CompoundFacilityRiskScore
     optimization_benchmark: HybridOptimizationBenchmark
+    adaptive_routes: Optional[AdaptiveRoutingResult] = None
     explanation: DecisionExplanationReport
     narrative: Dict[str, str]
     total_pipeline_latency_ms: float
@@ -51,6 +53,7 @@ class CareDOMAIPipeline:
         self.forecaster = MultiHorizonDemandForecaster()
         self.anomaly_detector = HealthInventoryAnomalyDetector()
         self.quantum_allocator = HybridQuantumAllocator()
+        self.adaptive_allocator = AdaptiveRouteAllocator()
         self.narrator = GeminiDecisionNarrator()
 
     def run_full_pipeline(
@@ -142,10 +145,14 @@ class CareDOMAIPipeline:
                 {"facility_id": "PHC-003", "name": "Shikrapur PHC", "latitude": 18.73, "longitude": 74.15, "is_dh": False, "medicine_surplus_deficit": 400},
             ]
 
-        # 7. Quantum-Classical Hybrid Optimization
+        # 7. Multi-Scale Optimization & Hybrid Benchmark
         opt_benchmark = self.quantum_allocator.optimize_redistribution(
             facilities=country_facs,
             unit_batch_size=100
+        )
+        adaptive_routes = self.adaptive_allocator.optimize_routes(
+            facilities=country_facs,
+            priority_facility_ids=[target_facility_id]
         )
 
         # 8. Genuine TreeSHAP Explanation from actual model
@@ -180,6 +187,7 @@ class CareDOMAIPipeline:
             anomaly_result=anomaly_res,
             compound_risk_score=compound_risk,
             optimization_benchmark=opt_benchmark,
+            adaptive_routes=adaptive_routes,
             explanation=explanation,
             narrative=narrative,
             total_pipeline_latency_ms=round(total_latency, 2)
