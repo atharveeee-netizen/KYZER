@@ -1,99 +1,49 @@
-# 🖥️ CareDOM Architecture: Person 3 — Frontend & GIS Lead (Updated BRICS Edition)
-**Project:** CareDOM — BRICS-Federated Smart Health Centre Management  
-**Team:** KYZER | **Hackathon:** Build with AI: Code for Communities 2  
-**Role:** Person 3 — Frontend Dashboard, MapLibre GIS, BRICS Switcher & Zero-Auth Judge UX  
+# 🗺️ PERSON 3: FRONTEND & 3D GIS DASHBOARD ARCHITECTURE
+**Role**: Arnav (Lead Frontend & Geospatial Systems Engineer)  
+**Project**: CareDOM — Autonomous Healthcare Supply Chain Platform  
+**Team**: KYZER | **Hackathon**: Build with AI: Code for Communities 2
 
 ---
 
-## 1. 📋 EXECUTIVE SUMMARY & SCOPE
-Person 3 creates the visual command center that judges will interact with on the live deployed link.
+## 🎯 1. ROLE OVERVIEW & CORE RESPONSIBILITIES
+Person 3 owns the **6-Tab Public Health Command Dashboard** built in `frontend/` adhering to the **Cursor Design System** and **MapLibre 3D Vector GIS**.
 
-| Feature | Design Specification | Impact |
-| :--- | :--- | :--- |
-| **BRICS Switcher** | Top-bar toggle: 🇮🇳 **India (Maharashtra)** \| 🇿🇦 **South Africa (Gauteng)** \| 🇧🇷 **Brazil (São Paulo)** | **20% Cross-Border Score** |
-| **3 Core Pillars UI** | Live KPI Cards: **Medicine Stocks** + **Bed Occupancy (ICU/General)** + **Staff Attendance** | **20% Problem-Solution Fit** |
-| **Redistribution Action** | 1-click modal: *"Emergency stockout at Dindori PHC -> Transfer 200 units from Nashik CHC (14km away)"* | **Hero Demo Moment** |
-| **Zero Login Wall** | Immediate public access with a floating "Judge Demo Persona" pill | **Zero friction evaluation** |
-| **GIS Mapping** | **MapLibre GL JS v4** with WebGL rendering & Okabe-Ito colorblind-safe status markers | **60 FPS high-density map** |
-| **OCR Register Tool** | Camera upload -> Live Gemini OCR extraction preview -> One-tap commit | **Google AI Visibility** |
-
----
-
-## 2. 🗺️ DASHBOARD VIEWS & COMPONENT BREAKDOWN
-
-### 1. Header & Global Controls
-- **Country Selector:** `[ 🇮🇳 India | 🇿🇦 South Africa | 🇧🇷 Brazil ]`
-- **Judge Demo Persona Switcher:** `[ 👨‍⚕️ District Officer | 👩‍⚕️ Clinic Nurse | 🚚 Logistics Director ]`
-- **Live System Status:** Green pulse dot indicating active Server-Sent Events (SSE) stream.
-
-### 2. Multi-Pillar Hero Metrics Bar
-- 💊 **Medicine Stockouts:** `3 Critical` (Pulsing Red)
-- 🛏️ **Bed Occupancy:** `86% Occupied` (34/40 ICU beds in use)
-- 👩‍⚕️ **Staff Attendance:** `91% Present` (42/46 doctors on duty)
-- 🚚 **Active Transfers:** `2 In Transit` (Cold-chain monitored)
-
-### 3. Interactive MapLibre GIS View
-- **Markers:** Clinics color-coded by composite risk:
-  - 🔴 **Red:** Zero stock of critical medicine OR 100% ICU bed saturation.
-  - 🟡 **Amber:** Low buffer stock (<48 hrs) OR staff shortage.
-  - 🟢 **Green:** Stable inventory and capacity.
-- **Redistribution Polyline:** Clicking an emergency clinic displays a dashed glowing polyline to the nearest donor clinic with driving distance and transit time.
-
-### 4. Interactive 1-Click Redistribution Modal
-When a stockout is selected:
 ```
-┌────────────────────────────────────────────────────────┐
-│ 🚨 Automated Cross-District Redistribution             │
-├────────────────────────────────────────────────────────┤
-│ Destination: Dindori PHC (Stockout: ORS Sachets)       │
-│ Recommended Donor: Nashik CHC (Distance: 14.2 km)      │
-│ Surplus Available: 850 units (Batch: ORS2409B)         │
-│ Estimated Delivery: 25 minutes                         │
-│                                                        │
-│ [ 🚀 Approve & Dispatch Transfer ]   [ Dismiss ]       │
-└────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────────────────────────────┐
+│                                 PERSON 3 FRONTEND ARCHITECTURE                                  │
+├────────────────────────┬────────────────────────┬───────────────────────┬───────────────────────┤
+│ 🎨 1. CURSOR DESIGN    │ 🗺️ 2. 3D GIS & FLEET   │ 📈 3. FORECASTER & XAI│ 📸 4. REGISTER OCR    │
+├────────────────────────┼────────────────────────┼───────────────────────┼───────────────────────┤
+│ • Warm Cream Floor     │ • MapLibre 3D Vector   │ • Recharts P10/P50/P90│ • OpenCV Clean Scan   │
+│   (#f7f7f4)            │   Map (Pitch: 60°)     │   Quantile Area Band  │   Side-by-Side View   │
+│ • White Cards with 1px │ • 9-Clinic Autonomous  │ • TreeSHAP Clinical   │ • 3-Pillar Data Grid  │
+│   Hairline Borders     │   AI Route Polyline    │   Driver Badges       │   (Meds, Beds, Staff) │
+│ • Cursor Orange Primary│ • 1-Click Google Maps  │ • Coupled SEIR Out-   │ • Editable Quantities │
+│   CTA Pill (#f54e00)   │   Turn-by-Turn GPS     │   break Diagnostics   │ • 1-Click Commit to   │
+│ • Inter Display 400    │ • Human-in-the-Loop    │ • Live Multi-Agent    │   PostgreSQL Database │
+│   + JetBrains Mono Code│   Road Blocker Modal   │   Timeline Pastels    │                       │
+└────────────────────────┴────────────────────────┴───────────────────────┴───────────────────────┘
 ```
 
 ---
 
-## 3. 📁 FOLDER STRUCTURE (`frontend/`)
+## 🗂️ 2. THE 6 DEDICATED TABS IMPLEMENTED
 
-```text
-frontend/
-├── public/
-│   ├── manifest.json
-│   └── favicon.ico
-├── src/
-│   ├── components/
-│   │   ├── BricsCountrySwitcher.tsx # Multi-nation toggle
-│   │   ├── JudgePersonaBar.tsx      # Zero-login demo role switcher
-│   │   ├── PillarMetricCards.tsx    # Medicines + Beds + Staff cards
-│   │   ├── MapLibreGISMap.tsx       # 50k+ facility WebGL map
-│   │   ├── RedistributionModal.tsx  # 1-click PostGIS transfer popup
-│   │   └── OCRScanUpload.tsx        # Camera -> Gemini OCR review
-│   ├── pages/
-│   │   ├── DashboardOverview.tsx
-│   │   ├── FacilityDetailView.tsx
-│   │   └── OCRUploadView.tsx
-│   ├── hooks/
-│   │   ├── useSSEAlerts.ts          # Real-time alert listener
-│   │   └── useFacilities.ts         # TanStack Query client
-│   ├── App.tsx
-│   ├── main.tsx
-│   └── index.css                    # Tailwind CSS v4 & high-contrast theme
-├── package.json
-└── vite.config.ts
 ```
+┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ [ 📊 Dashboard ] [ 🗺️ GIS Map ] [ 📋 Inventory ] [ 📈 Forecast ] [ 🚚 Routes ] [ 📸 OCR Ingestion ]   │
+└────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+1. **`DashboardTab.tsx`**: Executive summary with 4 KPI cards (Total Clinics, $P_0$ Critical Risk, Bed Occupancy, WAPE $17.48\%$) + SSE Alert Ticker.
+2. **`MapTab.tsx`**: 3D perspective MapLibre map (`pitch: 60°`, `bearing: -15°`) with 3D building extrusions, color-coded status markers (🔴 $P_0$, 🟡 $P_1$, 🟢 $P_2$), and the **"🤖 AI Agent Self-Plan 9-Clinic Route"** interactive simulation button.
+3. **`InventoryTab.tsx`**: FEFO pharmaceutical inventory table with medicine search, facility filters, expiry countdowns, and a manual reallocation modal.
+4. **`ForecastTab.tsx`**: Recharts quantile area band ($P_{10}, P_{50}, P_{90}$) with TreeSHAP explainability pills (0.0% Hallucination) and SEIR outbreak metrics.
+5. **`RoutesTab.tsx`**: Active & past redistribution itinerary with cold-chain freshness validation ($<240\text{ min}$ SLA) and **1-Click WhatsApp Driver Dispatch**.
+6. **`OcrTab.tsx`**: Side-by-side OpenCV $-8.0^\circ \rightarrow 0.0^\circ$ deskewed scan preview + editable data grid for nurse auditing.
 
 ---
 
-## 4. ⏱️ PRIORITY TASK ORDER
-
-| Priority | Task | Est. Hours | Impact |
-| :--- | :--- | :--- | :--- |
-| **P0** | Vite + React 19 shell + BRICS Country Switcher + Judge Persona pill | 2.5 hrs | Core Navigation & Cross-Border |
-| **P0** | MapLibre GIS Map with facility risk markers | 3.5 hrs | Core Visual Experience |
-| **P0** | 3-Pillar KPI Cards (Stockouts, Beds, Staff Attendance) | 2.0 hrs | 20% Rubric Scope |
-| **P1** | 1-Click PostGIS Redistribution Action Modal | 2.0 hrs | Killer Demo Feature |
-| **P1** | Mobile Camera OCR upload & table preview integration | 2.0 hrs | Google AI Gate UI |
-| **P2** | Real-time SSE alert toasts & audio notification | 1.5 hrs | Live Reactivity |
+## 🌐 3. CLOUD HOSTING & REPO STRUCTURE
+- **GitHub Pages Hosting**: `https://atharveeee-netizen.github.io/KYZER/` (Bundled with Vite `base: './'` and `.nojekyll`).
+- **Dependencies**: React 18, MapLibre GL JS, Recharts, Tailwind CSS v4, Lucide React.
