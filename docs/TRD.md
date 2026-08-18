@@ -1,81 +1,88 @@
-# ⚙️ TECHNICAL REQUIREMENTS DOCUMENT (TRD) — BRICS Federated Edition
-**Project Name:** CareDOM (BRICS Smart Health Centre Management)  
+# ⚙️ TECHNICAL REQUIREMENTS DOCUMENT (TRD) — Research-Backed Edition
+**Project Name:** CareDOM (BRICS Smart Health Centre Management & Autonomous Co-Pilot)  
 **Team Name:** KYZER | **Hackathon:** Build with AI: Code for Communities 2  
 
 ---
 
-## 1. System Architecture & Tech Stack
+## 1. System Architecture & Component Mapping
 
 ```
-[Clients]
-  ├── React 19 + MapLibre PWA (Person 3)
-  └── WhatsApp Voice Bot (Person 4)
-         │
-         ▼
-[API & Core Logic - Person 2]
-  └── FastAPI (ASGI) + PostGIS Redistribution Engine
-         ├── GET /api/v1/facilities/dashboard
-         ├── GET /api/v1/redistribution/suggest
-         └── POST /api/v1/ocr/commit-register
-         │
-         ▼
-[Persistence Layer]
-  └── PostgreSQL 16 + PostGIS (Spatial KNN) + Server-Sent Events (SSE)
-         ▲
-         │
-[AI & Optimization - Person 1]
-  ├── Google Gemini 1.5 Flash Vision OCR (ai_engine/ocr/)
-  ├── LightGBM 7-Day Quantile Forecaster (ai_engine/forecaster/)
-  └── Google OR-Tools CVRPTW Router (ai_engine/allocator/)
+                                    ┌────────────────────────────────────────────────────────┐
+                                    │               CAREDOM SYSTEM ARCHITECTURE              │
+                                    └───────────────────────────┬────────────────────────────┘
+                                                                │
+                 ┌──────────────────────────────────────────────┼──────────────────────────────────────────────┐
+                 ▼                                              ▼                                              ▼
+    ┌─────────────────────────┐                    ┌─────────────────────────┐                    ┌─────────────────────────┐
+    │  CLIENT LAYER (PERSON 3)│                    │  API LAYER (PERSON 2)   │                    │  VOICE LAYER (PERSON 4) │
+    │  • React 19 + Vite SPA  │ ◄─── REST / SSE ───┤  • FastAPI (ASGI)       │ ◄─── Webhooks ────┤  • IndicWhisper ASR     │
+    │  • MapLibre GL GIS      │                    │  • SQLAlchemy 2.0 Async │                    │  • Meta WhatsApp Cloud  │
+    │  • Offline-First Dexie  │                    │  • PostgreSQL + PostGIS │                    │  • MSG91 DLT SMS Gateway│
+    └─────────────────────────┘                    └────────────┬────────────┘                    └─────────────────────────┘
+                                                                │
+                                                                ▼
+                                    ┌────────────────────────────────────────────────────────┐
+                                    │             AI & QUANTUM ENGINE (PERSON 1)             │
+                                    │             ai_engine/engine.py: CareDOMEngine         │
+                                    └───────────────────────────┬────────────────────────────┘
+                                                                │
+                 ┌───────────────────────┬──────────────────────┼───────────────────────┬────────────────────────┐
+                 ▼                       ▼                      ▼                       ▼                        ▼
+        ┌─────────────────┐    ┌──────────────────┐   ┌──────────────────┐   ┌────────────────────┐   ┌───────────────────┐
+        │ Vision Ingestion│    │ Demand Forecaster│   │ Cascade Risk     │   │ Quantum Routing    │   │ Explainability    │
+        │ • OpenCV CLAHE  │    │ • LightGBM       │   │ • 3-Pillar Non-  │   │ • IBM Heron QAOA   │   │ • TreeSHAP Values │
+        │ • Gemini 1.5    │    │   Tweedie Loss   │   │   Linear Copula  │   │ • D-Wave BQM       │   │ • Marathi/Hindi/  │
+        │   Flash Vision  │    │ • SEIR ODE L-BFGS│   │ • IsoForest      │   │ • OR-Tools CVRPTW  │   │   English Narrator│
+        └─────────────────┘    └──────────────────┘   └──────────────────┘   └────────────────────┘   └───────────────────┘
 ```
 
 ---
 
-## 2. Universal Data Schemas & API Contracts
+## 2. Mathematical Formulations
 
-### 2.1 Unified Facilities Endpoint (`GET /api/v1/facilities/dashboard?country_code=IND`)
-```json
-[
-  {
-    "facility_id": "fac_ind_01",
-    "name": "Dindori Primary Health Centre",
-    "country_code": "IND",
-    "lat": 20.201,
-    "lng": 73.834,
-    "inventory": {
-      "total_items": 45,
-      "stockouts": 2,
-      "items": [{ "code": "MED_ORS", "name": "ORS", "qty": 0, "status": "P0_CRITICAL" }]
-    },
-    "beds": {
-      "general_total": 20,
-      "general_occupied": 18,
-      "icu_total": 4,
-      "icu_occupied": 4,
-      "status": "SATURATED"
-    },
-    "staff": {
-      "doctors_present": 2,
-      "doctors_expected": 3,
-      "nurses_present": 5,
-      "nurses_expected": 5
-    }
-  }
-]
+### 2.1 Demand Forecaster: Tweedie Compound Poisson-Gamma & Quantile Pinball
+- **Tweedie Loss ($p=1.3$)**:
+  $$\mathcal{L}_{\text{Tweedie}}(y, \mu) = 2 \left( \frac{y \mu^{1-p}}{1-p} - \frac{\mu^{2-p}}{2-p} - \frac{y^{2-p}}{(1-p)(2-p)} \right)$$
+- **Quantile Pinball Loss ($\alpha \in \{0.10, 0.50, 0.90\}$)**:
+  $$\mathcal{L}_\alpha(y, \hat{y}_\alpha) = \max(\alpha (y - \hat{y}_\alpha), (1 - \alpha)(\hat{y}_\alpha - y))$$
+- **Recursive Autoregressive Horizon**:
+  $$\hat{y}_{t+d} = f\left( X_t \cup \{\text{lag}_1 = \hat{y}_{t+d-1}, \text{rolling\_mean}_7 = \frac{1}{7} \sum_{k=1}^7 \hat{y}_{t+d-k}\} \right)$$
+
+### 2.2 Cross-Drug Syndromic Covariance Matrix
+$$\hat{y}_{i, \text{adjusted}} = \hat{y}_i \cdot \left(1 + \min\left(0.35, \frac{I_t}{50}\right) \cdot \frac{1}{|K_i|} \sum_{k \in K_i} \rho_{i,k}\right)$$
+
+### 2.3 Non-Linear Compounding Cascade Risk
+$$\text{Risk}_{\text{composite}} = 1 - (1 - m)^{1.6} \cdot (1 - b)^{1.4} \cdot (1 - s)^{1.2}$$
+where $m = \text{Medicine Vulnerability}, b = \text{Bed Occupancy Stress}, s = \text{Staff Shortage Deficit}$.
+
+### 2.4 Topographical Road Tortuosity
+$$D_{\text{road}}(i, j) = D_{\text{Haversine}}(i, j) \times \tau_{\text{district}}$$
+where $\tau_{\text{Pune}} = 1.38, \tau_{\text{Satara}} = 1.45, \tau_{\text{Default}} = 1.30$.
+
+---
+
+## 3. REST API Contract Specification (Person 2 Integration)
+
+```
+╔═══════════════════════╦═════════════════════════════════════╦═══════════════════════════════════════════════════════╗
+║ HTTP ROUTE            ║ INPUT PAYLOAD                       ║ OUTPUT SCHEMA (CareDOMEngine Response)                ║
+╠═══════════════════════╬═════════════════════════════════════╬═══════════════════════════════════════════════════════╣
+║ POST /api/v1/ai/run   ║ {                                   ║ {                                                     ║
+║                       ║   "facility_id": "PHC-PUN-002",     ║   "status": "SUCCESS",                                ║
+║                       ║   "item_code": "MED-PCM-500",       ║   "execution_time_ms": 2715.6,                        ║
+║                       ║   "country_code": "IND"             ║   "ocr_telemetry": { ... },                           ║
+║                       ║ }                                   ║   "demand_forecast": { P10/P50/P90 arrays },          ║
+║                       ║                                     ║   "systemic_risk": { 3-pillar compound scores },      ║
+║                       ║                                     ║   "route_optimization": { ordered stops, km, min },   ║
+║                       ║                                     ║   "clinical_explainability": { Marathi, Hindi, EN }   ║
+║                       ║                                     ║ }                                                     ║
+╚═══════════════════════╩═════════════════════════════════════╩═══════════════════════════════════════════════════════╝
 ```
 
-### 2.2 PostGIS Nearest Surplus Redistribution (`GET /api/v1/redistribution/suggest`)
-```json
-{
-  "requesting_facility": "Dindori PHC",
-  "needed_item": "MED_ORS",
-  "needed_qty": 200,
-  "suggested_donor": {
-    "facility_id": "fac_ind_09",
-    "name": "Nashik Community Health Centre",
-    "distance_km": 14.2,
-    "surplus_available": 850,
-    "batch_number": "ORS2409B"
-  }
-}
-```
+---
+
+## 4. Hardware Profiles & Deployment Topology
+
+- **Docker Container:** `python:3.10-slim` with pre-compiled wheels for LightGBM, Qiskit Aer, and OpenCV.
+- **Memory Footprint:** $< 512\text{ MB}$ RAM on cold startup.
+- **Model Bundle Pre-loading:** Serialized `.pkl` artifacts pre-loaded into memory in $\sim 145\text{ ms}$.
