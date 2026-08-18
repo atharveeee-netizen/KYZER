@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import maplibregl from 'maplibre-gl';
-import { Navigation, Send, AlertTriangle, CheckCircle2, Bed, Users, Pill, ShieldAlert, Sparkles, MapPin, Zap, RefreshCw, Layers, Compass, Eye, Truck } from 'lucide-react';
+import { Navigation, Send, AlertTriangle, CheckCircle2, Bed, Users, Pill, ShieldAlert, Sparkles, MapPin, Zap, RefreshCw, Layers, Compass, Eye, Truck, Satellite } from 'lucide-react';
 import { HealthFacility, RoutingResult } from '../../types';
 
 interface MapTabProps {
@@ -9,6 +9,18 @@ interface MapTabProps {
   onFacilitySelect: (facility: HealthFacility) => void;
   selectedFacility: HealthFacility | null;
   onRerouteRequest: (blockedRoadName: string) => void;
+}
+
+// Helper to generate 3D hexagonal footprint for extruded spatial pillars
+function createHexagonPolygon(lng: number, lat: number, radius = 0.022): [number, number][] {
+  const coords: [number, number][] = [];
+  for (let i = 0; i <= 6; i++) {
+    const angle = (i * 60 * Math.PI) / 180;
+    const dx = radius * Math.cos(angle);
+    const dy = radius * Math.sin(angle);
+    coords.push([lng + dx, lat + dy]);
+  }
+  return coords;
 }
 
 export const MapTab: React.FC<MapTabProps> = ({
@@ -25,51 +37,104 @@ export const MapTab: React.FC<MapTabProps> = ({
   const [roadNote, setRoadNote] = useState('Ghod River Bridge Submerged (Rainfall >45mm)');
   const [isSelfPlanning, setIsSelfPlanning] = useState(false);
   const [planningStep, setPlanningStep] = useState<string | null>(null);
-  const [cameraMode, setCameraMode] = useState<'3D' | '2D' | 'ORBIT'>('3D');
-  const [activeClinicIndex, setActiveClinicIndex] = useState<number>(0);
+  const [basemapStyle, setBasemapStyle] = useState<'DARK' | 'SATELLITE'>('DARK');
+  const [isOrbiting, setIsOrbiting] = useState(false);
+  const orbitIntervalRef = useRef<any>(null);
 
-  // 9 Pune District Clinics + 1 Central Depot Hub (10 Nodes)
+  // 9 Pune District Clinics + 1 Central Depot Hub
   const puneClinics = facilities.filter(f => f.country === 'IND');
 
   useEffect(() => {
     if (!mapContainer.current || mapRef.current) return;
 
-    const defaultLat = facilities[0]?.latitude || 18.8285;
-    const defaultLng = facilities[0]?.longitude || 74.3755;
+    // Basemap style URL
+    const mapStyle = basemapStyle === 'DARK'
+      ? 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json'
+      : {
+          version: 8,
+          sources: {
+            'esri-satellite': {
+              type: 'raster',
+              tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],
+              tileSize: 256,
+              attribution: 'Esri Satellite'
+            }
+          },
+          layers: [
+            {
+              id: 'satellite-layer',
+              type: 'raster',
+              source: 'esri-satellite',
+              minzoom: 0,
+              maxzoom: 19
+            }
+          ]
+        };
 
     const map = new maplibregl.Map({
       container: mapContainer.current,
-      style: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json', // High-Tech 3D Dark Matter Basemap
+      style: mapStyle as any,
       center: [74.08, 18.78],
-      zoom: 9.8,
-      pitch: 62, // 3D Camera Tilt (62 degrees)
-      bearing: -18, // 3D Perspective Rotation
+      zoom: 9.7,
+      pitch: 65, // 3D Camera Tilt (65 degrees)
+      bearing: -22, // 3D Perspective Rotation
       antialias: true,
+      maxPitch: 85,
     });
 
     mapRef.current = map;
 
     map.on('load', () => {
-      // 1. Add 3D Extruded Building Layer
-      map.addLayer({
-        id: '3d-buildings',
-        source: 'carto',
-        'source-layer': 'building',
-        type: 'fill-extrusion',
-        minzoom: 12,
-        paint: {
-          'fill-extrusion-color': '#1f2937',
-          'fill-extrusion-height': ['get', 'height'],
-          'fill-extrusion-base': ['get', 'min_height'],
-          'fill-extrusion-opacity': 0.75,
+      // 1. ADD MASSIVE 3D EXTRUDED PILLARS (COLUMNS) AT EACH CLINIC
+      const pillarFeatures = puneClinics.map((fac) => {
+        const isP0 = fac.risk_tier === 'P0_CRITICAL';
+        const isP1 = fac.risk_tier === 'P1_WARNING';
+        // Height proportional to stock / risk (up to 18,000 meters virtual height in 3D)
+        const heightMeters = isP0 ? 14000 : isP1 ? 9000 : 18000;
+        const colorHex = isP0 ? '#ef4444' : isP1 ? '#f59e0b' : '#10b981';
+
+        return {
+          type: 'Feature' as const,
+          properties: {
+            name: fac.name,
+            facility_id: fac.facility_id,
+            height: heightMeters,
+            base: 0,
+            color: colorHex,
+          },
+          geometry: {
+            type: 'Polygon' as const,
+            coordinates: [createHexagonPolygon(fac.longitude, fac.latitude, 0.02)],
+          },
+        };
+      });
+
+      map.addSource('3d-clinic-pillars', {
+        type: 'geojson',
+        data: {
+          type: 'FeatureCollection',
+          features: pillarFeatures,
         },
       });
 
-      // 2. Add 9-Clinic Quantum Route
+      // Render 3D Extruded Glass Towers
+      map.addLayer({
+        id: '3d-clinic-pillars-extrusion',
+        type: 'fill-extrusion',
+        source: '3d-clinic-pillars',
+        paint: {
+          'fill-extrusion-color': ['get', 'color'],
+          'fill-extrusion-height': ['get', 'height'],
+          'fill-extrusion-base': ['get', 'base'],
+          'fill-extrusion-opacity': 0.88,
+        },
+      });
+
+      // 2. ADD 3D GLOWING QUANTUM ROUTE LINESTRING
       const coordinates = puneClinics.map(f => [f.longitude, f.latitude]);
       if (coordinates.length > 0) coordinates.push(coordinates[0]);
 
-      map.addSource('quantum-route', {
+      map.addSource('quantum-route-3d', {
         type: 'geojson',
         data: {
           type: 'Feature',
@@ -85,51 +150,50 @@ export const MapTab: React.FC<MapTabProps> = ({
       map.addLayer({
         id: 'quantum-route-glow',
         type: 'line',
-        source: 'quantum-route',
+        source: 'quantum-route-3d',
         layout: { 'line-join': 'round', 'line-cap': 'round' },
         paint: {
           'line-color': '#06b6d4',
-          'line-width': 10,
-          'line-opacity': 0.35,
+          'line-width': 12,
+          'line-opacity': 0.45,
         },
       });
 
-      // 3D Cursor Orange Solid Vector Line
+      // 3D Cursor Orange Solid Vector Ribbon
       map.addLayer({
         id: 'quantum-route-line',
         type: 'line',
-        source: 'quantum-route',
+        source: 'quantum-route-3d',
         layout: { 'line-join': 'round', 'line-cap': 'round' },
         paint: {
           'line-color': '#f54e00',
-          'line-width': 3.5,
+          'line-width': 4.5,
           'line-opacity': 0.95,
         },
       });
 
-      // 3. Render 3D Holographic Pins with Numbered Stops
+      // 3. Render 3D Floating Top Badges at Each Clinic Pillar
       puneClinics.forEach((fac, idx) => {
         const el = document.createElement('div');
-        el.className = 'custom-3d-pin cursor-pointer transform hover:scale-125 transition-all duration-300';
+        el.className = 'custom-3d-hud-pin cursor-pointer transform hover:scale-125 transition-all duration-300';
 
         const isP0 = fac.risk_tier === 'P0_CRITICAL';
         const isP1 = fac.risk_tier === 'P1_WARNING';
         const badgeColor = isP0 ? 'bg-red-500 text-white animate-pulse' : isP1 ? 'bg-amber-500 text-white' : 'bg-emerald-500 text-white';
 
         el.innerHTML = `
-          <div style="display: flex; flex-direction: column; align-items: center; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5));">
-            <div style="background: #ffffff; color: #111827; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-family: monospace; font-weight: 700; border: 1px solid #e5e7eb; display: flex; align-items: center; gap: 4px;">
+          <div style="display: flex; flex-direction: column; align-items: center; filter: drop-shadow(0 6px 12px rgba(0,0,0,0.8));">
+            <div style="background: rgba(28,27,23,0.92); color: #ffffff; padding: 4px 9px; border-radius: 6px; font-size: 11px; font-family: monospace; font-weight: 700; border: 1px solid rgba(255,255,255,0.25); display: flex; align-items: center; gap: 5px; backdrop-filter: blur(4px);">
               <span class="${badgeColor}" style="width: 8px; height: 8px; border-radius: 9999px; display: inline-block;"></span>
               <span>${idx + 1}. ${fac.name.replace(' Primary Health Centre', '').replace(' Sub-District Hospital', '').replace(' Health Centre', '').replace(' Rural Hospital', '')}</span>
             </div>
-            <div style="width: 2px; height: 14px; background: #f54e00;"></div>
-            <div style="width: 6px; height: 6px; border-radius: 50%; background: #f54e00;"></div>
+            <div style="width: 2px; height: 18px; background: #f54e00; box-shadow: 0 0 8px #f54e00;"></div>
           </div>
         `;
 
         el.addEventListener('click', () => {
           onFacilitySelect(fac);
-          map.flyTo({ center: [fac.longitude, fac.latitude], zoom: 11.5, pitch: 65, duration: 1200 });
+          map.flyTo({ center: [fac.longitude, fac.latitude], zoom: 11.5, pitch: 70, duration: 1200 });
         });
 
         new maplibregl.Marker({ element: el })
@@ -137,12 +201,12 @@ export const MapTab: React.FC<MapTabProps> = ({
           .addTo(map);
       });
 
-      // 4. Add Animated 3D Delivery Vehicle Marker
+      // 4. Add Animated 3D Vehicle Marker
       if (puneClinics.length > 0) {
         const truckEl = document.createElement('div');
         truckEl.innerHTML = `
-          <div style="background: #f54e00; color: white; padding: 6px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 12px #f54e00; display: flex; align-items: center; justify-content: center;">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9"/><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.62l-3.48-4.35A1 1 0 0 0 17.52 8H14v10Z"/><circle cx="17" cy="18" r="2"/><circle cx="7" cy="18" r="2"/></svg>
+          <div style="background: #f54e00; color: white; padding: 7px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 16px #f54e00; display: flex; align-items: center; justify-content: center; transform: scale(1.2);">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9"/><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.62l-3.48-4.35A1 1 0 0 0 17.52 8H14v10Z"/><circle cx="17" cy="18" r="2"/><circle cx="7" cy="18" r="2"/></svg>
           </div>
         `;
         const truckMarker = new maplibregl.Marker({ element: truckEl })
@@ -153,64 +217,69 @@ export const MapTab: React.FC<MapTabProps> = ({
     });
 
     return () => {
+      if (orbitIntervalRef.current) clearInterval(orbitIntervalRef.current);
       map.remove();
       mapRef.current = null;
     };
-  }, [facilities]);
+  }, [facilities, basemapStyle]);
 
-  // Camera Mode Switchers
-  const setCamera3D = () => {
-    setCameraMode('3D');
-    mapRef.current?.flyTo({ pitch: 62, bearing: -18, zoom: 9.8, duration: 1000 });
+  // 3D Camera Controls
+  const handleSnap3D = () => {
+    mapRef.current?.flyTo({ pitch: 68, bearing: -22, zoom: 9.8, duration: 1200 });
   };
 
-  const setCamera2D = () => {
-    setCameraMode('2D');
+  const handleSnap2D = () => {
     mapRef.current?.flyTo({ pitch: 0, bearing: 0, duration: 1000 });
   };
 
-  const setCameraOrbit = () => {
-    setCameraMode('ORBIT');
-    if (!mapRef.current) return;
-    const currentBearing = mapRef.current.getBearing();
-    mapRef.current.easeTo({ bearing: currentBearing + 90, pitch: 68, duration: 2500 });
+  const handleToggleOrbit = () => {
+    if (isOrbiting) {
+      if (orbitIntervalRef.current) clearInterval(orbitIntervalRef.current);
+      setIsOrbiting(false);
+    } else {
+      setIsOrbiting(true);
+      let angle = mapRef.current?.getBearing() || 0;
+      orbitIntervalRef.current = setInterval(() => {
+        angle = (angle + 1) % 360;
+        mapRef.current?.setBearing(angle);
+      }, 50);
+    }
   };
 
-  // Autonomous 9-Clinic Self-Planning Simulation with Truck Transit
+  // Autonomous 9-Clinic Self-Planning Simulation with 3D Flight
   const handleTriggerSelfPlan = () => {
     setIsSelfPlanning(true);
     setPlanningStep('Step 1/4: ForecasterAgent scanning 9-clinic demand surges...');
     
-    // Fly to first clinic
-    if (mapRef.current && puneClinics.length > 0) {
-      mapRef.current.flyTo({ center: [puneClinics[1].longitude, puneClinics[1].latitude], zoom: 11, pitch: 65, duration: 1000 });
+    if (mapRef.current && puneClinics.length > 1) {
+      mapRef.current.flyTo({ center: [puneClinics[1].longitude, puneClinics[1].latitude], zoom: 11, pitch: 70, duration: 1200 });
       truckMarkerRef.current?.setLngLat([puneClinics[1].longitude, puneClinics[1].latitude]);
     }
 
     setTimeout(() => {
-      setPlanningStep('Step 2/4: AllocatorAgent formulating 81-qubit Hamiltonian on IBM Quantum...');
-      if (mapRef.current && puneClinics.length > 3) {
-        mapRef.current.flyTo({ center: [puneClinics[3].longitude, puneClinics[3].latitude], zoom: 11.2, pitch: 65, duration: 1200 });
-        truckMarkerRef.current?.setLngLat([puneClinics[3].longitude, puneClinics[3].latitude]);
+      setPlanningStep('Step 2/4: AllocatorAgent formulating 81-qubit Hamiltonian on IBM Quantum QAOA...');
+      if (mapRef.current && puneClinics.length > 4) {
+        mapRef.current.flyTo({ center: [puneClinics[4].longitude, puneClinics[4].latitude], zoom: 11.2, pitch: 72, bearing: 45, duration: 1200 });
+        truckMarkerRef.current?.setLngLat([puneClinics[4].longitude, puneClinics[4].latitude]);
       }
-    }, 1200);
+    }, 1300);
 
     setTimeout(() => {
       setPlanningStep('Step 3/4: SupervisorAgent auditing 1.5x buffer at Khed & Wagholi donor hubs...');
       if (mapRef.current && puneClinics.length > 7) {
-        mapRef.current.flyTo({ center: [puneClinics[7].longitude, puneClinics[7].latitude], zoom: 11, pitch: 65, duration: 1200 });
+        mapRef.current.flyTo({ center: [puneClinics[7].longitude, puneClinics[7].latitude], zoom: 11, pitch: 68, bearing: -90, duration: 1200 });
         truckMarkerRef.current?.setLngLat([puneClinics[7].longitude, puneClinics[7].latitude]);
       }
-    }, 2400);
+    }, 2600);
 
     setTimeout(() => {
       setPlanningStep('Step 4/4: ExplainerAgent locked 159.15 km tour! 1-Click GPS navigation ready.');
       if (mapRef.current) {
-        mapRef.current.flyTo({ center: [74.08, 18.78], zoom: 9.8, pitch: 62, bearing: -18, duration: 1500 });
+        mapRef.current.flyTo({ center: [74.08, 18.78], zoom: 9.7, pitch: 65, bearing: -22, duration: 1500 });
       }
       setIsSelfPlanning(false);
       setTimeout(() => setPlanningStep(null), 4000);
-    }, 3600);
+    }, 3900);
   };
 
   return (
@@ -221,27 +290,37 @@ export const MapTab: React.FC<MapTabProps> = ({
         <div ref={mapContainer} className="w-full h-full" />
 
         {/* 🎮 3D Camera Controls Toolbar (Top Right) */}
-        <div className="absolute top-4 right-4 z-10 flex items-center bg-surface-card/95 backdrop-blur-md border border-hairline rounded-lg p-1 shadow-md text-xs font-mono">
+        <div className="absolute top-4 right-4 z-10 flex items-center bg-surface-card/95 backdrop-blur-md border border-hairline rounded-lg p-1.5 shadow-md text-xs font-mono gap-1">
           <button
-            onClick={setCamera3D}
-            className={`px-3 py-1.5 rounded-md flex items-center gap-1.5 transition-colors ${cameraMode === '3D' ? 'bg-primary text-white font-bold' : 'text-ink hover:bg-canvas-soft'}`}
+            onClick={handleSnap3D}
+            className="px-3 py-1.5 rounded-md bg-primary text-white font-bold flex items-center gap-1.5 hover:bg-primary-active transition-colors"
           >
             <Compass className="w-3.5 h-3.5" />
-            <span>3D Aerial (62°)</span>
+            <span>3D Tilt (68°)</span>
           </button>
+          
           <button
-            onClick={setCamera2D}
-            className={`px-3 py-1.5 rounded-md flex items-center gap-1.5 transition-colors ${cameraMode === '2D' ? 'bg-primary text-white font-bold' : 'text-ink hover:bg-canvas-soft'}`}
+            onClick={handleToggleOrbit}
+            className={`px-3 py-1.5 rounded-md flex items-center gap-1.5 transition-colors ${isOrbiting ? 'bg-amber-500 text-white font-bold animate-pulse' : 'text-ink hover:bg-canvas-soft'}`}
           >
-            <Layers className="w-3.5 h-3.5" />
-            <span>Top-Down (2D)</span>
+            <RefreshCw className={`w-3.5 h-3.5 ${isOrbiting ? 'animate-spin' : ''}`} />
+            <span>{isOrbiting ? 'Stop Orbit' : '360° Orbit'}</span>
           </button>
+
           <button
-            onClick={setCameraOrbit}
-            className="px-3 py-1.5 rounded-md flex items-center gap-1.5 text-ink hover:bg-canvas-soft transition-colors"
+            onClick={handleSnap2D}
+            className="px-2.5 py-1.5 rounded-md text-ink hover:bg-canvas-soft transition-colors flex items-center gap-1"
           >
-            <RefreshCw className="w-3.5 h-3.5 text-muted" />
-            <span>360° Orbit</span>
+            <Layers className="w-3.5 h-3.5 text-muted" />
+            <span>2D Flat</span>
+          </button>
+
+          <button
+            onClick={() => setBasemapStyle(prev => prev === 'DARK' ? 'SATELLITE' : 'DARK')}
+            className="px-2.5 py-1.5 rounded-md text-ink hover:bg-canvas-soft transition-colors flex items-center gap-1 border-l border-hairline ml-1"
+          >
+            <Satellite className="w-3.5 h-3.5 text-primary" />
+            <span>{basemapStyle === 'DARK' ? 'Satellite' : 'Dark Vector'}</span>
           </button>
         </div>
 
@@ -251,11 +330,11 @@ export const MapTab: React.FC<MapTabProps> = ({
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-semantic-success animate-ping"></span>
               <span className="text-[11px] font-mono uppercase tracking-wider text-muted font-semibold">
-                3D Autonomous Fleet Navigator
+                3D Spatial Fleet Twin
               </span>
             </div>
             <span className="text-[10px] font-mono bg-surface-strong px-2 py-0.5 rounded-pill text-ink font-bold">
-              9 Clinics + 1 Central Depot
+              3D Pillars Active (14,000m)
             </span>
           </div>
 
