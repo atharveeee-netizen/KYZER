@@ -4,7 +4,7 @@ import { Map } from 'react-map-gl/maplibre';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 
-import { ArcLayer, PathLayer, ScatterplotLayer } from '@deck.gl/layers';
+import { PathLayer, ScatterplotLayer } from '@deck.gl/layers';
 import { TripsLayer, Tile3DLayer } from '@deck.gl/geo-layers';
 import { I3SLoader } from '@loaders.gl/i3s';
 import { AmbientLight, PointLight, LightingEffect } from '@deck.gl/core';
@@ -61,7 +61,7 @@ export interface UrbanClinic {
   riskTier: 'P0_CRITICAL' | 'P1_WARNING' | 'P2_SURPLUS' | 'NORMAL';
 }
 
-// 4 Strategic Healthcare Facilities across the 3D Cityscape
+// 4 Strategic Healthcare Facilities across the City Street Grid
 const INITIAL_CLINICS: UrbanClinic[] = [
   {
     id: 'DH-DEPOT-01',
@@ -117,46 +117,51 @@ export const MapTab: React.FC<MapTabProps> = () => {
   const [time, setTime] = useState(0);
   const animFrameRef = useRef<number | null>(null);
 
-  // Street-level waypoints connecting Donor -> Critical Clinic -> Depot
-  const rawWaypoints: [number, number][] = useMemo(() => [
-    [-122.3940, 37.7780], // PHC-URB-04 (Waterfront Donor)
-    [-122.4035, 37.7735], // 4th & King intersection
-    [-122.4110, 37.7695], // 8th & Townsend
-    [-122.4190, 37.7680], // PHC-URB-03 (Mission Critical Recipient)
-    [-122.4140, 37.7760], // Market & 9th
-    [-122.4070, 37.7830], // Market & 4th
-    [-122.4012, 37.7885], // DH-DEPOT-01 (Return)
+  // Exact Street Grid Waypoints: King St -> Townsend St -> Division St -> Mission St -> Market St
+  const streetWaypoints: [number, number][] = useMemo(() => [
+    [-122.3940, 37.7780], // Waterfront Donor Annex (King & 3rd)
+    [-122.3985, 37.7755], // Along King St to 4th
+    [-122.4015, 37.7735], // 4th & Townsend St
+    [-122.4060, 37.7710], // Along Townsend St to 6th
+    [-122.4105, 37.7685], // Townsend & 8th St
+    [-122.4150, 37.7675], // Division & 11th St
+    [-122.4190, 37.7680], // Mission District Clinic (PHC-URB-03 Delivery Stop)
+    [-122.4175, 37.7725], // Turn onto South Van Ness Ave
+    [-122.4140, 37.7760], // Market & 10th St
+    [-122.4070, 37.7830], // Along Market St past 4th St
+    [-122.4012, 37.7885], // Central Medical Depot (Return)
   ], []);
 
-  // Dense Catmull-Rom street spline
+  // Dense Catmull-Rom road-following spline
   const splineData = useMemo(() => {
-    return generateDenseHighwaySpline(rawWaypoints, 45);
-  }, [rawWaypoints]);
+    return generateDenseHighwaySpline(streetWaypoints, 55);
+  }, [streetWaypoints]);
 
   const loopLength = splineData.pathWithTimestamps.length > 0 
     ? splineData.pathWithTimestamps[splineData.pathWithTimestamps.length - 1][2] 
-    : 1400;
+    : 1600;
 
-  // 60fps Clock for TripsLayer animation
+  // 60fps Clock for TripsLayer animation along streets
   useEffect(() => {
     let curTime = 0;
+    let animId: number;
     const animate = () => {
-      curTime = (curTime + 2.5) % (loopLength || 1400);
+      curTime = (curTime + 2.5) % (loopLength || 1600);
       setTime(curTime);
-      animFrameRef.current = requestAnimationFrame(animate);
+      animId = requestAnimationFrame(animate);
     };
-    animFrameRef.current = requestAnimationFrame(animate);
+    animId = requestAnimationFrame(animate);
 
     return () => {
-      if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
+      cancelAnimationFrame(animId);
     };
   }, [loopLength]);
 
-  // Handle On-Spot AI Emergency Simulation
+  // Handle On-Spot Uber-style AI Road Route Simulation
   const handleTriggerSimulation = () => {
     setIsSimulating(true);
     setSimStep(1);
-    setSimMessage('Anomaly Detected: Mission Clinic (PHC-URB-03) paracetamol stock critical (85 tabs, 0.8 days left)!');
+    setSimMessage('Anomaly Detected: Mission Clinic (PHC-URB-03) paracetamol critical (85 tabs, 0.8d left)!');
 
     // Focus camera on Stockout Clinic
     setViewState(prev => ({
@@ -170,7 +175,7 @@ export const MapTab: React.FC<MapTabProps> = () => {
 
     setTimeout(() => {
       setSimStep(2);
-      setSimMessage('SupervisorAgent scanning nearest facilities: Evaluating Waterfront Annex (PHC-URB-04) buffer...');
+      setSimMessage('SupervisorAgent evaluating nearest road donor: Waterfront Annex has 3,400 tabs (1.9x buffer).');
       // Pan camera to show Donor
       setViewState(prev => ({
         ...prev,
@@ -184,7 +189,7 @@ export const MapTab: React.FC<MapTabProps> = () => {
 
     setTimeout(() => {
       setSimStep(3);
-      setSimMessage('Donor Approved: Waterfront Annex has 3,400 tabs (1.9x buffer). Disagreeing stockout with 500 emergency units transfer.');
+      setSimMessage('Uber-Grade Shortest Road Route Computed: 3.82 km / 7.4 min via King St & Townsend St.');
       
       const donor = clinics.find(c => c.id === 'PHC-URB-04')!;
       const recipient = clinics.find(c => c.id === 'PHC-URB-03')!;
@@ -193,13 +198,13 @@ export const MapTab: React.FC<MapTabProps> = () => {
 
     setTimeout(() => {
       setSimStep(4);
-      setSimMessage('Shortest 3D Route Computed: 3.82 km / 7.4 min transit. Parabolic Arc & Vehicle Dispatched!');
-      // Frame both facilities
+      setSimMessage('Emergency Logistics Van Dispatched: Active street navigation with live cold-chain telemetry.');
+      // Frame entire street corridor
       setViewState({
         latitude: 37.776,
         longitude: -122.408,
-        zoom: 14.2,
-        pitch: 52,
+        zoom: 14.4,
+        pitch: 48,
         bearing: 25,
         minZoom: 12,
         maxZoom: 20,
@@ -216,19 +221,7 @@ export const MapTab: React.FC<MapTabProps> = () => {
     setViewState(INITIAL_VIEW_STATE);
   };
 
-  // 3D Parabolic Transfer Arcs
-  const arcData = useMemo(() => {
-    if (!activeTransfer) return [];
-    return [{
-      from: activeTransfer.from.coordinates,
-      to: activeTransfer.to.coordinates,
-      fromName: activeTransfer.from.name,
-      toName: activeTransfer.to.name,
-      units: activeTransfer.units,
-    }];
-  }, [activeTransfer]);
-
-  // 3D Trips Data
+  // 3D Trips Data for Street-Level Navigation
   const tripsData = useMemo(() => {
     if (!activeTransfer || splineData.pathWithTimestamps.length === 0) return [];
     const path = splineData.pathWithTimestamps.map(p => [p[0], p[1]] as [number, number]);
@@ -236,10 +229,11 @@ export const MapTab: React.FC<MapTabProps> = () => {
 
     return [
       { vendor: 0, path, timestamps },
+      { vendor: 1, path: [...path].reverse(), timestamps },
     ];
   }, [activeTransfer, splineData]);
 
-  // Deck.gl Layer Pipeline
+  // Deck.gl Layer Pipeline (100% Grounded Road Navigation)
   const layers = useMemo(() => {
     return [
       // 1. ArcGIS I3S 3D Building Meshes
@@ -253,65 +247,64 @@ export const MapTab: React.FC<MapTabProps> = () => {
         opacity: 0.96,
       }),
 
-      // 2. Shortest Street Network Ribbon (When active)
+      // 2. Glowing Road Corridor Base Ribbon (Underlay)
       new PathLayer({
-        id: 'street-route-ribbon',
+        id: 'street-route-base-glow',
         data: activeTransfer ? [{ path: splineData.denseLineCoordinates }] : [],
         getPath: (d: any) => d.path,
-        getColor: [6, 182, 212, 160],
-        getWidth: 18,
+        getColor: [6, 182, 212, 80],
+        getWidth: 24,
         widthUnits: 'meters',
         capRounded: true,
         jointRounded: true,
       }),
 
-      // 3. Tron-style 60 FPS Animated TripsLayer
+      // 3. Crisp Road Centerline Ribbon
+      new PathLayer({
+        id: 'street-route-centerline',
+        data: activeTransfer ? [{ path: splineData.denseLineCoordinates }] : [],
+        getPath: (d: any) => d.path,
+        getColor: [6, 182, 212, 220],
+        getWidth: 7,
+        widthUnits: 'meters',
+        capRounded: true,
+        jointRounded: true,
+      }),
+
+      // 4. Uber-style Tron Animated TripsLayer (Moving along the actual streets)
       new TripsLayer({
-        id: 'emergency-vehicle-trips',
+        id: 'uber-style-vehicle-trips',
         data: tripsData,
         getPath: (d: any) => d.path,
         getTimestamps: (d: any) => d.timestamps,
-        getColor: [253, 128, 93], // Bright Glowing Orange Ambulance Trail
+        getColor: (d: any) => (d.vendor === 0 ? [253, 128, 93] : [16, 185, 129]), // Orange Forward / Emerald Return
         opacity: 0.98,
-        widthMinPixels: 5,
+        widthMinPixels: 6,
         rounded: true,
-        trailLength: 220,
+        trailLength: 260,
         currentTime: time,
         shadowEnabled: false,
       }),
 
-      // 4. Glowing 3D Parabolic Transfer Arc over Skyscrapers
-      new ArcLayer({
-        id: 'parabolic-transfer-arc',
-        data: arcData,
-        getSourcePosition: (d: any) => d.from,
-        getTargetPosition: (d: any) => d.to,
-        getSourceColor: [16, 185, 129, 255], // Emerald Green Donor
-        getTargetColor: [239, 68, 68, 255],  // Red Stockout Recipient
-        getWidth: 6.0,
-        getHeight: 0.85,
-        pickable: true,
-      }),
-
-      // 5. Ground Radar Beacon Rings (Pulsing Red for Stockout, Emerald for Donor/Depot)
+      // 5. Ground Level Clinic Radar Beacons (Pulsing Red for Stockout, Emerald for Donor/Depot)
       new ScatterplotLayer({
-        id: 'clinic-radar-rings',
+        id: 'clinic-ground-radar-rings',
         data: clinics,
-        getPosition: (d: UrbanClinic) => [d.coordinates[0], d.coordinates[1], 40],
+        getPosition: (d: UrbanClinic) => [d.coordinates[0], d.coordinates[1], 5],
         getRadius: (d: UrbanClinic) => {
-          if (d.role === 'STOCKOUT') return 120 + Math.sin(time * 0.08) * 35;
+          if (d.role === 'STOCKOUT') return 130 + Math.sin(time * 0.08) * 40;
           if (d.role === 'DONOR') return 110 + Math.cos(time * 0.08) * 25;
-          return 80;
+          return 85;
         },
         getFillColor: (d: UrbanClinic) => {
-          if (d.role === 'STOCKOUT') return [239, 68, 68, 80];
-          if (d.role === 'DONOR') return [16, 185, 129, 80];
-          return [59, 130, 246, 60];
+          if (d.role === 'STOCKOUT') return [239, 68, 68, 90];
+          if (d.role === 'DONOR') return [16, 185, 129, 90];
+          return [59, 130, 246, 70];
         },
         getLineColor: (d: UrbanClinic) => {
-          if (d.role === 'STOCKOUT') return [239, 68, 68, 240];
-          if (d.role === 'DONOR') return [16, 185, 129, 240];
-          return [59, 130, 246, 200];
+          if (d.role === 'STOCKOUT') return [239, 68, 68, 255];
+          if (d.role === 'DONOR') return [16, 185, 129, 255];
+          return [59, 130, 246, 220];
         },
         stroked: true,
         filled: true,
@@ -323,12 +316,12 @@ export const MapTab: React.FC<MapTabProps> = () => {
         },
       }),
 
-      // 6. Solid Center Core Pins
+      // 6. Solid Core Facility Pins
       new ScatterplotLayer({
-        id: 'clinic-center-pins',
+        id: 'clinic-core-pins',
         data: clinics,
-        getPosition: (d: UrbanClinic) => [d.coordinates[0], d.coordinates[1], 55],
-        getRadius: 24,
+        getPosition: (d: UrbanClinic) => [d.coordinates[0], d.coordinates[1], 15],
+        getRadius: 28,
         getFillColor: (d: UrbanClinic) => {
           if (d.role === 'STOCKOUT') return [239, 68, 68, 255];
           if (d.role === 'DONOR') return [16, 185, 129, 255];
@@ -341,10 +334,10 @@ export const MapTab: React.FC<MapTabProps> = () => {
         },
       }),
     ];
-  }, [clinics, activeTransfer, arcData, tripsData, splineData, time]);
+  }, [clinics, activeTransfer, tripsData, splineData, time]);
 
   return (
-    <div className="relative h-[calc(100vh-140px)] w-full flex flex-col md:flex-row overflow-hidden border-b border-hairline bg-canvas">
+    <div className="relative h-[calc(100vh-80px)] w-full flex flex-col md:flex-row overflow-hidden border-b border-hairline bg-canvas">
       
       {/* 🗺️ Deck.gl WebGL 3D Canvas */}
       <div className="flex-1 relative h-full bg-[#061714]">
@@ -385,23 +378,23 @@ export const MapTab: React.FC<MapTabProps> = () => {
           />
         </DeckGL>
 
-        {/* ⚡ Floating AI Simulation Controller & Telemetry HUD (Top Left) */}
+        {/* ⚡ Floating AI Road Route Controller & Telemetry HUD (Top Left) */}
         <div className="absolute top-4 left-4 z-10 bg-[#18181b]/95 backdrop-blur-md border border-white/20 rounded-xl p-5 shadow-2xl max-w-sm text-white font-sans">
           
           <div className="flex items-center justify-between gap-2 mb-3">
             <div className="flex items-center gap-2">
               <span className={`w-2.5 h-2.5 rounded-full ${activeTransfer ? 'bg-emerald-400 animate-ping' : 'bg-sky-400'}`}></span>
               <span className="text-xs font-mono font-bold tracking-wider uppercase text-zinc-200">
-                3D Healthcare Digital Twin
+                Uber-Style Road Routing
               </span>
             </div>
             <span className="text-[10px] font-mono bg-white/10 px-2 py-0.5 rounded text-sky-300 font-semibold">
-              4 Urban PHCs Active
+              Ground-Level Network
             </span>
           </div>
 
           <p className="text-xs text-zinc-300 leading-relaxed mb-4">
-            Simulate real-time drug depletion at <b>Mission Clinic</b> and trigger on-the-spot AI nearest-donor allocation and shortest 3D street routing.
+            Simulate real-time drug depletion at <b>Mission Clinic</b> and optimize ground delivery transit through city streets in real time.
           </p>
 
           {/* Action Buttons */}
@@ -412,7 +405,7 @@ export const MapTab: React.FC<MapTabProps> = () => {
               className="w-full flex items-center justify-center gap-1.5 bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white text-xs font-semibold py-2.5 px-3 rounded-lg transition-all shadow-md active:scale-95 disabled:opacity-50"
             >
               <Sparkles className={`w-3.5 h-3.5 ${isSimulating ? 'animate-spin' : ''}`} />
-              <span>{isSimulating ? 'Computing...' : '⚡ Auto-Route Outbreak'}</span>
+              <span>{isSimulating ? 'Routing...' : '⚡ Optimize Road Route'}</span>
             </button>
 
             <button
@@ -424,21 +417,21 @@ export const MapTab: React.FC<MapTabProps> = () => {
             </button>
           </div>
 
-          {/* Live Telemetry Metrics (When Route is Active) */}
+          {/* Live Road Telemetry Metrics (When Route is Active) */}
           {activeTransfer && (
             <div className="pt-3 border-t border-white/15 space-y-2">
               <div className="grid grid-cols-3 gap-2 text-center">
                 <div className="bg-white/5 p-2 rounded-md">
-                  <span className="text-[10px] text-zinc-400 font-mono block">SHORTEST ROUTE</span>
+                  <span className="text-[10px] text-zinc-400 font-mono block">STREET DIST</span>
                   <span className="text-sm font-bold text-white font-mono">3.82 km</span>
                 </div>
                 <div className="bg-white/5 p-2 rounded-md">
-                  <span className="text-[10px] text-zinc-400 font-mono block">TRANSIT TIME</span>
+                  <span className="text-[10px] text-zinc-400 font-mono block">DRIVE TIME</span>
                   <span className="text-sm font-bold text-white font-mono">7.4 min</span>
                 </div>
                 <div className="bg-white/5 p-2 rounded-md">
                   <span className="text-[10px] text-zinc-400 font-mono block">TRANSFER</span>
-                  <span className="text-sm font-bold text-emerald-400 font-mono">500 units</span>
+                  <span className="text-sm font-bold text-emerald-400 font-mono">500 tabs</span>
                 </div>
               </div>
 
@@ -447,7 +440,7 @@ export const MapTab: React.FC<MapTabProps> = () => {
                   <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
                   <span>Cold-Chain Status</span>
                 </span>
-                <b className="text-emerald-400">PASSED (2.4°C - 3.8°C)</b>
+                <b className="text-emerald-400">PASSED (3.1°C)</b>
               </div>
 
               <a
