@@ -16,6 +16,7 @@ import {
   MOCK_ALERTS,
 } from './data/mockData';
 import { HealthFacility, OcrExtractedItem, SystemAlert } from './types';
+import { apiClient } from './services/api';
 
 export const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<string>('dashboard');
@@ -33,6 +34,37 @@ export const App: React.FC = () => {
       if (saved === 'dark') document.documentElement.classList.add('dark');
       else document.documentElement.classList.remove('dark');
     }
+  }, []);
+
+  // Fetch live facilities and alerts from Service A on mount
+  useEffect(() => {
+    let isMounted = true;
+    
+    // 1. Initial Fetch
+    apiClient.getFacilities().then(data => {
+      if (isMounted && data && data.length > 0) {
+        setFacilities(data);
+        setSelectedFacility(data[0]);
+      }
+    });
+
+    apiClient.getAlerts().then(data => {
+      if (isMounted && data && data.length > 0) {
+        setAlerts(data);
+      }
+    });
+
+    // 2. Subscribe to real-time SSE alerts stream
+    const unsubscribe = apiClient.subscribeAlertsStream((incomingAlert) => {
+      if (isMounted && incomingAlert) {
+        setAlerts(prev => [incomingAlert, ...prev]);
+      }
+    });
+
+    return () => {
+      isMounted = false;
+      unsubscribe();
+    };
   }, []);
 
   const handleToggleTheme = () => {

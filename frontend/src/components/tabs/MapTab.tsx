@@ -9,8 +9,8 @@ import { TripsLayer, Tile3DLayer } from '@deck.gl/geo-layers';
 import { I3SLoader } from '@loaders.gl/i3s';
 import { AmbientLight, PointLight, LightingEffect } from '@deck.gl/core';
 
-import { Sparkles, Navigation, Pill, Bed, Activity, RefreshCw, X, CheckCircle2, Route } from 'lucide-react';
-import { computeShortestRoadPath, RouteResult } from '../../services/roadRouter';
+import { Sparkles, Navigation, Pill, Bed, Activity, RefreshCw, X, CheckCircle2, Route, Cpu } from 'lucide-react';
+import { fetchOSRMShortestRoute, RouteResult } from '../../services/roadRouter';
 import { HealthFacility, RoutingResult } from '../../types';
 
 interface MapTabProps {
@@ -117,29 +117,34 @@ export const MapTab: React.FC<MapTabProps> = () => {
 
   const [time, setTime] = useState(0);
 
-  // Compute Shortest Road Route using Dijkstra/A* algorithm when transfer is active
+  // Compute Shortest Road Route using live OSRM Driving Engine API
   useEffect(() => {
+    let isMounted = true;
     if (activeTransfer) {
-      const result = computeShortestRoadPath(
+      fetchOSRMShortestRoute(
         activeTransfer.from.coordinates,
         activeTransfer.to.coordinates
-      );
-      setActiveRouteResult(result);
+      ).then((result) => {
+        if (isMounted) setActiveRouteResult(result);
+      });
     } else {
       setActiveRouteResult(null);
     }
+    return () => {
+      isMounted = false;
+    };
   }, [activeTransfer]);
 
   const loopLength = activeRouteResult && activeRouteResult.pathWithTimestamps.length > 0
     ? activeRouteResult.pathWithTimestamps[activeRouteResult.pathWithTimestamps.length - 1][2]
     : 1600;
 
-  // 60fps Clock for TripsLayer animation strictly along computed road network
+  // 60fps Clock for TripsLayer animation strictly along computed OSRM road network
   useEffect(() => {
     let curTime = 0;
     let animId: number;
     const animate = () => {
-      curTime = (curTime + 1.8) % (loopLength || 1600);
+      curTime = (curTime + 2.0) % (loopLength || 1600);
       setTime(curTime);
       animId = requestAnimationFrame(animate);
     };
@@ -150,8 +155,8 @@ export const MapTab: React.FC<MapTabProps> = () => {
     };
   }, [loopLength]);
 
-  // Handle On-Spot Dijkstra AI Road Route Simulation
-  const handleTriggerSimulation = () => {
+  // Handle On-Spot OSRM AI Road Route Simulation
+  const handleTriggerSimulation = async () => {
     setIsSimulating(true);
     setSimStep(1);
     setSimMessage('Step 1: Anomaly Detected at Mission Clinic (PHC-URB-03) (85 tabs, 0.8 days left)!');
@@ -180,19 +185,20 @@ export const MapTab: React.FC<MapTabProps> = () => {
       }));
     }, 1500);
 
-    setTimeout(() => {
+    setTimeout(async () => {
       setSimStep(3);
       const donor = clinics.find(c => c.id === 'PHC-URB-04')!;
       const recipient = clinics.find(c => c.id === 'PHC-URB-03')!;
-      const res = computeShortestRoadPath(donor.coordinates, recipient.coordinates);
+      const res = await fetchOSRMShortestRoute(donor.coordinates, recipient.coordinates);
       
-      setSimMessage(`Step 3: Dijkstra Algorithm computed shortest road path (${res.totalDistanceKm} km, ${res.estimatedTimeMin} min) via ${res.streetSequence.slice(0, 3).join(', ')}.`);
+      setSimMessage(`Step 3: OSRM Engine calculated shortest road path (${res.totalDistanceKm} km, ${res.estimatedTimeMin} min, ${res.denseCoordinates.length} road GPS coordinates).`);
       setActiveTransfer({ from: donor, to: recipient, units: 500 });
+      setActiveRouteResult(res);
     }, 3000);
 
     setTimeout(() => {
       setSimStep(4);
-      setSimMessage('Step 4: Emergency Logistics Van Dispatched on asphalt with live cold-chain telemetry.');
+      setSimMessage('Step 4: Emergency Logistics Van Dispatched along OSRM street network with live cold-chain telemetry.');
       // Frame entire street corridor
       setViewState({
         latitude: 37.776,
@@ -216,7 +222,7 @@ export const MapTab: React.FC<MapTabProps> = () => {
     setViewState(INITIAL_VIEW_STATE);
   };
 
-  // 3D Trips Data for Street-Level Navigation (100% Grounded)
+  // 3D Trips Data for Street-Level Navigation (100% Grounded via OSRM)
   const tripsData = useMemo(() => {
     if (!activeRouteResult || activeRouteResult.pathWithTimestamps.length === 0) return [];
     const path = activeRouteResult.pathWithTimestamps.map(p => [p[0], p[1]] as [number, number]);
@@ -228,7 +234,7 @@ export const MapTab: React.FC<MapTabProps> = () => {
     ];
   }, [activeRouteResult]);
 
-  // Deck.gl Layer Pipeline (100% Grounded on Road Centerlines - ZERO Sky Arcs)
+  // Deck.gl Layer Pipeline (100% Grounded on OSRM Road Centerlines - ZERO Sky Arcs)
   const layers = useMemo(() => {
     return [
       // 1. ArcGIS I3S 3D Building Meshes
@@ -242,19 +248,19 @@ export const MapTab: React.FC<MapTabProps> = () => {
         opacity: 0.96,
       }),
 
-      // 2. Glowing Road Corridor Base Ribbon (Underlay on Asphalt)
+      // 2. Glowing OSRM Road Corridor Base Ribbon (Underlay on Asphalt)
       new PathLayer({
         id: 'street-route-base-glow',
         data: activeRouteResult ? [{ path: activeRouteResult.denseCoordinates }] : [],
         getPath: (d: any) => d.path,
         getColor: [6, 182, 212, 100],
-        getWidth: 20,
+        getWidth: 18,
         widthUnits: 'meters',
         capRounded: true,
         jointRounded: true,
       }),
 
-      // 3. Crisp Road Centerline Ribbon
+      // 3. Crisp OSRM Road Centerline Ribbon
       new PathLayer({
         id: 'street-route-centerline',
         data: activeRouteResult ? [{ path: activeRouteResult.denseCoordinates }] : [],
@@ -266,7 +272,7 @@ export const MapTab: React.FC<MapTabProps> = () => {
         jointRounded: true,
       }),
 
-      // 4. Uber-Style Tron Animated TripsLayer (Moving along the actual streets)
+      // 4. Uber-Style Tron Animated TripsLayer (Moving along OSRM street coordinates)
       new TripsLayer({
         id: 'uber-style-vehicle-trips',
         data: tripsData,
@@ -373,23 +379,24 @@ export const MapTab: React.FC<MapTabProps> = () => {
           />
         </DeckGL>
 
-        {/* Floating AI Road Route Controller & Telemetry HUD (Top Left) */}
+        {/* Floating OSRM Road Route Controller & Telemetry HUD (Top Left) */}
         <div className="absolute top-4 left-4 z-10 bg-[#18181b]/95 backdrop-blur-md border border-white/20 rounded-xl p-5 shadow-2xl max-w-sm text-white font-sans">
           
           <div className="flex items-center justify-between gap-2 mb-3">
             <div className="flex items-center gap-2">
               <span className={`w-2.5 h-2.5 rounded-full ${activeTransfer ? 'bg-emerald-400 animate-ping' : 'bg-sky-400'}`}></span>
               <span className="text-xs font-mono font-bold tracking-wider uppercase text-zinc-200">
-                Dijkstra Road Router
+                OSRM Routing Engine
               </span>
             </div>
-            <span className="text-[10px] font-mono bg-white/10 px-2 py-0.5 rounded text-sky-300 font-semibold">
-              Graph Network
+            <span className="text-[10px] font-mono bg-white/10 px-2 py-0.5 rounded text-sky-300 font-semibold flex items-center gap-1">
+              <Cpu className="w-3 h-3 text-sky-400" />
+              <span>OSRM Driving API</span>
             </span>
           </div>
 
           <p className="text-xs text-zinc-300 leading-relaxed mb-4">
-            Simulate real-time drug depletion at <b>Mission Clinic</b> and run Dijkstra shortest road routing between donor and recipient PHCs.
+            Simulate real-time drug depletion at <b>Mission Clinic</b> and run OSRM shortest road routing across the street network.
           </p>
 
           {/* Action Buttons */}
@@ -400,7 +407,7 @@ export const MapTab: React.FC<MapTabProps> = () => {
               className="w-full flex items-center justify-center gap-1.5 bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white text-xs font-semibold py-2.5 px-3 rounded-lg transition-all shadow-md active:scale-95 disabled:opacity-50"
             >
               <Sparkles className={`w-3.5 h-3.5 ${isSimulating ? 'animate-spin' : ''}`} />
-              <span>{isSimulating ? 'Routing...' : 'Find Shortest Path'}</span>
+              <span>{isSimulating ? 'Routing...' : 'Run OSRM Route'}</span>
             </button>
 
             <button
@@ -412,12 +419,12 @@ export const MapTab: React.FC<MapTabProps> = () => {
             </button>
           </div>
 
-          {/* Live Dijkstra Routing Telemetry Metrics (When Route is Active) */}
+          {/* Live OSRM Routing Telemetry Metrics (When Route is Active) */}
           {activeRouteResult && (
             <div className="pt-3 border-t border-white/15 space-y-2">
               <div className="grid grid-cols-3 gap-2 text-center">
                 <div className="bg-white/5 p-2 rounded-md">
-                  <span className="text-[10px] text-zinc-400 font-mono block">DIJKSTRA DIST</span>
+                  <span className="text-[10px] text-zinc-400 font-mono block">OSRM DIST</span>
                   <span className="text-sm font-bold text-white font-mono">{activeRouteResult.totalDistanceKm} km</span>
                 </div>
                 <div className="bg-white/5 p-2 rounded-md">
@@ -425,8 +432,8 @@ export const MapTab: React.FC<MapTabProps> = () => {
                   <span className="text-sm font-bold text-white font-mono">{activeRouteResult.estimatedTimeMin} min</span>
                 </div>
                 <div className="bg-white/5 p-2 rounded-md">
-                  <span className="text-[10px] text-zinc-400 font-mono block">INTERSECTIONS</span>
-                  <span className="text-sm font-bold text-emerald-400 font-mono">{activeRouteResult.nodePath.length} nodes</span>
+                  <span className="text-[10px] text-zinc-400 font-mono block">OSRM POINTS</span>
+                  <span className="text-sm font-bold text-emerald-400 font-mono">{activeRouteResult.denseCoordinates.length} pts</span>
                 </div>
               </div>
 
@@ -434,7 +441,7 @@ export const MapTab: React.FC<MapTabProps> = () => {
               <div className="p-2 bg-white/5 border border-white/10 rounded-md text-[10px] font-mono text-zinc-300 flex items-start gap-1.5">
                 <Route className="w-3.5 h-3.5 text-sky-400 shrink-0 mt-0.5" />
                 <div>
-                  <span className="text-zinc-400 block mb-0.5">Computed Street Sequence:</span>
+                  <span className="text-zinc-400 block mb-0.5">Engine & Road Corridor:</span>
                   <span className="text-sky-300 font-semibold">{activeRouteResult.streetSequence.join(' -> ')}</span>
                 </div>
               </div>
