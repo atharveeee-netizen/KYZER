@@ -39,16 +39,23 @@ class ExplainerAgent(BaseCareDOMAgent):
         if state.demand_forecast and state.demand_forecast.p50_median_expected:
             pred_val = float(state.demand_forecast.p50_median_expected[0])
 
-        # Extract genuine feature values from the forecaster's latest engineered feature vector
+        # Extract genuine feature values aligned with forecaster feature names
+        feat_names = self.forecaster.feature_names or [
+            "facility_encoded", "item_encoded", "category_encoded", "is_dh",
+            "day_of_week", "month", "is_weekend",
+            "consumption_lag_1d", "consumption_lag_2d", "consumption_lag_3d",
+            "consumption_lag_7d", "consumption_lag_14d",
+            "rolling_mean_7d", "rolling_std_7d", "rolling_max_14d", "rolling_mean_14d",
+            "lag1_to_mean7_ratio", "lag7_to_mean14_ratio",
+            "rainfall_lag_3d", "heavy_rain_flag", "epidemic_growth_rate", "epidemic_cases_level"
+        ]
+
         if state.demand_forecast and state.demand_forecast.latest_feature_vector:
             real_features = state.demand_forecast.latest_feature_vector
-            feat_names = list(real_features.keys())
-            feat_df = pd.DataFrame([real_features])
+            feat_values = [float(real_features.get(k, 0.0)) for k in feat_names]
+            feat_df = pd.DataFrame([feat_values], columns=feat_names)
         else:
-            feat_names = list(state.demand_forecast.feature_importances.keys()) if (state.demand_forecast and state.demand_forecast.feature_importances) else [
-                "day_of_week", "month", "is_weekend", "consumption_lag_1d", "consumption_lag_7d", "rolling_mean_7d", "rainfall_lag_3d", "epidemic_growth_rate"
-            ]
-            feat_df = pd.DataFrame([{name: 25.0 if "consumption" in name or "rolling" in name else 1.0 for name in feat_names}])
+            feat_df = pd.DataFrame([[25.0 if "consumption" in name or "rolling" in name else 0.0 for name in feat_names]], columns=feat_names)
         
         model_obj = self.forecaster.models.get(0.50, None)
         

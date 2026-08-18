@@ -94,3 +94,23 @@ class MultiAgentWorkflowEngine:
         state.execution_steps.append(f"[Engine] Multi-Agent Workflow {wf_id} completed successfully in {elapsed_ms:.2f} ms")
 
         return state
+
+    async def run_workflow_async(
+        self,
+        country_code: str = "IND",
+        target_facility_id: str = "PHC-PUN-002",
+        target_item_code: str = "MED-ORS-PKG",
+        register_image_bytes: Optional[bytes] = None
+    ) -> MultiAgentBlackboardState:
+        """
+        Asynchronous concurrent execution of the collaborative multi-agent workflow graph.
+        Utilizes non-blocking async loops and worker threads for high-throughput concurrency.
+        """
+        import asyncio
+        return await asyncio.to_thread(
+            self.run_workflow,
+            country_code=country_code,
+            target_facility_id=target_facility_id,
+            target_item_code=target_item_code,
+            register_image_bytes=register_image_bytes
+        )

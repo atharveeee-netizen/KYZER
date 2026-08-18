@@ -13,7 +13,12 @@ from typing import Dict, Any, List, Optional, Tuple
 from pydantic import BaseModel, Field
 
 from ai_engine.config import settings, AI_ENGINE_DIR
-from ai_engine.forecaster.features import DemandFeatureEngineer
+from ai_engine.forecaster.features import (
+    DemandFeatureEngineer,
+    FACILITY_ENCODING,
+    ITEM_ENCODING,
+    CATEGORY_ENCODING
+)
 from ai_engine.forecaster.seir_coupling import SEIRCouplingModel, SEIRSimulationParameters
 
 logger = logging.getLogger("ai_engine.forecaster")
@@ -42,11 +47,13 @@ class MultiHorizonDemandForecaster:
         self.alphas = alphas or settings.QUANTILE_ALPHAS
         self.models: Dict[float, Any] = {}
         self.feature_names: List[str] = [
+            "facility_encoded", "item_encoded", "category_encoded", "is_dh",
             "day_of_week", "month", "is_weekend",
             "consumption_lag_1d", "consumption_lag_2d", "consumption_lag_3d",
             "consumption_lag_7d", "consumption_lag_14d",
-            "rolling_mean_7d", "rolling_std_7d", "rolling_max_14d",
-            "rainfall_lag_3d", "heavy_rain_flag", "epidemic_growth_rate"
+            "rolling_mean_7d", "rolling_std_7d", "rolling_max_14d", "rolling_mean_14d",
+            "lag1_to_mean7_ratio", "lag7_to_mean14_ratio",
+            "rainfall_lag_3d", "heavy_rain_flag", "epidemic_growth_rate", "epidemic_cases_level"
         ]
         self.is_trained: bool = False
         self.engine_name: str = "LightGBM"
@@ -58,7 +65,7 @@ class MultiHorizonDemandForecaster:
                 with open(bundle_file, "rb") as f:
                     bundle = pickle.load(f)
                     self.models = bundle.get("models", {})
-                    self.feature_names = bundle.get("features", self.feature_names)
+                    self.feature_names = bundle.get("feature_names", bundle.get("features", self.feature_names))
                     self.engine_name = bundle.get("engine", "LightGBM Quantile Regressor")
                     self.is_trained = True
                 logger.info(f"Loaded trained models from {bundle_file}")
@@ -192,8 +199,17 @@ class MultiHorizonDemandForecaster:
             prev_inf = float(seir_infected_curve[min(d-1, len(seir_infected_curve)-1)])
             epi_growth = (cur_inf - prev_inf) / max(prev_inf, 1.0)
 
-            # Feature dictionary for step d
+            # Feature dictionary for step d with entity embeddings and temporal statistics
+            fac_enc = FACILITY_ENCODING.get(facility_id, 0)
+            itm_enc = ITEM_ENCODING.get(item_code, 0)
+            is_dh_val = 1 if "DH" in facility_id else 0
+            r_mean14 = float(np.mean(last14)) if len(last14) > 0 else r_mean7
+
             step_features = {
+                "facility_encoded": float(fac_enc),
+                "item_encoded": float(itm_enc),
+                "category_encoded": 0.0,
+                "is_dh": float(is_dh_val),
                 "day_of_week": float(dow),
                 "month": float(month),
                 "is_weekend": float(is_wknd),
@@ -205,15 +221,21 @@ class MultiHorizonDemandForecaster:
                 "rolling_mean_7d": r_mean7,
                 "rolling_std_7d": r_std7,
                 "rolling_max_14d": r_max14,
+                "rolling_mean_14d": r_mean14,
+                "lag1_to_mean7_ratio": float(lag1 / (r_mean7 + 1.0)),
+                "lag7_to_mean14_ratio": float(lag7 / (r_mean14 + 1.0)),
                 "rainfall_lag_3d": rain_lag3,
                 "heavy_rain_flag": float(heavy_rain),
-                "epidemic_growth_rate": float(epi_growth)
+                "epidemic_growth_rate": float(epi_growth),
+                "epidemic_cases_level": cur_inf
             }
 
             if d == 1:
                 latest_feature_dict = step_features.copy()
 
-            fv_df = pd.DataFrame([[step_features[col] for col in self.feature_names]], columns=self.feature_names)
+            # Ensure all self.feature_names exist in fv_df
+            fv_values = [step_features.get(col, 0.0) for col in self.feature_names]
+            fv_df = pd.DataFrame([fv_values], columns=self.feature_names)
 
             # Execute real model predictions across quantile heads
             if 0.50 in self.models:

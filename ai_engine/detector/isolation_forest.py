@@ -75,11 +75,19 @@ class HealthInventoryAnomalyDetector:
                 high_priority_alerts=[]
             )
 
+        # Facility-specific baseline normalization
+        if "facility_id" in df.columns and "item_code" in df.columns:
+            mean_by_fac = df.groupby(["facility_id", "item_code"])["consumption"].transform("mean")
+            std_by_fac = df.groupby(["facility_id", "item_code"])["consumption"].transform("std").fillna(1.0)
+            df["consumption_zscore"] = (df["consumption"] - mean_by_fac) / (std_by_fac + 1e-4)
+        else:
+            mean_by_fac = df["consumption"].mean()
+            std_by_fac = max(df["consumption"].std(), 1.0)
+            df["consumption_zscore"] = (df["consumption"] - mean_by_fac) / std_by_fac
+
         df["daily_depletion_rate"] = df["consumption"] / np.maximum(df.get("stock_remaining", 100), 1.0)
         
-        feature_cols = ["consumption"]
-        if "stock_remaining" in df.columns:
-            feature_cols.append("daily_depletion_rate")
+        feature_cols = ["consumption_zscore", "daily_depletion_rate"]
         if "active_epidemic_cases" in df.columns:
             feature_cols.append("active_epidemic_cases")
 
@@ -100,42 +108,43 @@ class HealthInventoryAnomalyDetector:
 
         flagged = []
         alerts = []
-        mean_cons = df["consumption"].mean()
-        std_cons = max(df["consumption"].std(), 1.0)
 
         for i, (pred, score) in enumerate(zip(preds, scores)):
             row = df.iloc[i]
             cons = float(row["consumption"])
-            sigmas = (cons - mean_cons) / std_cons
-            is_anom = bool(pred == -1 or sigmas > 2.5)
+            zscore = float(row["consumption_zscore"])
+            expected = float(mean_by_fac.iloc[i] if hasattr(mean_by_fac, "iloc") else mean_by_fac)
+            
+            # Anomaly triggered only when Z-score > 3.0σ (genuine outlier) or model predicts -1 with positive surge
+            is_anom = bool(pred == -1 and (zscore > 2.5 or zscore < -2.5))
 
             if is_anom:
-                if cons > mean_cons * 2.0:
+                if zscore > 2.5:
                     cause = "EPIDEMIC_SURGE"
-                elif row.get("stock_remaining", 100) < 10:
-                    cause = "PILFERAGE_LEAK"
+                elif row.get("stock_remaining", 100) < 5 and cons > 0:
+                    cause = "CRITICAL_STOCKOUT_RISK"
                 else:
-                    cause = "REPORTING_LAG"
+                    cause = "OPERATIONAL_DEVIATION"
 
                 rec = AnomalyRecord(
                     facility_id=str(row.get("facility_id", "PHC-101")),
                     item_code=str(row.get("item_code", "MED-PCM-500")),
                     date=str(row.get("date", "2026-08-18")),
                     observed_consumption=round(cons, 1),
-                    expected_baseline=round(mean_cons, 1),
-                    deviation_sigmas=round(sigmas, 2),
+                    expected_baseline=round(expected, 1),
+                    deviation_sigmas=round(zscore, 2),
                     anomaly_score=round(float(score), 4),
                     is_anomaly=True,
                     probable_cause=cause
                 )
                 flagged.append(rec)
 
-                if sigmas > 2.0 or cause == "EPIDEMIC_SURGE":
+                if zscore > 3.0 or cause == "EPIDEMIC_SURGE":
                     alerts.append({
                         "priority": "P0_CRITICAL",
                         "facility_id": rec.facility_id,
                         "item_code": rec.item_code,
-                        "message": f"Critical consumption surge ({cons} units, +{rec.deviation_sigmas}σ) detected. Immediate resupply needed.",
+                        "message": f"Critical consumption surge ({cons} units, {rec.deviation_sigmas:+.1f}σ from local baseline) detected.",
                         "probable_cause": cause
                     })
 

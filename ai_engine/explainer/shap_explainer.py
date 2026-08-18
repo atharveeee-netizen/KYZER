@@ -56,15 +56,17 @@ class HealthSHAPExplainer:
         """
         shap_values_dict = {}
         
-        # 1. Try real SHAP TreeExplainer
+        # 1. Try real SHAP TreeExplainer with exact column alignment
         try:
             import shap
+            fv_aligned = feature_vector.reindex(columns=feature_names, fill_value=0.0)
             if background_data is not None and len(background_data) > 0:
-                explainer = shap.TreeExplainer(model, data=background_data.iloc[:50])
+                bg_aligned = background_data.reindex(columns=feature_names, fill_value=0.0)
+                explainer = shap.TreeExplainer(model, data=bg_aligned.iloc[:50])
             else:
                 explainer = shap.TreeExplainer(model)
                 
-            raw_shap = explainer.shap_values(feature_vector)
+            raw_shap = explainer.shap_values(fv_aligned)
             if isinstance(raw_shap, list):
                 raw_shap = raw_shap[0]
             if len(raw_shap.shape) > 1:

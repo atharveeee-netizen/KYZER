@@ -86,17 +86,50 @@ class GeminiDecisionNarrator:
         explanation: DecisionExplanationReport,
         target_language: str
     ) -> Dict[str, str]:
-        """High-fidelity template fallback for offline demo."""
+        """High-fidelity dynamic template fallback matching actual TreeSHAP attribution drivers."""
+        
+        # Extract top feature driver
+        top_driver_name = "general_demand"
+        top_factor_desc_en = "observed clinic consumption patterns"
+        top_factor_desc_hi = "हाल के उपभोग के रुझानों"
+
+        if explanation.top_contributing_factors:
+            top_f = explanation.top_contributing_factors[0]
+            top_driver_name = top_f.feature_name
+            val = top_f.feature_value
+
+            if "rainfall" in top_driver_name or "rain" in top_driver_name:
+                if val > 5.0:
+                    top_factor_desc_en = f"heavy local rainfall ({val:.1f} mm) accelerating waterborne cases"
+                    top_factor_desc_hi = f"भारी वर्षा ({val:.1f} मिमी) और मौसमी जलभराव"
+                else:
+                    top_factor_desc_en = "dry-weather clinical distribution cycles"
+                    top_factor_desc_hi = "सामान्य मौसमी वितरण चक्र"
+            elif "epidemic" in top_driver_name or "cases" in top_driver_name:
+                top_factor_desc_en = f"regional epidemiological surge (growth rate {val:+.1f}%)"
+                top_factor_desc_hi = f"क्षेत्रीय बीमारी में तीव्र वृद्धि (वृद्धि दर {val:+.1f}%)"
+            elif "rolling_mean" in top_driver_name or "rolling" in top_driver_name:
+                top_factor_desc_en = f"sustained 7-day rolling consumption baseline ({val:.1f} units/day)"
+                top_factor_desc_hi = f"पिछले 7 दिनों की निरंतर उच्च मांग ({val:.1f} यूनिट/दिन)"
+            elif "lag" in top_driver_name:
+                top_factor_desc_en = f"recent historical dispensing velocity ({val:.1f} units)"
+                top_factor_desc_hi = f"हाल ही में दवाओं की बढ़ी हुई खपत ({val:.1f} यूनिट)"
+            elif "is_weekend" in top_driver_name or "day_of_week" in top_driver_name:
+                top_factor_desc_en = "weekend clinic patient volume influx"
+                top_factor_desc_hi = "सप्ताहांत में मरीजों की बढ़ी हुई संख्या"
+
         en = (
-            f"Demand for {explanation.item_code} at {explanation.facility_id} is projected to surge from "
-            f"{explanation.base_expected_consumption} to {explanation.predicted_demand} units. "
-            f"{explanation.primary_driver_summary} Automated lateral transfer from neighboring surplus clinic is recommended."
+            f"Demand for {explanation.item_code} at {explanation.facility_id} is projected to change from "
+            f"{explanation.base_expected_consumption} to {explanation.predicted_demand} units, primarily driven by {top_factor_desc_en}. "
+            f"Automated lateral inventory transfer from surplus neighboring facilities is scheduled."
         )
+        
         hi = (
-            f"{explanation.facility_id} पर {explanation.item_code} की मांग {explanation.base_expected_consumption} से बढ़कर "
-            f"{explanation.predicted_demand} होने का अनुमान है। भारी बारिश और मौसमी बीमारी के कारण मांग में वृद्धि हुई है। "
-            f"पास के स्वास्थ्य केंद्र से तुरंत अतिरिक्त दवा भेजने की सिफारिश की जाती है।"
+            f"{explanation.facility_id} पर {explanation.item_code} की मांग {explanation.base_expected_consumption} से बदलकर "
+            f"{explanation.predicted_demand} यूनिट होने का अनुमान है। मुख्य कारण {top_factor_desc_hi} है। "
+            f"अतिरिक्त स्टॉक वाले निकटवर्ती स्वास्थ्य केंद्र से स्वचालित पुनर्वितरण की सिफारिश की जाती है।"
         )
+        
         return {
             "english_narrative": en,
             "hindi_narrative": hi

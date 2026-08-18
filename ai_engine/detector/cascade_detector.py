@@ -61,9 +61,15 @@ class SystemicCascadeAnalyzer:
         nurse_deficit = max(0, nurses_expected - nurses_present) / max(1, nurses_expected)
         staff_score = min(1.0, 0.7 * doc_deficit + 0.3 * nurse_deficit)
 
-        # Composite score
-        composite = 0.40 * med_score + 0.35 * bed_score + 0.25 * staff_score
-        composite = round(min(1.0, max(0.0, composite)), 3)
+        # Non-linear Multiplicative Compounding Collapse Model
+        # Risk = 1 - (1 - med)^alpha * (1 - bed)^beta * (1 - staff)^gamma
+        alpha, beta, gamma = 1.6, 1.4, 1.2
+        surv_med = max(0.0, 1.0 - med_score) ** alpha
+        surv_bed = max(0.0, 1.0 - bed_score) ** beta
+        surv_staff = max(0.0, 1.0 - staff_score) ** gamma
+        
+        non_linear_composite = 1.0 - (surv_med * surv_bed * surv_staff)
+        composite = round(min(1.0, max(0.0, non_linear_composite)), 3)
 
         interventions = []
         if med_score >= 0.7:
@@ -73,11 +79,11 @@ class SystemicCascadeAnalyzer:
         if staff_score >= 0.5:
             interventions.append("Deploy mobile medical team / locum doctor from District Headquarters.")
 
-        if composite >= 0.75:
+        if composite >= 0.70 or med_score >= 0.90 or (bed_score >= 0.85 and staff_score >= 0.50):
             tier = "P0_CRITICAL"
-        elif composite >= 0.50:
+        elif composite >= 0.45 or med_score >= 0.60 or bed_score >= 0.70:
             tier = "P1_HIGH"
-        elif composite >= 0.30:
+        elif composite >= 0.25:
             tier = "P2_MEDIUM"
         else:
             tier = "P3_NORMAL"

@@ -1,0 +1,66 @@
+{
+  "facility_id": "PHC-PUN-002",
+  "country_code": "IND",
+  "date_of_record": "2026-08-18",
+  "medicines": [
+    {
+      "item_code": "MED-PCM-500",
+      "generic_name": "Paracetamol 500mg Tablets",
+      "batch_number": "B240812",
+      "expiry_date": "2026-11-30",
+      "quantity": 1450,
+      "unit": "tablets",
+      "confidence_score": 0.98
+    },
+    {
+      "item_code": "MED-AMX-250",
+      "generic_name": "Amoxicillin 250mg Capsules",
+      "batch_number": "B240605",
+      "expiry_date": "2026-09-15",
+      "quantity": 320,
+      "unit": "capsules",
+      "confidence_score": 0.94
+    },
+    {
+      "item_code": "MED-ORS-PKG",
+      "generic_name": "Oral Rehydration Salts (WHO Formula)",
+      "batch_number": "B240720",
+      "expiry_date": "2027-03-31",
+      "quantity": 85,
+      "unit": "packets",
+      "confidence_score": 0.96
+    },
+    {
+      "item_code": "MED-ART-60",
+      "generic_name": "Artesunate 60mg Injection (Antimalarial)",
+      "batch_number": "B240501",
+      "expiry_date": "2026-08-28",
+      "quantity": 45,
+      "unit": "vials",
+      "confidence_score": 0.91
+    },
+    {
+      "item_code": "MED-INS-REG",
+      "generic_name": "Regular Human Insulin 100IU/ml (Cold-Chain)",
+      "batch_number": "B240410",
+      "expiry_date": "2026-10-15",
+      "quantity": 28,
+      "unit": "vials",
+      "confidence_score": 0.95
+    }
+  ],
+  "beds": {
+    "general_total": 24,
+    "general_occupied": 19,
+    "icu_total": 4,
+    "icu_occupied": 3
+  },
+  "staff": {
+    "doctors_present": 2,
+    "doctors_expected": 2,
+    "nurses_present": 5,
+    "nurses_expected": 6
+  },
+  "raw_text_summary": "Digitized physical clinic register (Cached Offline Baseline)",
+  "processing_time_ms": 45.0
+}
