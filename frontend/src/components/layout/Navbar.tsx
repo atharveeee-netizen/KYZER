@@ -18,11 +18,12 @@ export const Navbar: React.FC<NavbarProps> = ({
   onSimulateOutbreak,
 }) => {
   const tabs = [
-    { id: 'map', label: 'GIS Command Map' },
-    { id: 'forecast', label: '7-Day Forecaster' },
-    { id: 'timeline', label: 'Agent Timeline' },
-    { id: 'ocr', label: 'Register OCR' },
-    { id: 'alerts', label: 'Live Alerts & Voice' },
+    { id: 'dashboard', label: 'Dashboard' },
+    { id: 'map', label: 'GIS Map' },
+    { id: 'inventory', label: 'Inventory' },
+    { id: 'forecast', label: 'Forecast' },
+    { id: 'routes', label: 'Routes' },
+    { id: 'ocr', label: 'OCR' },
   ];
 
   return (
@@ -31,21 +32,21 @@ export const Navbar: React.FC<NavbarProps> = ({
         
         {/* Left: Brand Wordmark */}
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-md bg-primary flex items-center justify-center text-white shadow-sm">
+          <div className="w-8 h-8 rounded-md bg-primary flex items-center justify-center text-white shadow-xs">
             <Activity className="w-5 h-5" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="font-semibold tracking-tight text-ink text-lg">CareDOM</span>
-              <span className="text-[11px] font-mono uppercase bg-surface-strong px-2 py-0.5 rounded-pill text-ink tracking-wider font-semibold">
+              <span className="font-semibold tracking-tight text-ink text-base">CareDOM</span>
+              <span className="text-[10px] font-mono uppercase bg-surface-strong px-2 py-0.5 rounded-pill text-ink tracking-wider font-semibold">
                 AI + Quantum
               </span>
             </div>
-            <p className="text-xs text-muted">BRICS Smart Health Center Supply Co-Pilot</p>
+            <p className="text-[11px] text-muted">BRICS Smart Health Center Supply Co-Pilot</p>
           </div>
         </div>
 
-        {/* Center: Tabs Switcher */}
+        {/* Center: 6 Tabs Switcher */}
         <nav className="hidden md:flex items-center bg-canvas-soft border border-hairline rounded-md p-1">
           {tabs.map((tab) => {
             const isActive = activeTab === tab.id;
@@ -68,7 +69,7 @@ export const Navbar: React.FC<NavbarProps> = ({
         {/* Right: BRICS Switcher & Primary CTA */}
         <div className="flex items-center gap-3">
           {/* BRICS Flag Switcher */}
-          <div className="flex items-center bg-canvas-soft border border-hairline rounded-md p-0.5 text-xs">
+          <div className="flex items-center bg-canvas-soft border border-hairline rounded-md p-0.5 text-xs font-mono">
             <button
               onClick={() => setSelectedCountry('IND')}
               className={`px-2.5 py-1 rounded-xs transition-colors ${
@@ -98,10 +99,10 @@ export const Navbar: React.FC<NavbarProps> = ({
           {/* Primary Action Button (Cursor Orange #f54e00) */}
           <button
             onClick={onSimulateOutbreak}
-            className="flex items-center gap-1.5 bg-primary hover:bg-primary-active text-white text-xs font-medium px-3.5 py-2 rounded-md transition-colors shadow-xs"
+            className="flex items-center gap-1.5 bg-primary hover:bg-primary-active text-white text-xs font-medium px-3.5 py-2 rounded-md transition-colors shadow-xs shrink-0"
           >
             <Zap className="w-3.5 h-3.5" />
-            <span>Simulate Outbreak</span>
+            <span className="hidden sm:inline">Simulate Outbreak</span>
           </button>
         </div>
 
