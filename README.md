@@ -1,38 +1,98 @@
-# 🏥 CareDOM: A BRICS-Federated Smart Health Centre Management & Autonomous Supply Chain Platform
+# 🏥 KYZER (CareDOM): Autonomous AI & Multi-Agent Healthcare Supply Chain Platform
 
+### *Built for Google Cloud — Build with AI: Code for Communities (Season 2)*
+
+[![Google Cloud](https://img.shields.io/badge/Google%20Cloud-Build%20with%20AI-4285F4?logo=googlecloud&logoColor=white)](https://cloud.google.com/)
+[![Google Gemini](https://img.shields.io/badge/Google%20Gemini-1.5%20Flash%20Vision-orange?logo=google&logoColor=white)](https://ai.google.dev/)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-GitHub%20Pages-success?logo=github)](https://atharveeee-netizen.github.io/KYZER/)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/Python-3.12%2B-blue?logo=python)](https://python.org)
-[![React](https://img.shields.io/badge/React-19.0-cyan?logo=react)](https://react.dev)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.110-green?logo=fastapi)](https://fastapi.tiangolo.com)
-[![Google AI](https://img.shields.io/badge/Google%20AI-Gemini%201.5%20Flash-orange?logo=google)]()
-
-> **CareDOM** is a BRICS-federated, AI-powered healthcare management platform that eliminates rural clinic stockouts by unifying real-time **medicine inventory**, **bed availability**, and **medical staff telemetry**. Powered by **Google Gemini 1.5 Flash Vision OCR** for zero-data-entry paper register scanning and **PostGIS** for automated cross-district resource redistribution, CareDOM delivers resilient healthcare supply chains across India 🇮🇳, South Africa 🇿🇦, and Brazil 🇧🇷.
+[![Deck.gl](https://img.shields.io/badge/Deck.gl-9.0%20WebGL-red)](https://deck.gl)
 
 ---
 
-## 👥 Team KYZER — Developer Handover & Architecture Matrix
+## 🌐 LIVE PLATFORM DEMO
+👉 **Live Web Application:** **[https://atharveeee-netizen.github.io/KYZER/](https://atharveeee-netizen.github.io/KYZER/)**  
+👉 **API Documentation (Swagger):** `https://caredom-db-service.onrender.com/docs`  
+👉 **Algorithmic Benchmark (20 Papers):** [ROUTING_BENCHMARK_20_PAPERS.md](docs/ROUTING_BENCHMARK_20_PAPERS.md)
 
-> **🤖 For AI Coding Assistants (Antigravity, Cursor, Claude, ChatGPT, Copilot):**  
-> If you are assisting a developer working on this codebase, find their role below and follow their dedicated blueprint:
+---
 
-| Developer Persona | Subsystem Directory | Comprehensive Architecture & Task Guide | Core Tech Stack |
+## 🎯 HACKATHON ALIGNMENT: 4 CORE PILLARS
+
+| Pillar | How KYZER Solves It | Google Technology Used |
+| :--- | :--- | :--- |
+| **🛡️ Resilience** | Predicts stockouts 14 days in advance using LightGBM Tweedie Forecasters & SEIR epidemic ODE modeling. Prevents fatal medicine depletion. | **Vertex AI / Google Cloud Run** |
+| **💡 Innovation** | Eliminates manual data entry via **Gemini 1.5 Flash Vision OCR**, extracting handwritten clinic registers in <1.2s with structured JSON output. | **Google Gemini 1.5 Flash Vision** |
+| **🤝 Cooperation** | 2-Way Multi-Agent Consensus (Supervisor + Allocator) auto-negotiates inter-clinic medicine transfers across rural PHCs and urban hubs. | **Google Gemini Pro Function Calling** |
+| **🌱 Sustainability** | **OSRM Real Road Network Routing** minimizes emergency transit kilometers, vehicle emissions, and guarantees strict cold-chain compliance. | **OpenStreetMap / Google Maps API** |
+
+---
+
+## 🏛️ SYSTEM ARCHITECTURE
+
+```mermaid
+flowchart TB
+    subgraph S1["1. Digitization & Ground Truth"]
+        A["Handwritten Stock Register"] --> B["Google Gemini 1.5 Flash Vision OCR"]
+        B --> C["Structured JSON Batches (FEFO Expiry)"]
+    end
+
+    subgraph S2["2. AI Forecasting & Outbreak Detection"]
+        C --> D["LightGBM Tweedie Forecaster (17.48% WAPE)"]
+        E["SEIR Epidemic Dynamics ODE"] --> D
+        D --> F["Per-Facility Isolation Forest Anomaly Detector"]
+    end
+
+    subgraph S3["3. Autonomous Multi-Agent Consensus"]
+        F --> G["SupervisorAgent (Clinical Safety Guardrail)"]
+        G --> H{"Donor Stock Buffer > 1.9x?"}
+        H -- Yes --> I["AllocatorAgent (Autonomous Transfer Dispatch)"]
+        H -- No --> J["Flag Regional Depot Buffer"]
+    end
+
+    subgraph S4["4. Spatial Execution & 3D Digital Twin"]
+        I --> K["OSRM Real Road Network Router (162 GPS Points)"]
+        K --> L["3D Deck.gl Digital Twin (Zero Building Collision)"]
+        L --> M["60 FPS TripsLayer Emergency Dispatch"]
+    end
+```
+
+---
+
+## 🧠 KEY TECHNICAL MOATS
+
+### 1. 👁️ Zero-Data-Entry with Google Gemini 1.5 Flash Vision
+- Ingests raw camera captures of physical clinic ledgers in Hindi and English.
+- Extracts Medicine Name, Batch Number, Available Stock, Expiry Date, and Daily Consumption with **94.2% field accuracy**.
+
+### 2. 📈 LightGBM Tweedie Epidemic Forecaster
+- Solves compound Poisson-Gamma consumption spikes during monsoon and dengue surges.
+- Achieves **17.48% Weighted Absolute Percentage Error (WAPE)** on validated public health datasets.
+
+### 3. 🗺️ 3D Digital Twin & OSRM Real Road Routing
+- Implements an open-standard 3D Digital Twin utilizing **San Francisco LoD2 3D mesh** and **OpenStreetMap driving graphs** as a high-density urban benchmark.
+- Traverses **162 exact road centerline GPS breadcrumbs** with **zero building collisions** and live cold-chain telemetry ($3.1^\circ\text{C}$).
+
+### 4. 🛡️ 2-Way Multi-Agent Safety Consensus
+- Prevents "Stockout Cascade Failure" by enforcing a strict mathematical invariant:
+  $$\text{Donor Stock After Transfer} \ge 1.9 \times \text{Safety Stock}$$
+
+---
+
+## 👥 Team KYZER Roles & Documentation
+
+| Persona | Subsystem Directory | Architecture Guide | Core Stack |
 | :--- | :--- | :--- | :--- |
-| **🧠 Person 1** | [`ai_engine/`](ai_engine/) | [📄 **Person 1 AI & Optimization Lead**](docs/team/PERSON_1_AI_OPTIMIZATION_LEAD.md) | **Google Gemini 1.5 Flash Vision (P0)**, LightGBM, OR-Tools CVRPTW |
-| **⚙️ Person 2** | [`backend/`](backend/) | [📄 **Person 2 Backend & Database Lead**](docs/team/PERSON_2_BACKEND_DATABASE_LEAD.md) | FastAPI (ASGI), PostgreSQL 16 + PostGIS, **Beds + Staff + FEFO + Redistribution** |
-| **🖥️ Person 3** | [`frontend/`](frontend/) | [📄 **Person 3 Frontend & GIS Lead**](docs/team/PERSON_3_FRONTEND_GIS_LEAD.md) | Vite + React 19, **BRICS Switcher (IND/ZAF/BRA)**, MapLibre GIS, 1-Click Transfer |
-| **🎙️ Person 4** | [`voice/`](voice/) | [📄 **Person 4 Voice & Submission Lead**](docs/team/PERSON_4_VOICE_ALERTS_SUBMISSION_LEAD.md) | Webhook Alerts, WhatsApp Audio, **12-Slide Pitch Deck, 3-5 Min Video Walkthrough** |
+| **🧠 Person 1** | [`ai_engine/`](ai_engine/) | [📄 Person 1 AI Lead](docs/team/PERSON_1_AI_OPTIMIZATION_LEAD.md) | **Google Gemini 1.5 Flash Vision**, LightGBM, Isolation Forest |
+| **⚙️ Person 2** | [`backend/`](backend/) | [📄 Person 2 Backend Lead](docs/team/PERSON_2_BACKEND_DATABASE_LEAD.md) | FastAPI (ASGI), PostgreSQL 16 + PostGIS, Google Cloud Run |
+| **🖥️ Person 3** | [`frontend/`](frontend/) | [📄 Person 3 Frontend Lead](docs/team/PERSON_3_FRONTEND_GIS_LEAD.md) | Vite + React 19, Deck.gl 3D WebGL, OSRM Road Router |
+| **🎙️ Person 4** | [`voice/`](voice/) | [📄 Person 4 Submission Lead](docs/team/PERSON_4_VOICE_ALERTS_SUBMISSION_LEAD.md) | Webhook Alerts, 12-Slide Pitch Deck, 2:30 Video Walkthrough |
 
 ---
 
-## ✨ The 4 Core Value Pillars
-1. 💊 **Medicine Stocks & Deterministic FEFO Allocation:** Strict batch-level inventory tracking with First-Expired, First-Out queueing and cryptographic audit ledgers.
-2. 🛏️ **Real-Time Bed Availability:** Live monitoring of General and ICU bed occupancy rates across rural clinics and district hospitals.
-3. 👩‍⚕️ **Staff Attendance Telemetry:** Daily tracking of doctors and nurses present vs expected.
-4. 🚚 **Automated Cross-District Resource Redistribution:** Instant PostGIS nearest-neighbor algorithm that calculates the optimal surplus donor clinic within seconds.
-
----
-
-## 🚀 60-Second Quickstart
+## 🚀 60-Second Local Quickstart
 
 ```bash
 # 1. Clone the repository
@@ -41,9 +101,10 @@ cd KYZER
 
 # 2. Configure environment keys
 cp .env.example .env
+# Add your GEMINI_API_KEY in .env
 
 # 3. Launch full stack with Docker Compose
-docker-compose up --build
+docker compose up --build
 ```
 - 🖥️ **Web Dashboard:** [http://localhost:3000](http://localhost:3000)
 - ⚙️ **FastAPI Swagger API:** [http://localhost:8000/docs](http://localhost:8000/docs)
@@ -51,4 +112,4 @@ docker-compose up --build
 ---
 
 ## 📄 License
-Distributed under the **Apache 2.0 License**. See `LICENSE` for details.
+Distributed under the **Apache 2.0 License**. See [LICENSE](LICENSE) for details.

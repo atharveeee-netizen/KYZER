@@ -77,18 +77,32 @@ class GeminiRegisterExtractor:
 
             req_url = f"{self.endpoint_url}?key={self.api_key}"
             req_data = json.dumps(payload).encode("utf-8")
-            req = urllib.request.Request(
-                req_url,
-                data=req_data,
-                headers={
-                    "Content-Type": "application/json",
-                    "X-goog-api-key": self.api_key
-                },
-                method="POST"
-            )
+            
+            res_body = None
+            for attempt in range(3):
+                try:
+                    req = urllib.request.Request(
+                        req_url,
+                        data=req_data,
+                        headers={
+                            "Content-Type": "application/json",
+                            "X-goog-api-key": self.api_key
+                        },
+                        method="POST"
+                    )
+                    with urllib.request.urlopen(req, timeout=15) as response:
+                        res_body = json.loads(response.read().decode("utf-8"))
+                        break
+                except urllib.error.HTTPError as http_err:
+                    if http_err.code in [429, 503] and attempt < 2:
+                        sleep_time = (2 ** attempt) * 1.5
+                        logger.warning(f"Gemini API rate limit {http_err.code}, retrying in {sleep_time}s...")
+                        time.sleep(sleep_time)
+                    else:
+                        raise http_err
 
-            with urllib.request.urlopen(req, timeout=15) as response:
-                res_body = json.loads(response.read().decode("utf-8"))
+            if not res_body:
+                raise ValueError("Gemini API returned empty response body.")
                 
             # Extract generated JSON text from Gemini response
             candidates = res_body.get("candidates", [])
