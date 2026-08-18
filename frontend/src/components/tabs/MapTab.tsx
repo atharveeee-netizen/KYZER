@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import DeckGL from '@deck.gl/react';
 import { Map } from 'react-map-gl/maplibre';
 import maplibregl from 'maplibre-gl';
@@ -9,7 +9,7 @@ import { TripsLayer, Tile3DLayer } from '@deck.gl/geo-layers';
 import { I3SLoader } from '@loaders.gl/i3s';
 import { AmbientLight, PointLight, LightingEffect } from '@deck.gl/core';
 
-import { Navigation, Send, AlertTriangle, Bed, Users, Pill, ShieldAlert, Sparkles, RefreshCw, Layers, Compass, Satellite, Building2, Box, Globe } from 'lucide-react';
+import { Navigation, Send, AlertTriangle, Bed, Users, Pill, ShieldAlert, Sparkles, Building2, Box, Globe } from 'lucide-react';
 import { HealthFacility, RoutingResult } from '../../types';
 import { generateDenseHighwaySpline } from '../../data/denseRouteSpline';
 
@@ -126,20 +126,14 @@ export const MapTab: React.FC<MapTabProps> = ({
   selectedFacility,
   onRerouteRequest,
 }) => {
-  // Default to Pune Healthcare 3D Fleet Twin
   const [activeMode, setActiveMode] = useState<'PUNE_FLEET' | 'URBAN_MESH'>('PUNE_FLEET');
   const [viewState, setViewState] = useState(PUNE_INITIAL_VIEW_STATE);
 
   const [time, setTime] = useState(0);
   const [isSelfPlanning, setIsSelfPlanning] = useState(false);
   const [planningStep, setPlanningStep] = useState<string | null>(null);
-  const [isOrbiting, setIsOrbiting] = useState(false);
-  const [basemapStyle, setBasemapStyle] = useState<'DARK' | 'VOYAGER'>('DARK');
   const [showBlockerModal, setShowBlockerModal] = useState(false);
   const [roadNote, setRoadNote] = useState('Ghod River Bridge Submerged (Rainfall >45mm)');
-
-  const animFrameRef = useRef<number | null>(null);
-  const orbitRef = useRef<any>(null);
 
   // Pune District Clinics
   const puneClinics = (facilities || []).filter(f => f.country === 'IND');
@@ -158,15 +152,16 @@ export const MapTab: React.FC<MapTabProps> = ({
   // 60fps Continuous Clock for TripsLayer
   useEffect(() => {
     let curTime = 0;
+    let animId: number;
     const animate = () => {
       curTime = (curTime + 3.0) % (loopLength || 1800);
       setTime(curTime);
-      animFrameRef.current = requestAnimationFrame(animate);
+      animId = requestAnimationFrame(animate);
     };
-    animFrameRef.current = requestAnimationFrame(animate);
+    animId = requestAnimationFrame(animate);
 
     return () => {
-      if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
+      cancelAnimationFrame(animId);
     };
   }, [loopLength]);
 
@@ -333,21 +328,6 @@ export const MapTab: React.FC<MapTabProps> = ({
     setViewState(URBAN_MESH_VIEW_STATE);
   };
 
-  const handleToggleOrbit = () => {
-    if (isOrbiting) {
-      if (orbitRef.current) clearInterval(orbitRef.current);
-      setIsOrbiting(false);
-    } else {
-      setIsOrbiting(true);
-      orbitRef.current = setInterval(() => {
-        setViewState(prev => ({
-          ...prev,
-          bearing: (prev.bearing + 0.6) % 360,
-        }));
-      }, 30);
-    }
-  };
-
   // AI 9-Clinic Self-Planning Simulation
   const handleTriggerSelfPlan = () => {
     setIsSelfPlanning(true);
@@ -406,10 +386,6 @@ export const MapTab: React.FC<MapTabProps> = ({
     }, 3900);
   };
 
-  const mapStyleUrl = basemapStyle === 'DARK'
-    ? 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json'
-    : 'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json';
-
   return (
     <div className="relative h-[calc(100vh-140px)] w-full flex flex-col md:flex-row overflow-hidden border-b border-hairline bg-canvas">
       
@@ -458,14 +434,13 @@ export const MapTab: React.FC<MapTabProps> = ({
           <Map
             reuseMaps
             mapLib={maplibregl as any}
-            mapStyle={mapStyleUrl}
+            mapStyle="https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json"
           />
         </DeckGL>
 
-        {/* 🎮 3D Layer & Mode Switcher Toolbar (Top Right) */}
+        {/* 🎮 Mode Switcher Toolbar (Top Right) */}
         <div className="absolute top-4 right-4 z-10 flex items-center bg-surface-card/95 backdrop-blur-md border border-hairline rounded-lg p-1.5 shadow-md text-xs font-mono gap-1">
           
-          {/* Mode Switcher: Pune Fleet Twin vs Urban 3D Mesh */}
           <button
             onClick={handleSwitchToPuneFleet}
             className={`px-3 py-1.5 rounded-md flex items-center gap-1.5 transition-colors font-bold ${
@@ -488,22 +463,6 @@ export const MapTab: React.FC<MapTabProps> = ({
           >
             <Building2 className="w-3.5 h-3.5" />
             <span>3D Urban Mesh</span>
-          </button>
-          
-          <button
-            onClick={handleToggleOrbit}
-            className={`px-3 py-1.5 rounded-md flex items-center gap-1.5 transition-colors border-l border-hairline ml-1 ${isOrbiting ? 'bg-amber-500 text-white font-bold animate-pulse' : 'text-ink hover:bg-canvas-soft'}`}
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${isOrbiting ? 'animate-spin' : ''}`} />
-            <span>{isOrbiting ? 'Stop Orbit' : '360° Orbit'}</span>
-          </button>
-
-          <button
-            onClick={() => setBasemapStyle(prev => prev === 'DARK' ? 'VOYAGER' : 'DARK')}
-            className="px-2.5 py-1.5 rounded-md text-ink hover:bg-canvas-soft transition-colors flex items-center gap-1 border-l border-hairline ml-1"
-          >
-            <Satellite className="w-3.5 h-3.5 text-primary" />
-            <span>{basemapStyle === 'DARK' ? 'Voyager' : 'Dark Matter'}</span>
           </button>
         </div>
 
