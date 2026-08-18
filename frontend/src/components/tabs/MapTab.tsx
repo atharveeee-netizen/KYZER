@@ -9,7 +9,7 @@ import { TripsLayer, Tile3DLayer } from '@deck.gl/geo-layers';
 import { I3SLoader } from '@loaders.gl/i3s';
 import { AmbientLight, PointLight, LightingEffect } from '@deck.gl/core';
 
-import { Navigation, Send, AlertTriangle, Bed, Users, Pill, ShieldAlert, Sparkles, RefreshCw, Layers, Compass, Satellite, Building2, Box } from 'lucide-react';
+import { Navigation, Send, AlertTriangle, Bed, Users, Pill, ShieldAlert, Sparkles, RefreshCw, Layers, Compass, Satellite, Building2, Box, ExternalLink, Globe } from 'lucide-react';
 import { HealthFacility, RoutingResult } from '../../types';
 import { generateDenseHighwaySpline } from '../../data/denseRouteSpline';
 
@@ -30,7 +30,7 @@ const ambientLight = new AmbientLight({
 const pointLight = new PointLight({
   color: [255, 245, 230],
   intensity: 2.2,
-  position: [74.08, 18.78, 12000],
+  position: [-122.4, 37.78, 12000],
 });
 
 const lightingEffect = new LightingEffect({ ambientLight, pointLight });
@@ -42,9 +42,33 @@ const material = {
   specularColor: [80, 85, 95] as [number, number, number],
 };
 
-// ArcGIS I3S 3D Building Stream Layer URL
-const ARCGIS_I3S_TILESET_URL =
+// Official ArcGIS I3S San Francisco 3D Buildings SceneServer URL
+const SAN_FRANCISCO_I3S_URL =
   'https://tiles.arcgis.com/tiles/z2tnIkrLQ2BRzr6P/arcgis/rest/services/SanFrancisco_Bldgs/SceneServer/layers/0';
+
+// Initial ViewState for San Francisco LoD2 3D Buildings (Twin Peaks to Downtown Skyline)
+const SF_INITIAL_VIEW_STATE = {
+  latitude: 37.765,
+  longitude: -122.44,
+  zoom: 14.2,
+  pitch: 58,
+  bearing: 42,
+  maxPitch: 85,
+  minZoom: 10,
+  maxZoom: 22,
+};
+
+// Initial ViewState for Pune Healthcare 3D Fleet Twin
+const PUNE_INITIAL_VIEW_STATE = {
+  longitude: 74.08,
+  latitude: 18.78,
+  zoom: 9.8,
+  pitch: 60,
+  bearing: -18,
+  maxPitch: 85,
+  minZoom: 5,
+  maxZoom: 22,
+};
 
 // 3D Architectural Hospital Campus Footprint Generator
 function generateCampusComplex(lng: number, lat: number, isP0: boolean, isP1: boolean) {
@@ -102,23 +126,15 @@ export const MapTab: React.FC<MapTabProps> = ({
   selectedFacility,
   onRerouteRequest,
 }) => {
-  const [viewState, setViewState] = useState({
-    longitude: 74.08,
-    latitude: 18.78,
-    zoom: 9.8,
-    pitch: 60,
-    bearing: -18,
-    maxPitch: 85,
-    minZoom: 2,
-    maxZoom: 22,
-  });
+  // Default to San Francisco LoD2 3D Buildings view requested by user
+  const [activeMode, setActiveMode] = useState<'SF_3D_BUILDINGS' | 'PUNE_FLEET'>('SF_3D_BUILDINGS');
+  const [viewState, setViewState] = useState(SF_INITIAL_VIEW_STATE);
 
-  const [activeMode, setActiveMode] = useState<'PUNE_FLEET' | 'I3S_3D_BUILDINGS'>('PUNE_FLEET');
   const [time, setTime] = useState(0);
   const [isSelfPlanning, setIsSelfPlanning] = useState(false);
   const [planningStep, setPlanningStep] = useState<string | null>(null);
   const [isOrbiting, setIsOrbiting] = useState(false);
-  const [basemapStyle, setBasemapStyle] = useState<'DARK' | 'SATELLITE'>('DARK');
+  const [basemapStyle, setBasemapStyle] = useState<'DARK' | 'VOYAGER'>('DARK');
   const [showBlockerModal, setShowBlockerModal] = useState(false);
   const [roadNote, setRoadNote] = useState('Ghod River Bridge Submerged (Rainfall >45mm)');
 
@@ -202,17 +218,17 @@ export const MapTab: React.FC<MapTabProps> = ({
 
   // 4. Deck.gl Layers Configuration
   const layers = useMemo(() => {
-    if (activeMode === 'I3S_3D_BUILDINGS') {
-      // Official Deck.gl ArcGIS I3S / 3D Tiles Layer
+    if (activeMode === 'SF_3D_BUILDINGS') {
+      // Official Deck.gl San Francisco I3S 3D Building Stream Layer
       return [
         new Tile3DLayer({
-          id: 'tile-3d-i3s-layer',
-          data: ARCGIS_I3S_TILESET_URL,
+          id: 'tile-3d-sf-i3s-layer',
+          data: SAN_FRANCISCO_I3S_URL,
           loaders: [I3SLoader],
           loadOptions: {
             i3s: { useCompressedTextures: false },
           },
-          opacity: 0.95,
+          opacity: 0.96,
           pickable: true,
         }),
       ];
@@ -307,32 +323,14 @@ export const MapTab: React.FC<MapTabProps> = ({
   }, [activeMode, splineData, trips, buildings, arcs, puneClinics, time, onFacilitySelect]);
 
   // Mode Switchers
-  const handleSwitchToI3S = () => {
-    setActiveMode('I3S_3D_BUILDINGS');
-    setViewState({
-      latitude: 37.78,
-      longitude: -122.4,
-      zoom: 15.5,
-      pitch: 45,
-      bearing: 10,
-      maxPitch: 85,
-      minZoom: 2,
-      maxZoom: 22,
-    });
+  const handleSwitchToSF = () => {
+    setActiveMode('SF_3D_BUILDINGS');
+    setViewState(SF_INITIAL_VIEW_STATE);
   };
 
   const handleSwitchToPuneFleet = () => {
     setActiveMode('PUNE_FLEET');
-    setViewState({
-      longitude: 74.08,
-      latitude: 18.78,
-      zoom: 9.8,
-      pitch: 60,
-      bearing: -18,
-      maxPitch: 85,
-      minZoom: 2,
-      maxZoom: 22,
-    });
+    setViewState(PUNE_INITIAL_VIEW_STATE);
   };
 
   const handleToggleOrbit = () => {
@@ -344,7 +342,7 @@ export const MapTab: React.FC<MapTabProps> = ({
       orbitRef.current = setInterval(() => {
         setViewState(prev => ({
           ...prev,
-          bearing: (prev.bearing + 0.8) % 360,
+          bearing: (prev.bearing + 0.6) % 360,
         }));
       }, 30);
     }
@@ -418,6 +416,7 @@ export const MapTab: React.FC<MapTabProps> = ({
       {/* 🗺️ Deck.gl WebGL 3D Canvas */}
       <div className="flex-1 relative h-full bg-[#061714]">
         <DeckGL
+          style={{ backgroundColor: '#061714' }}
           viewState={viewState as any}
           onViewStateChange={(e: any) => setViewState(e.viewState)}
           controller={true}
@@ -463,32 +462,32 @@ export const MapTab: React.FC<MapTabProps> = ({
           />
         </DeckGL>
 
-        {/* 🎮 3D Layer & Camera Toolbar (Top Right) */}
+        {/* 🎮 3D Layer & Mode Switcher Toolbar (Top Right) */}
         <div className="absolute top-4 right-4 z-10 flex items-center bg-surface-card/95 backdrop-blur-md border border-hairline rounded-lg p-1.5 shadow-md text-xs font-mono gap-1">
           
-          {/* Mode Switcher: Pune Fleet Twin vs ArcGIS I3S 3D Mesh */}
+          {/* Mode Switcher: San Francisco 3D Buildings vs Pune Fleet Twin */}
           <button
-            onClick={handleSwitchToPuneFleet}
+            onClick={handleSwitchToSF}
             className={`px-3 py-1.5 rounded-md flex items-center gap-1.5 transition-colors font-bold ${
-              activeMode === 'PUNE_FLEET'
-                ? 'bg-primary text-white'
-                : 'text-ink hover:bg-canvas-soft'
-            }`}
-          >
-            <Box className="w-3.5 h-3.5" />
-            <span>Pune Fleet Twin (3D)</span>
-          </button>
-
-          <button
-            onClick={handleSwitchToI3S}
-            className={`px-3 py-1.5 rounded-md flex items-center gap-1.5 transition-colors font-bold ${
-              activeMode === 'I3S_3D_BUILDINGS'
-                ? 'bg-primary text-white'
+              activeMode === 'SF_3D_BUILDINGS'
+                ? 'bg-primary text-white shadow-xs'
                 : 'text-ink hover:bg-canvas-soft'
             }`}
           >
             <Building2 className="w-3.5 h-3.5" />
-            <span>ArcGIS I3S (3D Mesh)</span>
+            <span>San Francisco 3D Buildings</span>
+          </button>
+
+          <button
+            onClick={handleSwitchToPuneFleet}
+            className={`px-3 py-1.5 rounded-md flex items-center gap-1.5 transition-colors font-bold ${
+              activeMode === 'PUNE_FLEET'
+                ? 'bg-primary text-white shadow-xs'
+                : 'text-ink hover:bg-canvas-soft'
+            }`}
+          >
+            <Box className="w-3.5 h-3.5" />
+            <span>Pune Healthcare Fleet Twin</span>
           </button>
           
           <button
@@ -500,7 +499,7 @@ export const MapTab: React.FC<MapTabProps> = ({
           </button>
 
           <button
-            onClick={() => setBasemapStyle(prev => prev === 'DARK' ? 'SATELLITE' : 'DARK')}
+            onClick={() => setBasemapStyle(prev => prev === 'DARK' ? 'VOYAGER' : 'DARK')}
             className="px-2.5 py-1.5 rounded-md text-ink hover:bg-canvas-soft transition-colors flex items-center gap-1 border-l border-hairline ml-1"
           >
             <Satellite className="w-3.5 h-3.5 text-primary" />
@@ -508,66 +507,71 @@ export const MapTab: React.FC<MapTabProps> = ({
           </button>
         </div>
 
-        {/* 🛰️ 3D Floating HUD: Telemetry (Top Left) */}
-        <div className="absolute top-4 left-4 z-10 bg-surface-card/95 backdrop-blur-md border border-hairline rounded-lg p-4 shadow-md max-w-md">
-          <div className="flex items-center justify-between gap-2 mb-2">
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-semantic-success animate-ping"></span>
-              <span className="text-[11px] font-mono uppercase tracking-wider text-muted font-semibold">
-                {activeMode === 'I3S_3D_BUILDINGS' ? 'Deck.gl Tile3DLayer (I3SLoader Active)' : 'Deck.gl 3D Fleet Twin'}
+        {/* 🏢 EXACT MATCH HUD CARD (Top Left for San Francisco 3D Buildings) */}
+        {activeMode === 'SF_3D_BUILDINGS' ? (
+          <div className="absolute top-4 left-4 z-10 bg-[#1c1d21]/95 backdrop-blur-md border border-white/20 rounded-xl p-5 shadow-2xl max-w-sm text-white font-sans">
+            <h2 className="text-base font-bold text-sky-400 mb-1.5 tracking-tight flex items-center gap-2">
+              <span>San Francisco 3D Buildings</span>
+            </h2>
+            <p className="text-xs text-zinc-300 leading-relaxed mb-4">
+              Highly detailed LoD2 textured 3D buildings for downtown San Francisco in I3S format, visualized with deck.gl's <b>Tile3DLayer</b>. This data is provided by <b>Precision Light Works (PLW)</b>.
+            </p>
+            <div className="flex items-center justify-between pt-3 border-t border-white/10 text-[11px] text-zinc-400 font-mono">
+              <span className="flex items-center gap-1 text-zinc-300">
+                <Globe className="w-3.5 h-3.5 text-sky-400" /> ESRI ArcGIS SceneServer
+              </span>
+              <span className="text-sky-400 font-semibold">LoD2 Mesh Active</span>
+            </div>
+          </div>
+        ) : (
+          /* 🛰️ Pune Healthcare Fleet Telemetry HUD */
+          <div className="absolute top-4 left-4 z-10 bg-surface-card/95 backdrop-blur-md border border-hairline rounded-lg p-4 shadow-md max-w-md">
+            <div className="flex items-center justify-between gap-2 mb-2">
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-semantic-success animate-ping"></span>
+                <span className="text-[11px] font-mono uppercase tracking-wider text-muted font-semibold">
+                  Deck.gl 3D Fleet Twin
+                </span>
+              </div>
+              <span className="text-[10px] font-mono bg-surface-strong px-2 py-0.5 rounded-pill text-ink font-bold">
+                Spline & 3D Campus
               </span>
             </div>
-            <span className="text-[10px] font-mono bg-surface-strong px-2 py-0.5 rounded-pill text-ink font-bold">
-              {activeMode === 'I3S_3D_BUILDINGS' ? 'ArcGIS 3D Mesh' : 'Spline & 3D Campus'}
-            </span>
-          </div>
 
-          {activeMode === 'PUNE_FLEET' ? (
-            <>
-              <div className="flex items-baseline gap-4 mb-3">
-                <div>
-                  <span className="text-2xl font-display text-ink font-semibold">159.15 km</span>
-                  <span className="text-xs text-muted block">9-Clinic Tour</span>
-                </div>
-                <div className="border-l border-hairline pl-4">
-                  <span className="text-2xl font-display text-ink font-semibold">178.4 min</span>
-                  <span className="text-xs text-muted block">Transit Time</span>
-                </div>
-                <div className="border-l border-hairline pl-4">
-                  <span className="text-xs font-mono font-bold text-semantic-success bg-green-50 border border-green-200 px-2 py-1 rounded-sm block">
-                    COLD-CHAIN PASS
-                  </span>
-                </div>
+            <div className="flex items-baseline gap-4 mb-3">
+              <div>
+                <span className="text-2xl font-display text-ink font-semibold">159.15 km</span>
+                <span className="text-xs text-muted block">9-Clinic Tour</span>
               </div>
-
-              <button
-                onClick={handleTriggerSelfPlan}
-                disabled={isSelfPlanning}
-                className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary-active text-white text-xs font-medium py-2.5 rounded-md transition-colors shadow-xs"
-              >
-                <Sparkles className={`w-3.5 h-3.5 ${isSelfPlanning ? 'animate-spin' : ''}`} />
-                <span>{isSelfPlanning ? 'AI Agents Self-Planning in 3D...' : 'AI Agent Self-Plan 9-Clinic Route'}</span>
-              </button>
-
-              {planningStep && (
-                <div className="mt-2.5 p-2.5 bg-canvas-soft border border-hairline rounded-md text-[11.5px] font-mono text-ink animate-pulse">
-                  <code>&gt; {planningStep}</code>
-                </div>
-              )}
-            </>
-          ) : (
-            <div className="text-xs text-body space-y-2">
-              <p>
-                Streaming live Level-of-Detail (LOD2) 3D building meshes via <b>@deck.gl/geo-layers Tile3DLayer</b> and <b>@loaders.gl/i3s</b>.
-              </p>
-              <div className="p-2 bg-canvas-soft rounded-md font-mono text-[11px] text-ink">
-                <code>Endpoint: ArcGIS SceneServer / 3D Tiles</code>
+              <div className="border-l border-hairline pl-4">
+                <span className="text-2xl font-display text-ink font-semibold">178.4 min</span>
+                <span className="text-xs text-muted block">Transit Time</span>
+              </div>
+              <div className="border-l border-hairline pl-4">
+                <span className="text-xs font-mono font-bold text-semantic-success bg-green-50 border border-green-200 px-2 py-1 rounded-sm block">
+                  COLD-CHAIN PASS
+                </span>
               </div>
             </div>
-          )}
-        </div>
 
-        {/* 🚗 Floating Bottom Action Bar: Google Maps GPS & WhatsApp */}
+            <button
+              onClick={handleTriggerSelfPlan}
+              disabled={isSelfPlanning}
+              className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary-active text-white text-xs font-medium py-2.5 rounded-md transition-colors shadow-xs"
+            >
+              <Sparkles className={`w-3.5 h-3.5 ${isSelfPlanning ? 'animate-spin' : ''}`} />
+              <span>{isSelfPlanning ? 'AI Agents Self-Planning in 3D...' : 'AI Agent Self-Plan 9-Clinic Route'}</span>
+            </button>
+
+            {planningStep && (
+              <div className="mt-2.5 p-2.5 bg-canvas-soft border border-hairline rounded-md text-[11.5px] font-mono text-ink animate-pulse">
+                <code>&gt; {planningStep}</code>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* 🚗 Floating Bottom Action Bar: Google Maps GPS & WhatsApp (For Pune Fleet) */}
         {activeMode === 'PUNE_FLEET' && (
           <div className="absolute bottom-6 left-4 right-4 md:left-auto md:right-6 z-10 flex flex-wrap items-center gap-2 bg-surface-card/95 backdrop-blur-md border border-hairline rounded-lg p-2.5 shadow-md">
             
