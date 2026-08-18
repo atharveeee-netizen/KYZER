@@ -8,7 +8,7 @@ import { Tile3DLayer } from '@deck.gl/geo-layers';
 import { I3SLoader } from '@loaders.gl/i3s';
 import { AmbientLight, PointLight, LightingEffect } from '@deck.gl/core';
 
-import { RefreshCw, Layers, Compass, Satellite, Globe } from 'lucide-react';
+import { RefreshCw, Layers, Compass, Satellite, Globe, Building } from 'lucide-react';
 import { HealthFacility, RoutingResult } from '../../types';
 
 interface MapTabProps {
@@ -33,12 +33,12 @@ const pointLight = new PointLight({
 
 const lightingEffect = new LightingEffect({ ambientLight, pointLight });
 
-// Official ArcGIS I3S San Francisco 3D Buildings SceneServer URL
-const SAN_FRANCISCO_I3S_URL =
+// Official ArcGIS I3S 3D Buildings SceneServer URL
+const I3S_3D_BUILDINGS_URL =
   'https://tiles.arcgis.com/tiles/z2tnIkrLQ2BRzr6P/arcgis/rest/services/SanFrancisco_Bldgs/SceneServer/layers/0';
 
-// Initial ViewState for San Francisco LoD2 3D Buildings (Twin Peaks to Downtown Skyline)
-const SF_INITIAL_VIEW_STATE = {
+// Initial ViewState for LoD2 3D Buildings
+const INITIAL_3D_VIEW_STATE = {
   latitude: 37.765,
   longitude: -122.44,
   zoom: 14.2,
@@ -50,7 +50,7 @@ const SF_INITIAL_VIEW_STATE = {
 };
 
 export const MapTab: React.FC<MapTabProps> = () => {
-  const [viewState, setViewState] = useState(SF_INITIAL_VIEW_STATE);
+  const [viewState, setViewState] = useState(INITIAL_3D_VIEW_STATE);
   const [isOrbiting, setIsOrbiting] = useState(false);
   const [basemapStyle, setBasemapStyle] = useState<'DARK' | 'VOYAGER'>('DARK');
 
@@ -59,8 +59,8 @@ export const MapTab: React.FC<MapTabProps> = () => {
   // Deck.gl Tile3DLayer with I3SLoader
   const layers = [
     new Tile3DLayer({
-      id: 'tile-3d-sf-i3s-layer',
-      data: SAN_FRANCISCO_I3S_URL,
+      id: 'tile-3d-i3s-layer',
+      data: I3S_3D_BUILDINGS_URL,
       loaders: [I3SLoader],
       loadOptions: {
         i3s: { useCompressedTextures: false },
@@ -87,7 +87,7 @@ export const MapTab: React.FC<MapTabProps> = () => {
   };
 
   const handleSnap3D = () => {
-    setViewState(SF_INITIAL_VIEW_STATE);
+    setViewState(INITIAL_3D_VIEW_STATE);
   };
 
   const handleSnap2D = () => {
@@ -101,7 +101,7 @@ export const MapTab: React.FC<MapTabProps> = () => {
   return (
     <div className="relative h-[calc(100vh-140px)] w-full flex flex-col md:flex-row overflow-hidden border-b border-hairline bg-canvas">
       
-      {/* 🗺️ Deck.gl WebGL 3D Canvas */}
+      {/* Deck.gl WebGL 3D Canvas */}
       <div className="flex-1 relative h-full bg-[#061714]">
         <DeckGL
           style={{ backgroundColor: '#061714' }}
@@ -118,7 +118,7 @@ export const MapTab: React.FC<MapTabProps> = () => {
           />
         </DeckGL>
 
-        {/* 🎮 3D Camera Controls Toolbar (Top Right) */}
+        {/* 3D Camera Controls Toolbar (Top Right) */}
         <div className="absolute top-4 right-4 z-10 flex items-center bg-surface-card/95 backdrop-blur-md border border-hairline rounded-lg p-1.5 shadow-md text-xs font-mono gap-1">
           
           <button
@@ -156,13 +156,14 @@ export const MapTab: React.FC<MapTabProps> = () => {
           </button>
         </div>
 
-        {/* 🏢 EXACT MATCH HUD CARD (Top Left: San Francisco 3D Buildings) */}
+        {/* HUD Card: 3D Urban Health Infrastructure Digital Twin */}
         <div className="absolute top-4 left-4 z-10 bg-[#1c1d21]/95 backdrop-blur-md border border-white/20 rounded-xl p-5 shadow-2xl max-w-sm text-white font-sans">
           <h2 className="text-base font-bold text-sky-400 mb-1.5 tracking-tight flex items-center gap-2">
-            <span>San Francisco 3D Buildings</span>
+            <Building className="w-4 h-4 text-sky-400" />
+            <span>3D Urban Infrastructure Digital Twin</span>
           </h2>
           <p className="text-xs text-zinc-300 leading-relaxed mb-4">
-            Highly detailed LoD2 textured 3D buildings for downtown San Francisco in I3S format, visualized with deck.gl's <b>Tile3DLayer</b>. This data is provided by <b>Precision Light Works (PLW)</b>.
+            Highly detailed LoD2 textured 3D buildings in I3S format, visualized with deck.gl's <b>Tile3DLayer</b>. Real-time spatial mesh streaming for urban healthcare facility intelligence.
           </p>
           <div className="flex items-center justify-between pt-3 border-t border-white/10 text-[11px] text-zinc-400 font-mono">
             <span className="flex items-center gap-1 text-zinc-300">
