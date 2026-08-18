@@ -6,7 +6,6 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 
 import { Tile3DLayer } from '@deck.gl/geo-layers';
 import { I3SLoader } from '@loaders.gl/i3s';
-import { Building2, Globe } from 'lucide-react';
 import { HealthFacility, RoutingResult } from '../../types';
 
 interface MapTabProps {
@@ -47,8 +46,7 @@ export const MapTab: React.FC<MapTabProps> = () => {
 
   return (
     <div className="relative h-[calc(100vh-140px)] w-full flex flex-col md:flex-row overflow-hidden border-b border-hairline bg-canvas">
-      
-      {/* 🗺️ Deck.gl WebGL 3D Canvas */}
+      {/* 🗺️ Pure Fullscreen Deck.gl WebGL 3D Canvas */}
       <div className="flex-1 relative h-full bg-[#061714]">
         <DeckGL
           style={{ backgroundColor: '#061714' }}
@@ -62,26 +60,7 @@ export const MapTab: React.FC<MapTabProps> = () => {
             mapStyle="https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json"
           />
         </DeckGL>
-
-        {/* 🏢 Clean HUD Card (Sanitized) */}
-        <div className="absolute top-4 left-4 z-10 bg-[#1c1d21]/95 backdrop-blur-md border border-white/20 rounded-xl p-5 shadow-2xl max-w-sm text-white font-sans pointer-events-auto">
-          <h2 className="text-base font-bold text-sky-400 mb-1.5 tracking-tight flex items-center gap-2">
-            <Building2 className="w-4 h-4 text-sky-400" />
-            <span>3D Urban Infrastructure Digital Twin</span>
-          </h2>
-          <p className="text-xs text-zinc-300 leading-relaxed mb-4">
-            Highly detailed LoD2 textured 3D buildings in I3S format, visualized with deck.gl's <b>Tile3DLayer</b>. Real-time spatial mesh streaming for urban healthcare infrastructure.
-          </p>
-          <div className="flex items-center justify-between pt-3 border-t border-white/10 text-[11px] text-zinc-400 font-mono">
-            <span className="flex items-center gap-1 text-zinc-300">
-              <Globe className="w-3.5 h-3.5 text-sky-400" /> ESRI ArcGIS SceneServer
-            </span>
-            <span className="text-sky-400 font-semibold">LoD2 Mesh Active</span>
-          </div>
-        </div>
-
       </div>
-
     </div>
   );
 };
