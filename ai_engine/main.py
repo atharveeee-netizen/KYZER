@@ -17,6 +17,9 @@ import json
 import time
 import pandas as pd
 from ai_engine.pipeline import CareDOMAIPipeline
+from ai_engine.allocator.scaling_test import run_logistics_scaling_benchmark
+from ai_engine.allocator.robustness_test import run_monte_carlo_disruption_test
+from ai_engine.dashboard import build_caredom_copilot_html
 
 def main():
     print("=" * 80)
@@ -26,11 +29,12 @@ def main():
     
     pipeline = CareDOMAIPipeline()
     
-    print("\n[Step 1/5] Ingesting Register via Google Gemini 1.5 Flash Vision OCR...")
-    print("[Step 2/5] Running Multi-Horizon Quantile Demand Forecaster (P10/P50/P90)...")
-    print("[Step 3/5] Computing 3-Pillar Compound Systemic Risk (Meds + Beds + Staff)...")
-    print("[Step 4/5] Executing Quantum-Classical Hybrid Optimizer (QUBO-SA + OR-Tools)...")
-    print("[Step 5/5] Generating TreeSHAP Explanations & Gemini Multilingual Narrative...")
+    print("\n[Step 1/6] Ingesting Register via Google Gemini 1.5 Flash Vision OCR...")
+    print("[Step 2/6] Running Multi-Horizon Quantile Demand Forecaster (P10/P50/P90)...")
+    print("[Step 3/6] Computing 3-Pillar Compound Systemic Risk (Meds + Beds + Staff)...")
+    print("[Step 4/6] Executing Quantum-Classical Hybrid Optimizer (QUBO-SA + OR-Tools)...")
+    print("[Step 5/6] Generating TreeSHAP Explanations & Gemini Multilingual Narrative...")
+    print("[Step 6/6] Running Monte Carlo Stress & Network Scaling Benchmarks...")
     
     st = time.perf_counter()
     summary = pipeline.run_full_pipeline(
@@ -91,6 +95,24 @@ def main():
     print(f"  \"{summary.narrative.get('english_narrative', '')}\"")
     print("\nHindi (Devanagari) Community Briefing:")
     print(f"  \"{summary.narrative.get('hindi_narrative', '')}\"")
+
+    # Scaling & Robustness Execution
+    print("\n" + "=" * 80)
+    print("6. MONTE CARLO STRESS TEST & NETWORK SCALING PROOFS")
+    print("=" * 80)
+    test_facs = [
+        {"facility_id": "PHC-PUN-001", "name": "Shirur Sub-District Hospital", "latitude": 18.8285, "longitude": 74.3755, "is_dh": True, "medicine_surplus_deficit": 1200},
+        {"facility_id": "PHC-PUN-002", "name": "Koregaon Bhima PHC", "latitude": 18.6534, "longitude": 74.0624, "is_dh": False, "medicine_surplus_deficit": -250},
+        {"facility_id": "PHC-PUN-003", "name": "Shikrapur Health Centre", "latitude": 18.7368, "longitude": 74.1567, "is_dh": False, "medicine_surplus_deficit": 400},
+    ]
+    rob_res = run_monte_carlo_disruption_test(test_facs, iterations=20)
+    print(f"Monte Carlo Disruption Test (20 trials, +/-15% noise):")
+    print(f"  - Mean Distance: {rob_res.mean_network_distance_km} km | StdDev: {rob_res.std_dev_distance_km} km")
+    print(f"  - Robustness Index: {rob_res.robustness_index:.4f} (Cold-Chain Compliance: {rob_res.cold_chain_compliance_rate_pct:.1f}%)")
+
+    # Build Interactive HTML Co-Pilot Dashboard
+    dash_file = build_caredom_copilot_html("outputs/caredom_copilot_dashboard.html", summary.model_dump())
+    print(f"\n[DASHBOARD GENERATED] Interactive HTML Report rendered at: {dash_file}")
 
     print("\n" + "=" * 80)
     print(f"[SUCCESS] End-to-End Pipeline Completed in {summary.total_pipeline_latency_ms:.2f} ms")
