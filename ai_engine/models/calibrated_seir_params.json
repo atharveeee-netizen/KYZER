@@ -1,0 +1,7 @@
+{
+  "transmission_rate_beta": 0.38,
+  "incubation_rate_sigma": 0.2,
+  "recovery_treated_gamma1": 0.25,
+  "recovery_untreated_gamma0": 0.1,
+  "cascade_amplification_factor": 2.5
+}

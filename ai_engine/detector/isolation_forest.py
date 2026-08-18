@@ -1,13 +1,21 @@
 """
 Multivariate Consumption & Inventory Anomaly Detector using Isolation Forest.
-Identifies abnormal consumption spikes, sudden stock drains, and phantom reporting.
+Loads pre-trained model from `ai_engine/models/` or fits dynamically.
 """
 
+import logging
+import pickle
 import numpy as np
 import pandas as pd
+from pathlib import Path
 from typing import Dict, Any, List, Optional
 from sklearn.ensemble import IsolationForest
 from pydantic import BaseModel, Field
+
+from ai_engine.config import AI_ENGINE_DIR
+
+logger = logging.getLogger("ai_engine.detector")
+MODELS_DIR = AI_ENGINE_DIR / "models"
 
 class AnomalyRecord(BaseModel):
     """Detailed anomaly diagnostic for a single clinic-medicine pair."""
@@ -19,7 +27,7 @@ class AnomalyRecord(BaseModel):
     deviation_sigmas: float
     anomaly_score: float
     is_anomaly: bool
-    probable_cause: str = Field(..., description="'EPIDEMIC_SURGE', 'PILFERAGE_LEAK', 'REPORTING_LAG', 'NORMAL'")
+    probable_cause: str
 
 class AnomalyDetectionResult(BaseModel):
     """Batch anomaly detection report."""
@@ -34,18 +42,29 @@ class HealthInventoryAnomalyDetector:
 
     def __init__(self, contamination: float = 0.05, random_state: int = 42):
         self.contamination = contamination
-        self.model = IsolationForest(
-            contamination=contamination,
-            random_state=random_state,
-            n_estimators=100
-        )
+        self.model = None
         self.is_fitted = False
+        
+        # Try loading pre-trained model
+        iso_file = MODELS_DIR / "isolation_forest_model.pkl"
+        if iso_file.exists():
+            try:
+                with open(iso_file, "rb") as f:
+                    self.model = pickle.load(f)
+                self.is_fitted = True
+                logger.info("Loaded pre-trained Isolation Forest model from disk.")
+            except Exception:
+                pass
+
+        if self.model is None:
+            self.model = IsolationForest(
+                contamination=contamination,
+                random_state=random_state,
+                n_estimators=100
+            )
 
     def detect_anomalies(self, df_records: pd.DataFrame) -> AnomalyDetectionResult:
-        """
-        Takes DataFrame with ['facility_id', 'item_code', 'date', 'consumption', 'stock_remaining', 'cases_dengue_malaria']
-        and tags anomalous consumption events.
-        """
+        """Takes DataFrame and tags anomalous consumption events."""
         df = df_records.copy()
         if len(df) < 5:
             return AnomalyDetectionResult(
@@ -56,23 +75,28 @@ class HealthInventoryAnomalyDetector:
                 high_priority_alerts=[]
             )
 
-        # Build feature matrix
         df["daily_depletion_rate"] = df["consumption"] / np.maximum(df.get("stock_remaining", 100), 1.0)
         
         feature_cols = ["consumption"]
         if "stock_remaining" in df.columns:
             feature_cols.append("daily_depletion_rate")
-        if "cases_dengue_malaria" in df.columns:
-            feature_cols.append("cases_dengue_malaria")
+        if "active_epidemic_cases" in df.columns:
+            feature_cols.append("active_epidemic_cases")
 
         X = df[feature_cols].fillna(0)
         
-        self.model.fit(X)
-        self.is_fitted = True
+        if not self.is_fitted:
+            self.model.fit(X)
+            self.is_fitted = True
         
-        # -1 for anomaly, 1 for inlier
-        preds = self.model.predict(X)
-        scores = self.model.decision_function(X)
+        try:
+            preds = self.model.predict(X)
+            scores = self.model.decision_function(X)
+        except Exception:
+            # Fallback if dimension mismatch
+            self.model.fit(X)
+            preds = self.model.predict(X)
+            scores = self.model.decision_function(X)
 
         flagged = []
         alerts = []
