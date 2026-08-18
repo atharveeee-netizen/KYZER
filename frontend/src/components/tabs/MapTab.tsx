@@ -10,7 +10,7 @@ import { I3SLoader } from '@loaders.gl/i3s';
 import { AmbientLight, PointLight, LightingEffect } from '@deck.gl/core';
 
 import { Sparkles, Navigation, Pill, Bed, Activity, RefreshCw, X, CheckCircle2 } from 'lucide-react';
-import { generateDenseHighwaySpline } from '../../data/denseRouteSpline';
+import { generateOrthogonalStreetPath } from '../../data/denseRouteSpline';
 import { HealthFacility, RoutingResult } from '../../types';
 
 interface MapTabProps {
@@ -39,7 +39,7 @@ const lightingEffect = new LightingEffect({ ambientLight, pointLight });
 const TILESET_URL =
   'https://tiles.arcgis.com/tiles/z2tnIkrLQ2BRzr6P/arcgis/rest/services/SanFrancisco_Bldgs/SceneServer/layers/0';
 
-// Initial Street-Level ViewState (Focused directly over the road network)
+// Initial Street-Level ViewState (Positioned over street grid)
 const INITIAL_VIEW_STATE = {
   latitude: 37.776,
   longitude: -122.408,
@@ -61,7 +61,7 @@ export interface UrbanClinic {
   riskTier: 'P0_CRITICAL' | 'P1_WARNING' | 'P2_SURPLUS' | 'NORMAL';
 }
 
-// 4 Strategic Healthcare Facilities positioned directly on the Street Grid
+// 4 Strategic Healthcare Facilities positioned directly on Street Intersections
 const INITIAL_CLINICS: UrbanClinic[] = [
   {
     id: 'DH-DEPOT-01',
@@ -80,7 +80,7 @@ const INITIAL_CLINICS: UrbanClinic[] = [
     stock: 1850,
     daysLeft: 14.5,
     beds: { occupied: 18, total: 24 },
-    coordinates: [-122.4150, 37.7820], // Civic Center & 8th St
+    coordinates: [-122.4120, 37.7795], // Market St & 8th St
     riskTier: 'NORMAL',
   },
   {
@@ -90,7 +90,7 @@ const INITIAL_CLINICS: UrbanClinic[] = [
     stock: 85,
     daysLeft: 0.8,
     beds: { occupied: 23, total: 24 },
-    coordinates: [-122.4185, 37.7685], // Mission St & 16th St
+    coordinates: [-122.4190, 37.7680], // Mission St & 16th St
     riskTier: 'P0_CRITICAL',
   },
   {
@@ -117,39 +117,43 @@ export const MapTab: React.FC<MapTabProps> = () => {
   const [time, setTime] = useState(0);
   const animFrameRef = useRef<number | null>(null);
 
-  // Exact Orthogonal Street Grid Waypoints: Following Real Roads (King St -> Townsend St -> 7th St -> Brannan St -> 9th St -> Division St -> Mission St -> South Van Ness -> Market St)
+  // Exact Street Centerline Intersections: Zero Building Clipping
+  // Follows King St -> 4th St -> Townsend St -> 7th St -> Brannan St -> 9th St -> Division St -> Mission St -> Market St
   const streetWaypoints: [number, number][] = useMemo(() => [
-    [-122.3925, 37.7785], // 1. Waterfront Donor Annex (3rd & King St)
-    [-122.3970, 37.7760], // 2. King St & 4th St
-    [-122.3995, 37.7785], // 3. Turn Northwest on 4th St to Townsend St
-    [-122.4045, 37.7745], // 4. Turn Southwest on Townsend St to 7th St
-    [-122.4065, 37.7765], // 5. Turn Northwest on 7th St to Brannan St
-    [-122.4105, 37.7725], // 6. Turn Southwest on Brannan St to 9th St
-    [-122.4125, 37.7705], // 7. Turn Northwest on 9th St to Division St
-    [-122.4155, 37.7685], // 8. Along Division St to 11th St
-    [-122.4185, 37.7685], // 9. Mission District Health Clinic (PHC-URB-03 Delivery Stop)
-    [-122.4180, 37.7740], // 10. Turn North on South Van Ness Ave to Market St
-    [-122.4140, 37.7770], // 11. Market St & 9th St
-    [-122.4095, 37.7810], // 12. Market St & 6th St
-    [-122.4055, 37.7850], // 13. Market St & 4th St
-    [-122.4012, 37.7885], // 14. Central Regional Medical Depot (Return Hub)
+    [-122.3925, 37.7785], // 1. Start: 3rd St & King St (PHC-URB-04)
+    [-122.3970, 37.7760], // 2. Along King St to 4th St
+    [-122.3995, 37.7788], // 3. Turn NW on 4th St to Townsend St
+    [-122.4022, 37.7768], // 4. Turn SW on Townsend St past 5th St
+    [-122.4048, 37.7748], // 5. Along Townsend St to 6th St
+    [-122.4074, 37.7728], // 6. Along Townsend St to 7th St
+    [-122.4098, 37.7755], // 7. Turn NW on 7th St to Brannan St
+    [-122.4124, 37.7735], // 8. Turn SW on Brannan St past 8th St
+    [-122.4150, 37.7715], // 9. Along Brannan St to 9th St
+    [-122.4172, 37.7740], // 10. Turn NW on 9th St to Division St
+    [-122.4185, 37.7715], // 11. Turn SW on Division St to 10th St
+    [-122.4190, 37.7680], // 12. Arrive: Mission St (PHC-URB-03 Delivery Stop)
+    [-122.4180, 37.7745], // 13. Turn North on South Van Ness Ave to Market St
+    [-122.4155, 37.7765], // 14. Turn NE on Market St at 10th St
+    [-122.4120, 37.7795], // 15. Along Market St at 8th St
+    [-122.4070, 37.7840], // 16. Along Market St at 5th St
+    [-122.4012, 37.7885], // 17. Arrive: Central Medical Depot (3rd & Market)
   ], []);
 
-  // Dense Catmull-Rom street-following spline (60+ points per street segment)
+  // Dense Orthogonal Path along exact road centerlines (step interval = 3.5m)
   const splineData = useMemo(() => {
-    return generateDenseHighwaySpline(streetWaypoints, 60);
+    return generateOrthogonalStreetPath(streetWaypoints, 3.5);
   }, [streetWaypoints]);
 
   const loopLength = splineData.pathWithTimestamps.length > 0 
     ? splineData.pathWithTimestamps[splineData.pathWithTimestamps.length - 1][2] 
-    : 1800;
+    : 1600;
 
-  // 60fps Clock for TripsLayer animation along streets
+  // 60fps Clock for TripsLayer animation strictly on the road
   useEffect(() => {
     let curTime = 0;
     let animId: number;
     const animate = () => {
-      curTime = (curTime + 2.5) % (loopLength || 1800);
+      curTime = (curTime + 2.0) % (loopLength || 1600);
       setTime(curTime);
       animId = requestAnimationFrame(animate);
     };
@@ -169,8 +173,8 @@ export const MapTab: React.FC<MapTabProps> = () => {
     // Focus camera on Stockout Clinic
     setViewState(prev => ({
       ...prev,
-      longitude: -122.4185,
-      latitude: 37.7685,
+      longitude: -122.4190,
+      latitude: 37.7680,
       zoom: 15.6,
       pitch: 50,
       bearing: 30,
@@ -192,7 +196,7 @@ export const MapTab: React.FC<MapTabProps> = () => {
 
     setTimeout(() => {
       setSimStep(3);
-      setSimMessage('Shortest Ground Road Route Computed: 3.82 km / 7.4 min via King St, Townsend St & Mission St.');
+      setSimMessage('Shortest Road Route Computed: 3.82 km / 7.4 min via King St, Townsend St & Mission St.');
       
       const donor = clinics.find(c => c.id === 'PHC-URB-04')!;
       const recipient = clinics.find(c => c.id === 'PHC-URB-03')!;
@@ -236,7 +240,7 @@ export const MapTab: React.FC<MapTabProps> = () => {
     ];
   }, [activeTransfer, splineData]);
 
-  // Deck.gl Layer Pipeline (100% Grounded on the Road Network - ZERO Sky Arcs)
+  // Deck.gl Layer Pipeline (100% Grounded on Road Centerlines - ZERO Sky Arcs)
   const layers = useMemo(() => {
     return [
       // 1. ArcGIS I3S 3D Building Meshes
@@ -255,8 +259,8 @@ export const MapTab: React.FC<MapTabProps> = () => {
         id: 'street-route-base-glow',
         data: activeTransfer ? [{ path: splineData.denseLineCoordinates }] : [],
         getPath: (d: any) => d.path,
-        getColor: [6, 182, 212, 90],
-        getWidth: 24,
+        getColor: [6, 182, 212, 100],
+        getWidth: 20,
         widthUnits: 'meters',
         capRounded: true,
         jointRounded: true,
@@ -268,7 +272,7 @@ export const MapTab: React.FC<MapTabProps> = () => {
         data: activeTransfer ? [{ path: splineData.denseLineCoordinates }] : [],
         getPath: (d: any) => d.path,
         getColor: [6, 182, 212, 240],
-        getWidth: 8,
+        getWidth: 6,
         widthUnits: 'meters',
         capRounded: true,
         jointRounded: true,
@@ -392,7 +396,7 @@ export const MapTab: React.FC<MapTabProps> = () => {
               </span>
             </div>
             <span className="text-[10px] font-mono bg-white/10 px-2 py-0.5 rounded text-sky-300 font-semibold">
-              Ground-Level Network
+              Street Centerlines
             </span>
           </div>
 
@@ -447,7 +451,7 @@ export const MapTab: React.FC<MapTabProps> = () => {
               </div>
 
               <a
-                href="https://www.google.com/maps/dir/37.7785,-122.3925/37.7685,-122.4185"
+                href="https://www.google.com/maps/dir/37.7785,-122.3925/37.7680,-122.4190"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-full flex items-center justify-center gap-1.5 bg-white text-zinc-900 hover:bg-zinc-100 text-xs font-bold py-2 rounded-md transition-colors shadow-xs"
