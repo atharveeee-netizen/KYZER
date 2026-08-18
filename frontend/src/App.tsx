@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Navbar } from './components/layout/Navbar';
 import { DashboardTab } from './components/tabs/DashboardTab';
 import { MapTab } from './components/tabs/MapTab';
@@ -24,6 +24,28 @@ export const App: React.FC = () => {
   const [selectedFacility, setSelectedFacility] = useState<HealthFacility | null>(BRICS_FACILITIES[0]);
   const [alerts, setAlerts] = useState<SystemAlert[]>(MOCK_ALERTS);
   const [ocrItems, setOcrItems] = useState<OcrExtractedItem[]>(MOCK_OCR_ITEMS);
+  const [theme, setTheme] = useState<'light' | 'dark'>('light');
+
+  // Load theme preference and apply to document element
+  useEffect(() => {
+    const saved = localStorage.getItem('caredom_theme') as 'light' | 'dark' | null;
+    if (saved) {
+      setTheme(saved);
+      if (saved === 'dark') document.documentElement.classList.add('dark');
+      else document.documentElement.classList.remove('dark');
+    }
+  }, []);
+
+  const handleToggleTheme = () => {
+    const nextTheme = theme === 'light' ? 'dark' : 'light';
+    setTheme(nextTheme);
+    localStorage.setItem('caredom_theme', nextTheme);
+    if (nextTheme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  };
 
   // Filter facilities by country
   const filteredFacilities = facilities.filter(f => f.country === selectedCountry);
@@ -48,10 +70,10 @@ export const App: React.FC = () => {
     const newAlert: SystemAlert = {
       id: `alt-${Date.now()}`,
       facility_id: 'PHC-PUN-001',
-      facility_name: 'Primary Health Centre Shirur',
+      facility_name: 'Shirur Sub-District Hospital',
       severity: 'P0',
       timestamp: 'Just now',
-      title: 'OUTBREAK SHOCK: Viral Encephalitis Surge Consuming Remaining Stock in 14h',
+      title: 'OUTBREAK SHOCK: Viral Surge Consuming Remaining Stock in 14h',
       description_en: 'Severe viral surge detected after 52mm monsoon rainfall. Emergency buffer redistribution mandated immediately from PHC Khed.',
       description_mr: 'तातडीचा इशारा: ५२ मिमी पावसानंतर शिरूर आरोग्य केंद्रात रुग्णांची मोठी गर्दी. औषध साठा १४ तासांत संपणार आहे. खेड डेपोमधून तातडीने पुरवठा सुरू करण्यात आला आहे.',
       description_hi: 'आपातकालीन चेतावनी: शिरूर स्वास्थ्य केंद्र में रोगियों की भारी वृद्धि। खेड केंद्र से तुरंत दवा भेजी जा रही है।',
@@ -70,9 +92,9 @@ export const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-canvas text-ink flex flex-col font-sans">
+    <div className="min-h-screen bg-canvas text-ink flex flex-col font-sans transition-colors duration-200">
       
-      {/* 🧭 Top Navigation with Cursor Orange Primary Accent */}
+      {/* 🧭 Top Navigation with Dark Theme Toggle */}
       <Navbar
         activeTab={activeTab}
         setActiveTab={setActiveTab}
@@ -83,6 +105,8 @@ export const App: React.FC = () => {
           if (first) setSelectedFacility(first);
         }}
         onSimulateOutbreak={handleSimulateOutbreak}
+        theme={theme}
+        onToggleTheme={handleToggleTheme}
       />
 
       {/* 📱 Main Tab Content Area */}
@@ -138,7 +162,7 @@ export const App: React.FC = () => {
       </main>
 
       {/* 📄 Cursor Editorial Footer */}
-      <footer className="bg-canvas border-t border-hairline px-6 py-4 mt-auto text-xs text-muted">
+      <footer className="bg-canvas border-t border-hairline px-6 py-4 mt-auto text-xs text-muted transition-colors duration-200">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-2">
           <div className="flex items-center gap-3">
             <span className="font-semibold text-ink">CareDOM</span>

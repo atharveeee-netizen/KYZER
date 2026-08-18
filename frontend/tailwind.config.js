@@ -1,5 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 export default {
+  darkMode: 'class',
   content: [
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
@@ -8,26 +9,26 @@ export default {
     extend: {
       colors: {
         canvas: {
-          DEFAULT: '#f7f7f4',
-          soft: '#fafaf7',
+          DEFAULT: 'var(--color-canvas)',
+          soft: 'var(--color-canvas-soft)',
         },
         surface: {
-          card: '#ffffff',
-          strong: '#e6e5e0',
+          card: 'var(--color-surface-card)',
+          strong: 'var(--color-surface-strong)',
         },
         hairline: {
-          DEFAULT: '#e6e5e0',
-          soft: '#efeee8',
-          strong: '#cfcdc4',
+          DEFAULT: 'var(--color-hairline)',
+          soft: 'var(--color-hairline-soft)',
+          strong: 'var(--color-hairline-strong)',
         },
-        ink: '#26251e',
+        ink: 'var(--color-ink)',
         body: {
-          DEFAULT: '#5a5852',
-          strong: '#26251e',
+          DEFAULT: 'var(--color-body)',
+          strong: 'var(--color-body-strong)',
         },
         muted: {
-          DEFAULT: '#807d72',
-          soft: '#a09c92',
+          DEFAULT: 'var(--color-muted)',
+          soft: 'var(--color-muted-soft)',
         },
         primary: {
           DEFAULT: '#f54e00',
@@ -41,8 +42,8 @@ export default {
           done: '#c08532',     // Warm gold
         },
         semantic: {
-          success: '#1f8a65',
-          error: '#cf2d56',
+          success: '#10b981',
+          error: '#ef4444',
         }
       },
       fontFamily: {

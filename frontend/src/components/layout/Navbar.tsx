@@ -1,5 +1,5 @@
 import React from 'react';
-import { Activity, ShieldCheck, MapPin, Zap, Radio } from 'lucide-react';
+import { Activity, ShieldCheck, MapPin, Zap, Sun, Moon } from 'lucide-react';
 import { CountryCode } from '../../types';
 
 interface NavbarProps {
@@ -8,6 +8,8 @@ interface NavbarProps {
   selectedCountry: CountryCode;
   setSelectedCountry: (country: CountryCode) => void;
   onSimulateOutbreak: () => void;
+  theme: 'light' | 'dark';
+  onToggleTheme: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -16,6 +18,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   selectedCountry,
   setSelectedCountry,
   onSimulateOutbreak,
+  theme,
+  onToggleTheme,
 }) => {
   const tabs = [
     { id: 'dashboard', label: 'Dashboard' },
@@ -66,8 +70,23 @@ export const Navbar: React.FC<NavbarProps> = ({
           })}
         </nav>
 
-        {/* Right: BRICS Switcher & Primary CTA */}
-        <div className="flex items-center gap-3">
+        {/* Right: BRICS Switcher, Theme Toggle & Primary CTA */}
+        <div className="flex items-center gap-2.5">
+          
+          {/* 🌓 Dark / Light Mode Toggle Button */}
+          <button
+            onClick={onToggleTheme}
+            aria-label="Toggle theme"
+            title={`Switch to ${theme === 'light' ? 'Dark' : 'Light'} Mode`}
+            className="p-2 rounded-md bg-canvas-soft hover:bg-surface-strong border border-hairline text-ink transition-colors flex items-center justify-center"
+          >
+            {theme === 'light' ? (
+              <Moon className="w-4 h-4 text-body hover:text-ink" />
+            ) : (
+              <Sun className="w-4 h-4 text-amber-400 hover:text-amber-300" />
+            )}
+          </button>
+
           {/* BRICS Flag Switcher */}
           <div className="flex items-center bg-canvas-soft border border-hairline rounded-md p-0.5 text-xs font-mono">
             <button
