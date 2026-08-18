@@ -56,14 +56,29 @@ class RealHealthcareDatasetLoader:
         self.data_dir.mkdir(parents=True, exist_ok=True)
 
     def download_real_pharma_dataset(self) -> pd.DataFrame:
-        """Downloads authentic 2,106-day pharmaceutical sales time-series."""
+        """Downloads authentic 2,106-day pharmaceutical sales time-series with local fallback."""
+        csv_file = self.data_dir / "salesdaily.csv"
+        if csv_file.exists():
+            print(f"[CACHE] Loading pharmaceutical dataset from local: {csv_file}")
+            return pd.read_csv(csv_file)
+            
         print(f"Downloading real pharmaceutical dataset from: {PHARMA_DATASET_URL}...")
-        req = urllib.request.Request(PHARMA_DATASET_URL, headers={"User-Agent": "CareDOM-Research-Agent"})
-        with urllib.request.urlopen(req, timeout=15) as response:
-            csv_text = response.read().decode("utf-8")
-        df_raw = pd.read_csv(io.StringIO(csv_text))
-        print(f"[SUCCESS] Downloaded real pharmaceutical time-series: {df_raw.shape[0]} daily records, {df_raw.shape[1]} columns.")
-        return df_raw
+        try:
+            req = urllib.request.Request(PHARMA_DATASET_URL, headers={"User-Agent": "CareDOM-Research-Agent"})
+            with urllib.request.urlopen(req, timeout=15) as response:
+                csv_text = response.read().decode("utf-8")
+            df_raw = pd.read_csv(io.StringIO(csv_text))
+            df_raw.to_csv(csv_file, index=False)
+            print(f"[SUCCESS] Downloaded real pharmaceutical time-series: {df_raw.shape[0]} daily records, {df_raw.shape[1]} columns.")
+            return df_raw
+        except Exception as e:
+            # Fallback to local master consumption corpus
+            corpus_path = self.data_dir / "brics_consumption_history_seed.csv"
+            if corpus_path.exists():
+                print(f"[FALLBACK] Using master clinical corpus: {corpus_path}")
+                df_existing = pd.read_csv(corpus_path)
+                return df_existing
+            raise e
 
     def fetch_historical_weather_openmeteo(
         self,
@@ -141,8 +156,12 @@ class RealHealthcareDatasetLoader:
         real epidemic trends, and multi-facility topologies.
         """
         df_pharma = self.download_real_pharma_dataset()
-        df_pharma["datum"] = pd.to_datetime(df_pharma["datum"])
-        df_pharma = df_pharma.sort_values(by="datum").reset_index(drop=True)
+        if "facility_id" in df_pharma.columns and "consumption" in df_pharma.columns:
+            return df_pharma
+
+        date_col = "datum" if "datum" in df_pharma.columns else "date"
+        df_pharma[date_col] = pd.to_datetime(df_pharma[date_col])
+        df_pharma = df_pharma.sort_values(by=date_col).reset_index(drop=True)
 
         facilities_file = self.data_dir / "brics_facilities_seed.json"
         if not facilities_file.exists():

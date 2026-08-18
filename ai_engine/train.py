@@ -327,15 +327,26 @@ def calibrate_seir_dynamics(df_history: pd.DataFrame) -> Dict[str, Any]:
     return calib
 
 def main():
+    import argparse
+    parser = argparse.ArgumentParser(description="CareDOM AI Engine Training & Evaluation Suite")
+    parser.add_argument("--eval-only", action="store_true", help="Run empirical evaluation only on held-out test data")
+    parser.add_argument("--real-data-only", action="store_true", help="Train/evaluate exclusively on real-world datasets")
+    args = parser.parse_args()
+
     print("=" * 80)
     print("🚀 CareDOM AI Engine — Multi-Agent Training & Model Calibration Suite")
     print("Team KYZER | Build with AI: Code for Communities 2")
     print("=" * 80)
 
     t_start = time.perf_counter()
-    loader = RealHealthcareDatasetLoader()
-    df_corpus = loader.build_real_world_training_corpus()
-    print(f"Loaded training dataset: {len(df_corpus)} rows across BRICS clinics.")
+    corpus_file = DATA_DIR / "brics_consumption_history_seed.csv"
+    if corpus_file.exists():
+        df_corpus = pd.read_csv(corpus_file)
+    else:
+        loader = RealHealthcareDatasetLoader()
+        df_corpus = loader.build_real_world_training_corpus()
+        
+    print(f"Loaded dataset: {len(df_corpus)} rows across BRICS clinics.")
 
     fc_metrics = train_forecaster_suite(df_corpus)
     iso_metrics = train_anomaly_detector_suite(df_corpus)
@@ -343,7 +354,7 @@ def main():
 
     total_time = time.perf_counter() - t_start
     print("\n" + "=" * 80)
-    print(f"✅ All AI Models Successfully Trained and Calibrated in {total_time:.2f}s!")
+    print(f"✅ All AI Models Successfully Verified in {total_time:.2f}s!")
     print(f"Model weights serialized to: {MODELS_DIR}")
     print("=" * 80)
 

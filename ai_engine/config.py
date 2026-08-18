@@ -35,8 +35,8 @@ class Settings(BaseModel):
     GEMINI_API_KEY: str = Field(
         default_factory=lambda: os.getenv("GEMINI_API_KEY", "")
     )
-    GEMINI_MODEL_VISION: str = "gemini-1.5-flash"
-    GEMINI_MODEL_TEXT: str = "gemini-1.5-flash"
+    GEMINI_MODEL_VISION: str = "gemini-flash-latest"
+    GEMINI_MODEL_TEXT: str = "gemini-flash-latest"
     
     # BRICS Settings
     DEFAULT_COUNTRY: str = "IND"
