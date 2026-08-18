@@ -1,8 +1,12 @@
 """
-CareDOM AI & Quantum Engine Router — Drop-In FastAPI APIRouter for Person 2.
-Mounts seamlessly into Person 2's Neon/PostGIS/FEFO FastAPI application:
-    from backend.app.routes.ai import ai_router
-    app.include_router(ai_router, prefix="/api/v1")
+CareDOM AI & Quantum Engine Router — Person 1's routes, mounted by Person 2
+as Service B (see backend/app/main_ai.py). Deliberately has no dependency
+on asyncpg/DATABASE_URL/app.database — it's fully self-contained (in-memory
+models + ai_engine/data/*.json on disk), which is exactly why it's split
+into its own deployable service instead of living in Service A's process:
+importing this module pulls in ai_engine and its ~1.4GB of ML/quantum/CV
+dependencies (lightgbm, qiskit, opencv, ortools, ...) regardless of whether
+the importing process ever serves these routes.
 """
 
 import os
@@ -81,9 +85,9 @@ async def plan_autonomous_9_clinic_route(payload: RoutePlanRequest):
     seed_path = os.path.join(settings.DATA_DIR, "brics_facilities_seed.json")
     with open(seed_path, "r", encoding="utf-8") as f:
         all_facs = json.load(f)
-    
+
     pune_clinics = [f for f in all_facs if f.get("country_code") == "IND"][:10]
-    
+
     allocator_input = [
         {
             "facility_id": f["facility_id"],
@@ -94,12 +98,12 @@ async def plan_autonomous_9_clinic_route(payload: RoutePlanRequest):
         }
         for f in pune_clinics
     ]
-    
+
     routing_result = engine.route_allocator.optimize_routes(
         facilities=allocator_input,
         priority_facility_ids=["PHC-PUN-002", "PHC-PUN-004"]
     )
-    
+
     return {
         "status": "SUCCESS",
         "scale_tier": routing_result.scale_tier,
@@ -141,7 +145,9 @@ async def get_forecast(facility_id: str, item_code: str = "MED-PCM-500"):
 
 @ai_router.post("/ocr/upload", tags=["Perception & OCR"])
 async def upload_register_photo(file: UploadFile = File(...)):
-    """Ingests clinic register photo ➔ OpenCV Hough Deskew ➔ Gemini Vision OCR."""
+    """Ingests clinic register photo -> OpenCV Hough Deskew -> Gemini Vision OCR.
+    Extraction only, no DB write - see /api/v1/ocr/commit-register on Service A
+    for persisting a structured extraction result to Postgres."""
     engine = get_engine()
     contents = await file.read()
     extraction_result = engine.ocr_engine.extract_from_image(contents)
@@ -152,7 +158,14 @@ async def upload_register_photo(file: UploadFile = File(...)):
 
 @ai_router.get("/alerts/stream", tags=["Real-Time Alerts"])
 async def sse_alert_stream():
-    """Server-Sent Events (SSE) broadcasting real-time stockout alerts."""
+    """Server-Sent Events (SSE) broadcasting real-time stockout alerts.
+
+    NOTE: this emits a fixed, hardcoded alert payload on a 15s timer - it is
+    NOT derived from real database state (no query against inventory_batches
+    or facility_beds). It demonstrates the SSE transport/format for the demo,
+    not a working alert pipeline. Don't assume it's wired to live stock
+    levels without checking here first.
+    """
     async def event_generator():
         while True:
             await asyncio.sleep(15)
@@ -163,5 +176,5 @@ async def sse_alert_stream():
                 "marathi_audio_note": "सावधान: प्राथमिक आरोग्य केंद्र शिरूर येथे औषध साठा संपण्याची शक्यता आहे..."
             }
             yield f"data: {json.dumps(alert_payload)}\n\n"
-    
+
     return StreamingResponse(event_generator(), media_type="text/event-stream")
