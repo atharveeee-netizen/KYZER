@@ -1,0 +1,54 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    background-color: #f7f7f4;
+    color: #26251e;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+
+  /* Cursor Editorial Typography Rules */
+  h1, h2, h3, .font-display {
+    font-weight: 400;
+    letter-spacing: -0.035em;
+  }
+
+  code, pre, .font-code {
+    font-family: 'JetBrains Mono', monospace;
+  }
+}
+
+/* Custom hairline borders */
+.hairline-b {
+  border-bottom: 1px solid #e6e5e0;
+}
+.hairline-t {
+  border-top: 1px solid #e6e5e0;
+}
+.hairline-r {
+  border-right: 1px solid #e6e5e0;
+}
+.hairline-l {
+  border-left: 1px solid #e6e5e0;
+}
+.hairline-all {
+  border: 1px solid #e6e5e0;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #f7f7f4;
+}
+::-webkit-scrollbar-thumb {
+  background: #cfcdc4;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #a09c92;
+}
