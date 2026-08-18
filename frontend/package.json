@@ -9,7 +9,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@deck.gl/layers": "^9.3.10",
+    "@deck.gl/react": "^9.3.10",
     "clsx": "^2.1.0",
+    "deck.gl": "^9.3.10",
     "lucide-react": "^0.359.0",
     "maplibre-gl": "^4.1.1",
     "react": "^18.3.1",
