@@ -32,6 +32,8 @@ class AdaptiveRoutingResult(BaseModel):
     failover_engaged: bool = False
     warning_notes: List[str] = Field(default_factory=list)
     quantum_hardware_ready: bool = True
+    google_maps_url: Optional[str] = Field(None, description="Universal Google Maps turn-by-turn navigation deep link for drivers")
+    whatsapp_nav_share_url: Optional[str] = Field(None, description="One-click WhatsApp dispatch URL with pre-filled Google Maps route")
 
 class AdaptiveRouteAllocator:
     """
@@ -155,17 +157,59 @@ class AdaptiveRouteAllocator:
         # 3. Execute Classical Scale-Appropriate Algorithm with Try-Except Failover
         try:
             if tier == "MICRO":
-                return self._solve_micro_ortools(facilities, distance_matrix, start_time)
+                res = self._solve_micro_ortools(facilities, distance_matrix, start_time)
             elif tier == "MESO":
-                return self._solve_meso_qubo_sa(facilities, distance_matrix, priority_facility_ids, start_time)
+                res = self._solve_meso_qubo_sa(facilities, distance_matrix, priority_facility_ids, start_time)
             elif tier in ["MACRO", "NATION"]:
-                return self._solve_macro_hybrid_clustering(facilities, distance_matrix, start_time, tier)
+                res = self._solve_macro_hybrid_clustering(facilities, distance_matrix, start_time, tier)
             else:
-                return self._solve_micro_ortools(facilities, distance_matrix, start_time)
+                res = self._solve_micro_ortools(facilities, distance_matrix, start_time)
 
         except Exception as e:
             logger.critical(f"Primary solver for [{tier}] failed ({e}). Engaging instant OR-Tools failover!", exc_info=True)
-            return self._solve_failover_ortools(facilities, distance_matrix, start_time, str(e))
+            res = self._solve_failover_ortools(facilities, distance_matrix, start_time, str(e))
+
+        # Attach Google Maps & WhatsApp Navigation Links
+        gmaps_url, wa_url = self.generate_google_maps_url(facilities, res.ordered_facilities)
+        res.google_maps_url = gmaps_url
+        res.whatsapp_nav_share_url = wa_url
+        return res
+
+    @staticmethod
+    def generate_google_maps_url(facilities: List[Dict[str, Any]], ordered_ids: List[str]) -> Tuple[str, str]:
+        """
+        Generates Google Maps Universal Turn-by-Turn Navigation URL and WhatsApp dispatch link.
+        Format: https://www.google.com/maps/dir/?api=1&origin=LAT,LNG&destination=LAT,LNG&waypoints=LAT,LNG|...&travelmode=driving
+        """
+        import urllib.parse
+        fac_map = {str(f.get("facility_id", f"NODE-{i}")): f for i, f in enumerate(facilities)}
+        coords = []
+        for fid in ordered_ids:
+            if fid in fac_map:
+                lat = fac_map[fid].get("latitude", 18.5204)
+                lon = fac_map[fid].get("longitude", 73.8567)
+                coords.append((lat, lon, fac_map[fid].get("name", fid)))
+
+        if not coords:
+            return "", ""
+
+        origin_lat, origin_lon, _ = coords[0]
+        dest_lat, dest_lon, _ = coords[-1]
+
+        waypoint_strs = [f"{lat},{lon}" for lat, lon, _ in coords[1:-1]]
+        waypoints_param = f"&waypoints={'|'.join(waypoint_strs)}" if waypoint_strs else ""
+
+        gmaps_url = (
+            f"https://www.google.com/maps/dir/?api=1"
+            f"&origin={origin_lat},{origin_lon}"
+            f"&destination={dest_lat},{dest_lon}"
+            f"{waypoints_param}"
+            f"&travelmode=driving"
+        )
+
+        msg = f"🚚 *CareDOM Emergency Dispatch Route*\n📍 Stops: {len(coords)}\n🔗 Start GPS Navigation: {gmaps_url}"
+        whatsapp_url = f"https://api.whatsapp.com/send?text={urllib.parse.quote(msg)}"
+        return gmaps_url, whatsapp_url
 
     def _solve_micro_ortools(
         self,

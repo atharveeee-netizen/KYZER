@@ -158,7 +158,9 @@ class CareDOMEngine:
                 "total_transit_time_min": summary.adaptive_routes.total_transit_time_min,
                 "cold_chain_compliant": summary.adaptive_routes.cold_chain_compliant,
                 "quantum_hardware_ready": summary.adaptive_routes.quantum_hardware_ready,
-                "ordered_facility_sequence": summary.adaptive_routes.ordered_facilities
+                "ordered_facility_sequence": summary.adaptive_routes.ordered_facilities,
+                "google_maps_url": getattr(summary.adaptive_routes, "google_maps_url", None),
+                "whatsapp_nav_share_url": getattr(summary.adaptive_routes, "whatsapp_nav_share_url", None)
             },
             "clinical_explainability": {
                 "primary_driver": summary.explanation.primary_driver_summary,
