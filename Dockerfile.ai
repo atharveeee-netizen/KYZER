@@ -1,0 +1,28 @@
+# Service B: Person 1's AI/quantum/OCR-extraction routes (backend/app/main_ai.py).
+# Separate from backend/Dockerfile (Service A, the Postgres-backed API) because
+# this pulls in ai_engine's full ML/quantum/CV stack - see backend/app/main_ai.py
+# for why they're split. Build from the repo root:
+#   docker build -f Dockerfile.ai -t caredom-ai-service .
+FROM python:3.12-slim
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libgomp1 \
+    libgl1 \
+    libglib2.0-0 \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY ai_engine ./ai_engine
+COPY backend/app/__init__.py ./app/__init__.py
+COPY backend/app/main_ai.py ./app/main_ai.py
+COPY backend/app/routes/__init__.py ./app/routes/__init__.py
+COPY backend/app/routes/ai.py ./app/routes/ai.py
+
+ENV PORT=8000
+EXPOSE 8000
+
+CMD uvicorn app.main_ai:app --host 0.0.0.0 --port ${PORT}
