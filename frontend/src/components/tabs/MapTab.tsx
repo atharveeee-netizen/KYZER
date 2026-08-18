@@ -1,16 +1,7 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
-import DeckGL from '@deck.gl/react';
-import { Map } from 'react-map-gl/maplibre';
+import React, { useState, useEffect, useRef } from 'react';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
-
-import { Tile3DLayer } from '@deck.gl/geo-layers';
-import { CesiumIonLoader } from '@loaders.gl/3d-tiles';
-import { ColumnLayer, ArcLayer, PathLayer, ScatterplotLayer, PolygonLayer } from '@deck.gl/layers';
-import { TripsLayer } from '@deck.gl/geo-layers';
-import { AmbientLight, DirectionalLight, LightingEffect } from '@deck.gl/core';
-
-import { Navigation, Send, AlertTriangle, Bed, Users, Pill, ShieldAlert, Sparkles, RefreshCw, Layers, Compass, Box, Activity } from 'lucide-react';
+import { Navigation, Send, AlertTriangle, Bed, Users, Pill, ShieldAlert, Sparkles, RefreshCw, Layers, Compass, Satellite, Mountain } from 'lucide-react';
 import { HealthFacility, RoutingResult } from '../../types';
 
 interface MapTabProps {
@@ -21,67 +12,14 @@ interface MapTabProps {
   onRerouteRequest: (blockedRoadName: string) => void;
 }
 
-// Cesium Ion 3D Photogrammetric Mesh Asset (Official Deck.gl 3D-Tiles Example)
-const ION_ASSET_ID = 43978;
-const ION_TOKEN =
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI4OGMyMDVmMS0zNjIyLTRkMDQtYTQ2MS05YmQ3MTc5ZDJhOTAiLCJpZCI6MjYxMzMsImlhdCI6MTc3NjA4NzkxNX0.wfqN4Vu94UsALYDIunRGWO8wKFYMoe67ooozJwDAo-c';
-const TILESET_URL = `https://assets.ion.cesium.com/${ION_ASSET_ID}/tileset.json`;
-
-// 3D Lighting Setup (NASA / Palantir Visgl Specification)
-const ambientLight = new AmbientLight({
-  color: [255, 255, 255],
-  intensity: 1.2,
-});
-
-const dirLight1 = new DirectionalLight({
-  color: [255, 240, 220],
-  intensity: 2.0,
-  direction: [-1, -3, -2],
-});
-
-const dirLight2 = new DirectionalLight({
-  color: [100, 180, 255],
-  intensity: 1.0,
-  direction: [2, 1, -1],
-});
-
-const lightingEffect = new LightingEffect({ ambientLight, dirLight1, dirLight2 });
-
-const material = {
-  ambient: 0.35,
-  diffuse: 0.85,
-  shininess: 42,
-  specularColor: [255, 255, 255] as [number, number, number],
-};
-
-// Helper: Generate 3D Building Campus Complex footprint around each clinic
-function generateBuildingComplex(lng: number, lat: number, scale = 0.007) {
-  const mainBlock = [
-    [lng - scale, lat - scale * 0.7],
-    [lng + scale, lat - scale * 0.7],
-    [lng + scale, lat + scale * 0.7],
-    [lng - scale, lat + scale * 0.7],
-    [lng - scale, lat - scale * 0.7],
-  ];
-  const emergencyWing = [
-    [lng + scale * 1.1, lat - scale * 0.4],
-    [lng + scale * 1.8, lat - scale * 0.4],
-    [lng + scale * 1.8, lat + scale * 0.5],
-    [lng + scale * 1.1, lat + scale * 0.5],
-    [lng + scale * 1.1, lat - scale * 0.4],
-  ];
-  const vaccineVault = [
-    [lng - scale * 1.8, lat - scale * 0.5],
-    [lng - scale * 1.1, lat - scale * 0.5],
-    [lng - scale * 1.1, lat + scale * 0.3],
-    [lng - scale * 1.8, lat + scale * 0.3],
-    [lng - scale * 1.8, lat - scale * 0.5],
-  ];
-
+// Helper to generate 3D building polygon complexes
+function createBuildingFootprint(lng: number, lat: number, dx: number, dy: number, w: number, h: number): [number, number][] {
   return [
-    { polygon: mainBlock, height: 220, type: 'MAIN_HOSPITAL' },
-    { polygon: emergencyWing, height: 320, type: 'ICU_TRAUMA_WING' },
-    { polygon: vaccineVault, height: 160, type: 'WHO_VACCINE_VAULT' },
+    [lng + dx - w, lat + dy - h],
+    [lng + dx + w, lat + dy - h],
+    [lng + dx + w, lat + dy + h],
+    [lng + dx - w, lat + dy + h],
+    [lng + dx - w, lat + dy - h],
   ];
 }
 
@@ -92,252 +30,269 @@ export const MapTab: React.FC<MapTabProps> = ({
   selectedFacility,
   onRerouteRequest,
 }) => {
-  const [viewState, setViewState] = useState({
-    longitude: 74.08,
-    latitude: 18.78,
-    zoom: 9.8,
-    pitch: 62, // 3D Camera Tilt (62 degrees)
-    bearing: -20, // 3D Rotation
-    maxPitch: 85,
-    minZoom: 6,
-    maxZoom: 19,
-  });
+  const mapContainer = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<maplibregl.Map | null>(null);
+  const truckMarkerRef = useRef<maplibregl.Marker | null>(null);
+  const animFrameRef = useRef<number | null>(null);
+  const orbitRef = useRef<any>(null);
 
-  const [tripTime, setTripTime] = useState(0);
   const [isSelfPlanning, setIsSelfPlanning] = useState(false);
   const [planningStep, setPlanningStep] = useState<string | null>(null);
   const [isOrbiting, setIsOrbiting] = useState(false);
+  const [basemapMode, setBasemapMode] = useState<'DARK' | 'SATELLITE'>('DARK');
   const [showBlockerModal, setShowBlockerModal] = useState(false);
   const [roadNote, setRoadNote] = useState('Ghod River Bridge Submerged (Rainfall >45mm)');
 
-  const orbitRef = useRef<any>(null);
-  const animFrameRef = useRef<number | null>(null);
-
-  // 10 Pune District Nodes
+  // 10 Pune District Clinics (IND)
   const puneClinics = facilities.filter(f => f.country === 'IND');
 
-  // Continuous 60fps clock for TripsLayer animated light beam
+  // Initialize MapLibre GL 3D Map
   useEffect(() => {
-    let time = 0;
-    const loop = () => {
-      time = (time + 1.2) % 1800;
-      setTripTime(time);
-      animFrameRef.current = requestAnimationFrame(loop);
-    };
-    animFrameRef.current = requestAnimationFrame(loop);
+    if (!mapContainer.current || mapRef.current) return;
 
-    return () => {
-      if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
-    };
-  }, []);
+    const styleUrl = basemapMode === 'DARK'
+      ? 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json'
+      : {
+          version: 8,
+          sources: {
+            'esri-sat': {
+              type: 'raster',
+              tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],
+              tileSize: 256,
+              attribution: 'Esri Satellite'
+            }
+          },
+          layers: [
+            {
+              id: 'esri-sat-layer',
+              type: 'raster',
+              source: 'esri-sat',
+              minzoom: 0,
+              maxzoom: 19
+            }
+          ]
+        };
 
-  // 1. Build 3D Extruded Building Models Data
-  const buildingsData = useMemo(() => {
-    const list: any[] = [];
-    puneClinics.forEach((fac, idx) => {
-      const isP0 = fac.risk_tier === 'P0_CRITICAL';
-      const isP1 = fac.risk_tier === 'P1_WARNING';
-      const baseColor = isP0 ? [239, 68, 68] : isP1 ? [245, 158, 11] : [16, 185, 129];
+    const map = new maplibregl.Map({
+      container: mapContainer.current,
+      style: styleUrl as any,
+      center: [74.08, 18.78],
+      zoom: 9.8,
+      pitch: 65, // 3D Camera Tilt (65 degrees)
+      bearing: -20, // 3D Rotation
+      antialias: true,
+      maxPitch: 85,
+    });
+
+    mapRef.current = map;
+
+    map.on('load', () => {
+      // 1. ADD 3D EXTRUDED HOSPITAL CAMPUS BUILDINGS
+      const buildingFeatures: any[] = [];
       
-      const complexes = generateBuildingComplex(fac.longitude, fac.latitude);
-      complexes.forEach((comp) => {
-        list.push({
-          polygon: comp.polygon,
-          height: comp.height * (isP0 ? 1.8 : 1.2),
-          color: [...baseColor, 230],
-          facility: fac,
-          name: `${idx + 1}. ${fac.name} (${comp.type})`,
+      puneClinics.forEach((fac) => {
+        const isP0 = fac.risk_tier === 'P0_CRITICAL';
+        const isP1 = fac.risk_tier === 'P1_WARNING';
+        const roofColor = isP0 ? '#ef4444' : isP1 ? '#f59e0b' : '#10b981';
+
+        // Main Hospital Wing
+        buildingFeatures.push({
+          type: 'Feature',
+          properties: {
+            name: `${fac.name} (Main Ward)`,
+            height: isP0 ? 1200 : 800,
+            base: 0,
+            color: roofColor,
+          },
+          geometry: {
+            type: 'Polygon',
+            coordinates: [createBuildingFootprint(fac.longitude, fac.latitude, 0, 0, 0.009, 0.007)],
+          },
+        });
+
+        // Emergency Trauma & ICU Block
+        buildingFeatures.push({
+          type: 'Feature',
+          properties: {
+            name: `${fac.name} (Emergency ICU)`,
+            height: isP0 ? 1800 : 1200,
+            base: 0,
+            color: '#f54e00',
+          },
+          geometry: {
+            type: 'Polygon',
+            coordinates: [createBuildingFootprint(fac.longitude, fac.latitude, 0.012, 0.005, 0.006, 0.005)],
+          },
+        });
+
+        // WHO Cold-Chain Vault
+        buildingFeatures.push({
+          type: 'Feature',
+          properties: {
+            name: `${fac.name} (Cold-Chain Vault)`,
+            height: 600,
+            base: 0,
+            color: '#06b6d4',
+          },
+          geometry: {
+            type: 'Polygon',
+            coordinates: [createBuildingFootprint(fac.longitude, fac.latitude, -0.012, -0.004, 0.005, 0.004)],
+          },
         });
       });
-    });
-    return list;
-  }, [puneClinics]);
 
-  // 2. Build 3D Animated TripsLayer Route with Timestamps
-  const tripsData = useMemo(() => {
-    if (puneClinics.length === 0) return [];
-    const waypoints = puneClinics.map(f => [f.longitude, f.latitude]);
-    waypoints.push(waypoints[0]); // Complete circuit
+      map.addSource('3d-campus-buildings', {
+        type: 'geojson',
+        data: {
+          type: 'FeatureCollection',
+          features: buildingFeatures,
+        },
+      });
 
-    const pathWithTimes: [number, number, number][] = [];
-    let cumulativeTime = 0;
+      map.addLayer({
+        id: '3d-buildings-extrusion-layer',
+        type: 'fill-extrusion',
+        source: '3d-campus-buildings',
+        paint: {
+          'fill-extrusion-color': ['get', 'color'],
+          'fill-extrusion-height': ['get', 'height'],
+          'fill-extrusion-base': ['get', 'base'],
+          'fill-extrusion-opacity': 0.88,
+        },
+      });
 
-    for (let i = 0; i < waypoints.length; i++) {
-      pathWithTimes.push([waypoints[i][0], waypoints[i][1], cumulativeTime]);
-      cumulativeTime += 180; // 180 ticks per leg
-    }
+      // 2. ADD 3D GLOWING QUANTUM ROUTE LINE
+      const routeCoords = puneClinics.map(f => [f.longitude, f.latitude]);
+      if (routeCoords.length > 0) routeCoords.push(routeCoords[0]);
 
-    return [
-      {
-        path: pathWithTimes,
-        color: [245, 78, 0], // Neon Cursor Orange
-      },
-      {
-        path: pathWithTimes,
-        color: [6, 182, 212], // Neon Cyan Secondary
+      map.addSource('quantum-route-network', {
+        type: 'geojson',
+        data: {
+          type: 'Feature',
+          properties: {},
+          geometry: {
+            type: 'LineString',
+            coordinates: routeCoords,
+          },
+        },
+      });
+
+      // Neon Cyan 3D Glow Line
+      map.addLayer({
+        id: 'route-neon-glow',
+        type: 'line',
+        source: 'quantum-route-network',
+        layout: { 'line-join': 'round', 'line-cap': 'round' },
+        paint: {
+          'line-color': '#06b6d4',
+          'line-width': 12,
+          'line-opacity': 0.45,
+        },
+      });
+
+      // Cursor Orange Solid Path Ribbon
+      map.addLayer({
+        id: 'route-solid-ribbon',
+        type: 'line',
+        source: 'quantum-route-network',
+        layout: { 'line-join': 'round', 'line-cap': 'round' },
+        paint: {
+          'line-color': '#f54e00',
+          'line-width': 4.5,
+          'line-opacity': 0.95,
+        },
+      });
+
+      // 3. RENDER 3D FLOATING CLINIC HUD BADGES
+      puneClinics.forEach((fac, idx) => {
+        const el = document.createElement('div');
+        el.className = 'custom-3d-pin cursor-pointer transform hover:scale-125 transition-all duration-300';
+
+        const isP0 = fac.risk_tier === 'P0_CRITICAL';
+        const isP1 = fac.risk_tier === 'P1_WARNING';
+        const dotBg = isP0 ? '#ef4444' : isP1 ? '#f59e0b' : '#10b981';
+
+        el.innerHTML = `
+          <div style="display: flex; flex-direction: column; align-items: center; filter: drop-shadow(0 6px 14px rgba(0,0,0,0.85));">
+            <div style="background: rgba(24,24,27,0.94); color: #ffffff; padding: 4px 9px; border-radius: 6px; font-size: 11px; font-family: monospace; font-weight: 700; border: 1px solid rgba(255,255,255,0.25); display: flex; align-items: center; gap: 6px; backdrop-filter: blur(6px);">
+              <span style="width: 8px; height: 8px; border-radius: 50%; background: ${dotBg}; box-shadow: 0 0 8px ${dotBg}; display: inline-block;"></span>
+              <span>${idx + 1}. ${fac.name.replace(' Primary Health Centre', '').replace(' Sub-District Hospital', '').replace(' Health Centre', '').replace(' Rural Hospital', '')}</span>
+            </div>
+            <div style="width: 2px; height: 16px; background: #f54e00; box-shadow: 0 0 6px #f54e00;"></div>
+          </div>
+        `;
+
+        el.addEventListener('click', () => {
+          onFacilitySelect(fac);
+          map.flyTo({ center: [fac.longitude, fac.latitude], zoom: 12, pitch: 70, duration: 1200 });
+        });
+
+        new maplibregl.Marker({ element: el })
+          .setLngLat([fac.longitude, fac.latitude])
+          .addTo(map);
+      });
+
+      // 4. ANIMATED 3D DELIVERY TRUCK
+      if (puneClinics.length > 0) {
+        const truckEl = document.createElement('div');
+        truckEl.innerHTML = `
+          <div style="background: #f54e00; color: white; padding: 7px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 18px #f54e00; display: flex; align-items: center; justify-content: center; transform: scale(1.25);">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9"/><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.62l-3.48-4.35A1 1 0 0 0 17.52 8H14v10Z"/><circle cx="17" cy="18" r="2"/><circle cx="7" cy="18" r="2"/></svg>
+          </div>
+        `;
+        const truckMarker = new maplibregl.Marker({ element: truckEl })
+          .setLngLat([puneClinics[0].longitude, puneClinics[0].latitude])
+          .addTo(map);
+        truckMarkerRef.current = truckMarker;
       }
-    ];
-  }, [puneClinics]);
-
-  // 3. Build 3D Parabolic Transfer Arcs
-  const arcsData = useMemo(() => {
-    const donor = puneClinics.find(f => f.facility_id === 'PHC-PUN-008') || puneClinics[0];
-    const recipients = puneClinics.filter(f => f.risk_tier === 'P0_CRITICAL');
-
-    return recipients.map(rec => ({
-      from: [donor?.longitude || 73.9015, donor?.latitude || 18.8471],
-      to: [rec.longitude, rec.latitude],
-      fromName: donor?.name || 'Khed Donor Hub',
-      toName: rec.name,
-      units: 500,
-    }));
-  }, [puneClinics]);
-
-  // 4. Build 3D Hexagonal Metric Columns
-  const columnData = useMemo(() => {
-    return puneClinics.map((fac, idx) => {
-      const isP0 = fac.risk_tier === 'P0_CRITICAL';
-      const isP1 = fac.risk_tier === 'P1_WARNING';
-      const height = isP0 ? 4500 : isP1 ? 2500 : 6000;
-      const color: [number, number, number, number] = isP0 
-        ? [239, 68, 68, 240] 
-        : isP1 
-        ? [245, 158, 11, 240] 
-        : [16, 185, 129, 240];
-
-      return {
-        position: [fac.longitude, fac.latitude],
-        elevation: height,
-        color,
-        facility: fac,
-        name: `${idx + 1}. ${fac.name}`,
-      };
     });
-  }, [puneClinics]);
 
-  // 5. Official visgl/deck.gl Tile3DLayer with CesiumIonLoader
-  const tile3DLayer = useMemo(() => {
-    return new Tile3DLayer({
-      id: 'tile-3d-photogrammetry',
-      pointSize: 2,
-      data: TILESET_URL,
-      loaders: [CesiumIonLoader],
-      loadOptions: { 'cesium-ion': { accessToken: ION_TOKEN } },
-      pickable: true,
-      opacity: 0.85,
-    });
-  }, []);
+    return () => {
+      if (orbitRef.current) clearInterval(orbitRef.current);
+      if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
+      map.remove();
+      mapRef.current = null;
+    };
+  }, [facilities, basemapMode]);
 
-  // Deck.gl 3D Layers
-  const layers = [
-    // Layer 1: Official Cesium Ion Photogrammetry 3D Tiles Layer
-    tile3DLayer,
+  // Smooth 60fps Vehicle Animation along the 9-clinic route
+  const startVehicleAnimation = () => {
+    if (!truckMarkerRef.current || puneClinics.length === 0) return;
+    const waypoints = puneClinics.map(f => [f.longitude, f.latitude]);
+    waypoints.push(waypoints[0]);
 
-    // Layer 2: Static Route Ribbon (Underglow)
-    new PathLayer({
-      id: 'route-underglow',
-      data: [{ path: puneClinics.map(f => [f.longitude, f.latitude]).concat([[puneClinics[0]?.longitude || 74.08, puneClinics[0]?.latitude || 18.78]]) }],
-      getPath: (d: any) => d.path,
-      getColor: [6, 182, 212, 100],
-      getWidth: 1200,
-      widthUnits: 'meters',
-      capRounded: true,
-      jointRounded: true,
-    }),
+    let segment = 0;
+    let progress = 0;
+    const speed = 0.015;
 
-    // Layer 3: 3D Animated TripsLayer (Tron Pulsing Light Trail)
-    new TripsLayer({
-      id: 'animated-quantum-trips',
-      data: tripsData,
-      getPath: (d: any) => d.path.map((p: any) => [p[0], p[1]]),
-      getTimestamps: (d: any) => d.path.map((p: any) => p[2]),
-      getColor: (d: any) => d.color,
-      opacity: 0.95,
-      widthMinPixels: 5,
-      rounded: true,
-      trailLength: 220,
-      currentTime: tripTime,
-    }),
+    const step = () => {
+      progress += speed;
+      if (progress >= 1) {
+        progress = 0;
+        segment = (segment + 1) % (waypoints.length - 1);
+      }
 
-    // Layer 4: 3D Extruded Building Models with Real-Time Lighting
-    new PolygonLayer({
-      id: '3d-clinic-buildings',
-      data: buildingsData,
-      extruded: true,
-      wireframe: true,
-      filled: true,
-      getPolygon: (d: any) => d.polygon,
-      getElevation: (d: any) => d.height,
-      getFillColor: (d: any) => d.color,
-      getLineColor: [255, 255, 255, 180],
-      getLineWidth: 2,
-      lineWidthUnits: 'pixels',
-      material,
-      pickable: true,
-      onClick: (info: any) => {
-        if (info.object?.facility) {
-          onFacilitySelect(info.object.facility);
-          setViewState(prev => ({
-            ...prev,
-            longitude: info.object.facility.longitude,
-            latitude: info.object.facility.latitude,
-            zoom: 12,
-            pitch: 70,
-          }));
-        }
-      },
-    }),
+      const p1 = waypoints[segment];
+      const p2 = waypoints[segment + 1];
+      if (p1 && p2) {
+        const lng = p1[0] + (p2[0] - p1[0]) * progress;
+        const lat = p1[1] + (p2[1] - p1[1]) * progress;
+        truckMarkerRef.current?.setLngLat([lng, lat]);
+      }
+      animFrameRef.current = requestAnimationFrame(step);
+    };
 
-    // Layer 5: 3D High Parabolic Leaping Arcs in Space
-    new ArcLayer({
-      id: '3d-quantum-arcs',
-      data: arcsData,
-      getSourcePosition: (d: any) => d.from,
-      getTargetPosition: (d: any) => d.to,
-      getSourceColor: [16, 185, 129, 255],
-      getTargetColor: [239, 68, 68, 255],
-      getWidth: 4,
-      getHeight: 0.7, // High 3D arch
-      pickable: true,
-    }),
-
-    // Layer 6: 3D Spatial Status Columns
-    new ColumnLayer({
-      id: '3d-spatial-columns',
-      data: columnData,
-      diskResolution: 8,
-      radius: 800,
-      extruded: true,
-      pickable: true,
-      elevationScale: 1,
-      getPosition: (d: any) => d.position,
-      getFillColor: (d: any) => d.color,
-      getElevation: (d: any) => d.elevation,
-      material,
-    }),
-
-    // Layer 7: Ground Pulsing Radar Rings at Critical Clinics
-    new ScatterplotLayer({
-      id: 'pulsing-radar-rings',
-      data: puneClinics.filter(f => f.risk_tier === 'P0_CRITICAL'),
-      getPosition: (d: any) => [d.longitude, d.latitude],
-      getRadius: 2400 + Math.sin(tripTime * 0.05) * 800,
-      getFillColor: [239, 68, 68, 60],
-      getLineColor: [239, 68, 68, 220],
-      stroked: true,
-      filled: true,
-      lineWidthMinPixels: 2,
-      radiusUnits: 'meters',
-    }),
-  ];
+    if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
+    animFrameRef.current = requestAnimationFrame(step);
+  };
 
   // 3D Camera Controls
   const handleSnap3D = () => {
-    setViewState(prev => ({ ...prev, pitch: 68, bearing: -20, zoom: 9.8 }));
+    mapRef.current?.flyTo({ pitch: 68, bearing: -20, zoom: 9.8, duration: 1200 });
   };
 
   const handleSnap2D = () => {
-    setViewState(prev => ({ ...prev, pitch: 0, bearing: 0 }));
+    mapRef.current?.flyTo({ pitch: 0, bearing: 0, duration: 1000 });
   };
 
   const handleToggleOrbit = () => {
@@ -346,12 +301,11 @@ export const MapTab: React.FC<MapTabProps> = ({
       setIsOrbiting(false);
     } else {
       setIsOrbiting(true);
+      let angle = mapRef.current?.getBearing() || 0;
       orbitRef.current = setInterval(() => {
-        setViewState(prev => ({
-          ...prev,
-          bearing: (prev.bearing + 0.8) % 360,
-        }));
-      }, 30);
+        angle = (angle + 0.8) % 360;
+        mapRef.current?.setBearing(angle);
+      }, 40);
     }
   };
 
@@ -359,55 +313,54 @@ export const MapTab: React.FC<MapTabProps> = ({
   const handleTriggerSelfPlan = () => {
     setIsSelfPlanning(true);
     setPlanningStep('Step 1/4: ForecasterAgent evaluating 9-clinic demand surges...');
+    startVehicleAnimation();
     
-    if (puneClinics.length > 1) {
-      setViewState(prev => ({
-        ...prev,
-        longitude: puneClinics[1].longitude,
-        latitude: puneClinics[1].latitude,
+    if (mapRef.current && puneClinics.length > 1) {
+      mapRef.current.flyTo({
+        center: [puneClinics[1].longitude, puneClinics[1].latitude],
         zoom: 11.5,
         pitch: 72,
-      }));
+        duration: 1200,
+      });
     }
 
     setTimeout(() => {
       setPlanningStep('Step 2/4: AllocatorAgent formulating 81-qubit Hamiltonian on IBM Quantum QAOA...');
-      if (puneClinics.length > 4) {
-        setViewState(prev => ({
-          ...prev,
-          longitude: puneClinics[4].longitude,
-          latitude: puneClinics[4].latitude,
+      if (mapRef.current && puneClinics.length > 4) {
+        mapRef.current.flyTo({
+          center: [puneClinics[4].longitude, puneClinics[4].latitude],
           zoom: 11.8,
           pitch: 74,
           bearing: 45,
-        }));
+          duration: 1200,
+        });
       }
     }, 1300);
 
     setTimeout(() => {
       setPlanningStep('Step 3/4: SupervisorAgent auditing 1.5x buffer at Khed & Wagholi donor hubs...');
-      if (puneClinics.length > 7) {
-        setViewState(prev => ({
-          ...prev,
-          longitude: puneClinics[7].longitude,
-          latitude: puneClinics[7].latitude,
+      if (mapRef.current && puneClinics.length > 7) {
+        mapRef.current.flyTo({
+          center: [puneClinics[7].longitude, puneClinics[7].latitude],
           zoom: 11.5,
           pitch: 68,
           bearing: -90,
-        }));
+          duration: 1200,
+        });
       }
     }, 2600);
 
     setTimeout(() => {
       setPlanningStep('Step 4/4: ExplainerAgent locked 159.15 km tour! 1-Click GPS navigation ready.');
-      setViewState(prev => ({
-        ...prev,
-        longitude: 74.08,
-        latitude: 18.78,
-        zoom: 9.8,
-        pitch: 62,
-        bearing: -20,
-      }));
+      if (mapRef.current) {
+        mapRef.current.flyTo({
+          center: [74.08, 18.78],
+          zoom: 9.8,
+          pitch: 62,
+          bearing: -20,
+          duration: 1500,
+        });
+      }
       setIsSelfPlanning(false);
       setTimeout(() => setPlanningStep(null), 4000);
     }, 3900);
@@ -416,53 +369,9 @@ export const MapTab: React.FC<MapTabProps> = ({
   return (
     <div className="relative h-[calc(100vh-140px)] w-full flex flex-col md:flex-row overflow-hidden border-b border-hairline bg-canvas">
       
-      {/* 🗺️ Deck.gl WebGL 3D Canvas with Carto Dark Matter Vector Basemap */}
+      {/* 🗺️ Main 3D Map Viewport */}
       <div className="flex-1 relative h-full bg-[#0c0a09]">
-        <DeckGL
-          viewState={viewState as any}
-          onViewStateChange={(e: any) => setViewState(e.viewState)}
-          controller={true}
-          layers={layers as any}
-          effects={[lightingEffect]}
-          getTooltip={({ object }: any) => {
-            if (!object) return null;
-            if (object.facility) {
-              const fac = object.facility as HealthFacility;
-              return {
-                html: `
-                  <div style="background: rgba(28,27,23,0.95); backdrop-filter: blur(8px); padding: 10px 14px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); color: #fff; font-family: monospace; font-size: 11px; box-shadow: 0 8px 24px rgba(0,0,0,0.6);">
-                    <div style="font-weight: 700; font-size: 13px; color: #f54e00; margin-bottom: 4px;">${fac.name}</div>
-                    <div style="color: #a1a1aa; margin-bottom: 6px;">ID: ${fac.facility_id} | ${fac.district}</div>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 6px;">
-                      <div>💊 Paracetamol: <b style="color:#fff;">${fac.current_stock_pcm500} tabs</b></div>
-                      <div>⏳ Days Left: <b style="color:${fac.days_to_stockout <= 2 ? '#ef4444' : '#10b981'};">${fac.days_to_stockout}d</b></div>
-                      <div>🛏️ Bed Occupancy: <b style="color:#fff;">${fac.occupied_beds}/${fac.total_beds}</b></div>
-                      <div>🛡️ Risk Tier: <b style="color:${fac.risk_tier === 'P0_CRITICAL' ? '#ef4444' : '#10b981'};">${fac.risk_tier}</b></div>
-                    </div>
-                  </div>
-                `,
-              };
-            }
-            if (object.fromName) {
-              return {
-                html: `
-                  <div style="background: rgba(28,27,23,0.95); padding: 8px 12px; border-radius: 6px; border: 1px solid #10b981; color: #fff; font-family: monospace; font-size: 11px;">
-                    <span style="color:#10b981; font-weight: bold;">⚡ 3D Redistribution Arc</span><br/>
-                    <b>${object.fromName}</b> ➔ <b>${object.toName}</b><br/>
-                    Transfer: <b>${object.units} units Paracetamol</b>
-                  </div>
-                `,
-              };
-            }
-            return null;
-          }}
-        >
-          <Map
-            reuseMaps
-            mapLib={maplibregl as any}
-            mapStyle="https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json"
-          />
-        </DeckGL>
+        <div ref={mapContainer} className="w-full h-full" />
 
         {/* 🎮 3D Camera Controls Toolbar (Top Right) */}
         <div className="absolute top-4 right-4 z-10 flex items-center bg-surface-card/95 backdrop-blur-md border border-hairline rounded-lg p-1.5 shadow-md text-xs font-mono gap-1">
@@ -484,10 +393,18 @@ export const MapTab: React.FC<MapTabProps> = ({
 
           <button
             onClick={handleSnap2D}
-            className="px-2.5 py-1.5 rounded-md text-ink hover:bg-canvas-soft transition-colors flex items-center gap-1 border-l border-hairline ml-1"
+            className="px-2.5 py-1.5 rounded-md text-ink hover:bg-canvas-soft transition-colors flex items-center gap-1"
           >
             <Layers className="w-3.5 h-3.5 text-muted" />
             <span>2D Flat</span>
+          </button>
+
+          <button
+            onClick={() => setBasemapMode(prev => prev === 'DARK' ? 'SATELLITE' : 'DARK')}
+            className="px-2.5 py-1.5 rounded-md text-ink hover:bg-canvas-soft transition-colors flex items-center gap-1 border-l border-hairline ml-1"
+          >
+            <Satellite className="w-3.5 h-3.5 text-primary" />
+            <span>{basemapMode === 'DARK' ? 'Satellite' : 'Dark Matter'}</span>
           </button>
         </div>
 
@@ -497,11 +414,11 @@ export const MapTab: React.FC<MapTabProps> = ({
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-semantic-success animate-ping"></span>
               <span className="text-[11px] font-mono uppercase tracking-wider text-muted font-semibold">
-                visgl/deck.gl 3D-Tiles Engine
+                3D Spatial Fleet Twin
               </span>
             </div>
             <span className="text-[10px] font-mono bg-surface-strong px-2 py-0.5 rounded-pill text-ink font-bold">
-              Tile3DLayer & Trips Active
+              3D Buildings & Routes Active
             </span>
           </div>
 
