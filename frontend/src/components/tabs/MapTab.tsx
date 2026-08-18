@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import maplibregl from 'maplibre-gl';
-import { Navigation, Send, AlertTriangle, CheckCircle2, Phone, Bed, Users, Pill, ShieldAlert, Sparkles, MapPin, Zap, RefreshCw, Layers } from 'lucide-react';
+import { Navigation, Send, AlertTriangle, CheckCircle2, Bed, Users, Pill, ShieldAlert, Sparkles, MapPin, Zap, RefreshCw, Layers, Compass, Eye, Truck } from 'lucide-react';
 import { HealthFacility, RoutingResult } from '../../types';
 
 interface MapTabProps {
@@ -20,13 +20,15 @@ export const MapTab: React.FC<MapTabProps> = ({
 }) => {
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
+  const truckMarkerRef = useRef<maplibregl.Marker | null>(null);
   const [showBlockerModal, setShowBlockerModal] = useState(false);
   const [roadNote, setRoadNote] = useState('Ghod River Bridge Submerged (Rainfall >45mm)');
   const [isSelfPlanning, setIsSelfPlanning] = useState(false);
   const [planningStep, setPlanningStep] = useState<string | null>(null);
-  const [pitch3D, setPitch3D] = useState(60);
+  const [cameraMode, setCameraMode] = useState<'3D' | '2D' | 'ORBIT'>('3D');
+  const [activeClinicIndex, setActiveClinicIndex] = useState<number>(0);
 
-  // 9 Pune Clinics Route Sequence
+  // 9 Pune District Clinics + 1 Central Depot Hub (10 Nodes)
   const puneClinics = facilities.filter(f => f.country === 'IND');
 
   useEffect(() => {
@@ -37,32 +39,33 @@ export const MapTab: React.FC<MapTabProps> = ({
 
     const map = new maplibregl.Map({
       container: mapContainer.current,
-      style: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json', // 3D High-Tech Dark Style
-      center: [defaultLng, defaultLat],
-      zoom: 9.6,
-      pitch: pitch3D, // 3D Tilt perspective (60 degrees)
-      bearing: -15,   // 3D Orbital rotation
+      style: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json', // High-Tech 3D Dark Matter Basemap
+      center: [74.08, 18.78],
+      zoom: 9.8,
+      pitch: 62, // 3D Camera Tilt (62 degrees)
+      bearing: -18, // 3D Perspective Rotation
+      antialias: true,
     });
 
     mapRef.current = map;
 
     map.on('load', () => {
-      // 1. Add 3D Building Extrusions Layer
+      // 1. Add 3D Extruded Building Layer
       map.addLayer({
         id: '3d-buildings',
         source: 'carto',
         'source-layer': 'building',
         type: 'fill-extrusion',
-        minzoom: 13,
+        minzoom: 12,
         paint: {
-          'fill-extrusion-color': '#2a2820',
+          'fill-extrusion-color': '#1f2937',
           'fill-extrusion-height': ['get', 'height'],
           'fill-extrusion-base': ['get', 'min_height'],
-          'fill-extrusion-opacity': 0.8,
+          'fill-extrusion-opacity': 0.75,
         },
       });
 
-      // 2. Add 9-Clinic Quantum Route LineString
+      // 2. Add 9-Clinic Quantum Route
       const coordinates = puneClinics.map(f => [f.longitude, f.latitude]);
       if (coordinates.length > 0) coordinates.push(coordinates[0]);
 
@@ -78,7 +81,7 @@ export const MapTab: React.FC<MapTabProps> = ({
         },
       });
 
-      // Glowing Neon Cyan 3D Route
+      // 3D Neon Cyan Glow Line
       map.addLayer({
         id: 'quantum-route-glow',
         type: 'line',
@@ -86,46 +89,67 @@ export const MapTab: React.FC<MapTabProps> = ({
         layout: { 'line-join': 'round', 'line-cap': 'round' },
         paint: {
           'line-color': '#06b6d4',
-          'line-width': 8,
+          'line-width': 10,
           'line-opacity': 0.35,
         },
       });
 
+      // 3D Cursor Orange Solid Vector Line
       map.addLayer({
         id: 'quantum-route-line',
         type: 'line',
         source: 'quantum-route',
         layout: { 'line-join': 'round', 'line-cap': 'round' },
         paint: {
-          'line-color': '#f54e00', // Signature Cursor Orange
+          'line-color': '#f54e00',
           'line-width': 3.5,
+          'line-opacity': 0.95,
         },
       });
 
-      // 3. Render 3D SVG Clinic Pins with Stop Sequence
+      // 3. Render 3D Holographic Pins with Numbered Stops
       puneClinics.forEach((fac, idx) => {
         const el = document.createElement('div');
-        el.className = 'custom-map-pin cursor-pointer transform hover:scale-125 transition-transform';
-        
-        let colorClass = 'bg-semantic-success';
-        if (fac.risk_tier === 'P0_CRITICAL') colorClass = 'bg-semantic-error animate-pulse';
-        else if (fac.risk_tier === 'P1_WARNING') colorClass = 'bg-amber-500';
+        el.className = 'custom-3d-pin cursor-pointer transform hover:scale-125 transition-all duration-300';
+
+        const isP0 = fac.risk_tier === 'P0_CRITICAL';
+        const isP1 = fac.risk_tier === 'P1_WARNING';
+        const badgeColor = isP0 ? 'bg-red-500 text-white animate-pulse' : isP1 ? 'bg-amber-500 text-white' : 'bg-emerald-500 text-white';
 
         el.innerHTML = `
-          <div class="flex items-center gap-1.5 px-2.5 py-1 bg-surface-card/90 backdrop-blur-xs border border-hairline-strong rounded-md shadow-md text-[11px] font-mono font-bold text-ink">
-            <span class="w-2.5 h-2.5 rounded-full ${colorClass}"></span>
-            <span>${idx + 1}. ${fac.name.split(' ')[0]}</span>
+          <div style="display: flex; flex-direction: column; align-items: center; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5));">
+            <div style="background: #ffffff; color: #111827; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-family: monospace; font-weight: 700; border: 1px solid #e5e7eb; display: flex; align-items: center; gap: 4px;">
+              <span class="${badgeColor}" style="width: 8px; height: 8px; border-radius: 9999px; display: inline-block;"></span>
+              <span>${idx + 1}. ${fac.name.replace(' Primary Health Centre', '').replace(' Sub-District Hospital', '').replace(' Health Centre', '').replace(' Rural Hospital', '')}</span>
+            </div>
+            <div style="width: 2px; height: 14px; background: #f54e00;"></div>
+            <div style="width: 6px; height: 6px; border-radius: 50%; background: #f54e00;"></div>
           </div>
         `;
 
         el.addEventListener('click', () => {
           onFacilitySelect(fac);
+          map.flyTo({ center: [fac.longitude, fac.latitude], zoom: 11.5, pitch: 65, duration: 1200 });
         });
 
         new maplibregl.Marker({ element: el })
           .setLngLat([fac.longitude, fac.latitude])
           .addTo(map);
       });
+
+      // 4. Add Animated 3D Delivery Vehicle Marker
+      if (puneClinics.length > 0) {
+        const truckEl = document.createElement('div');
+        truckEl.innerHTML = `
+          <div style="background: #f54e00; color: white; padding: 6px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 12px #f54e00; display: flex; align-items: center; justify-content: center;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9"/><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.62l-3.48-4.35A1 1 0 0 0 17.52 8H14v10Z"/><circle cx="17" cy="18" r="2"/><circle cx="7" cy="18" r="2"/></svg>
+          </div>
+        `;
+        const truckMarker = new maplibregl.Marker({ element: truckEl })
+          .setLngLat([puneClinics[0].longitude, puneClinics[0].latitude])
+          .addTo(map);
+        truckMarkerRef.current = truckMarker;
+      }
     });
 
     return () => {
@@ -134,38 +158,95 @@ export const MapTab: React.FC<MapTabProps> = ({
     };
   }, [facilities]);
 
-  // AI Agent Self-Planning Simulation across 9 clinics
+  // Camera Mode Switchers
+  const setCamera3D = () => {
+    setCameraMode('3D');
+    mapRef.current?.flyTo({ pitch: 62, bearing: -18, zoom: 9.8, duration: 1000 });
+  };
+
+  const setCamera2D = () => {
+    setCameraMode('2D');
+    mapRef.current?.flyTo({ pitch: 0, bearing: 0, duration: 1000 });
+  };
+
+  const setCameraOrbit = () => {
+    setCameraMode('ORBIT');
+    if (!mapRef.current) return;
+    const currentBearing = mapRef.current.getBearing();
+    mapRef.current.easeTo({ bearing: currentBearing + 90, pitch: 68, duration: 2500 });
+  };
+
+  // Autonomous 9-Clinic Self-Planning Simulation with Truck Transit
   const handleTriggerSelfPlan = () => {
     setIsSelfPlanning(true);
-    setPlanningStep('1/4: ForecasterAgent evaluating 9-clinic demand spikes...');
+    setPlanningStep('Step 1/4: ForecasterAgent scanning 9-clinic demand surges...');
     
+    // Fly to first clinic
+    if (mapRef.current && puneClinics.length > 0) {
+      mapRef.current.flyTo({ center: [puneClinics[1].longitude, puneClinics[1].latitude], zoom: 11, pitch: 65, duration: 1000 });
+      truckMarkerRef.current?.setLngLat([puneClinics[1].longitude, puneClinics[1].latitude]);
+    }
+
     setTimeout(() => {
-      setPlanningStep('2/4: AllocatorAgent formulating 81-qubit Hamiltonian on IBM Quantum...');
-      if (mapRef.current) {
-        mapRef.current.flyTo({ center: [74.0624, 18.75], zoom: 10.2, pitch: 65, duration: 1500 });
+      setPlanningStep('Step 2/4: AllocatorAgent formulating 81-qubit Hamiltonian on IBM Quantum...');
+      if (mapRef.current && puneClinics.length > 3) {
+        mapRef.current.flyTo({ center: [puneClinics[3].longitude, puneClinics[3].latitude], zoom: 11.2, pitch: 65, duration: 1200 });
+        truckMarkerRef.current?.setLngLat([puneClinics[3].longitude, puneClinics[3].latitude]);
       }
-    }, 1000);
+    }, 1200);
 
     setTimeout(() => {
-      setPlanningStep('3/4: SupervisorAgent verifying 1.5x donor safety buffer at Khed & Wagholi...');
-    }, 2200);
+      setPlanningStep('Step 3/4: SupervisorAgent auditing 1.5x buffer at Khed & Wagholi donor hubs...');
+      if (mapRef.current && puneClinics.length > 7) {
+        mapRef.current.flyTo({ center: [puneClinics[7].longitude, puneClinics[7].latitude], zoom: 11, pitch: 65, duration: 1200 });
+        truckMarkerRef.current?.setLngLat([puneClinics[7].longitude, puneClinics[7].latitude]);
+      }
+    }, 2400);
 
     setTimeout(() => {
-      setPlanningStep('4/4: ExplainerAgent synthesizing Google Maps turn-by-turn route!');
+      setPlanningStep('Step 4/4: ExplainerAgent locked 159.15 km tour! 1-Click GPS navigation ready.');
+      if (mapRef.current) {
+        mapRef.current.flyTo({ center: [74.08, 18.78], zoom: 9.8, pitch: 62, bearing: -18, duration: 1500 });
+      }
       setIsSelfPlanning(false);
-      setTimeout(() => setPlanningStep(null), 3000);
-    }, 3200);
+      setTimeout(() => setPlanningStep(null), 4000);
+    }, 3600);
   };
 
   return (
     <div className="relative h-[calc(100vh-140px)] w-full flex flex-col md:flex-row overflow-hidden border-b border-hairline bg-canvas">
       
-      {/* 🗺️ Main 3D Map Viewport */}
+      {/* 🗺️ Main 3D Deck/MapLibre Viewport */}
       <div className="flex-1 relative h-full">
         <div ref={mapContainer} className="w-full h-full" />
 
-        {/* 3D Top-Left Floating AI Telemetry & 9-Clinic Route HUD */}
-        <div className="absolute top-4 left-4 z-10 bg-surface-card/95 backdrop-blur-sm border border-hairline rounded-lg p-4 shadow-sm max-w-md">
+        {/* 🎮 3D Camera Controls Toolbar (Top Right) */}
+        <div className="absolute top-4 right-4 z-10 flex items-center bg-surface-card/95 backdrop-blur-md border border-hairline rounded-lg p-1 shadow-md text-xs font-mono">
+          <button
+            onClick={setCamera3D}
+            className={`px-3 py-1.5 rounded-md flex items-center gap-1.5 transition-colors ${cameraMode === '3D' ? 'bg-primary text-white font-bold' : 'text-ink hover:bg-canvas-soft'}`}
+          >
+            <Compass className="w-3.5 h-3.5" />
+            <span>3D Aerial (62°)</span>
+          </button>
+          <button
+            onClick={setCamera2D}
+            className={`px-3 py-1.5 rounded-md flex items-center gap-1.5 transition-colors ${cameraMode === '2D' ? 'bg-primary text-white font-bold' : 'text-ink hover:bg-canvas-soft'}`}
+          >
+            <Layers className="w-3.5 h-3.5" />
+            <span>Top-Down (2D)</span>
+          </button>
+          <button
+            onClick={setCameraOrbit}
+            className="px-3 py-1.5 rounded-md flex items-center gap-1.5 text-ink hover:bg-canvas-soft transition-colors"
+          >
+            <RefreshCw className="w-3.5 h-3.5 text-muted" />
+            <span>360° Orbit</span>
+          </button>
+        </div>
+
+        {/* 🛰️ 3D Floating HUD: 9 Clinics AI Telemetry (Top Left) */}
+        <div className="absolute top-4 left-4 z-10 bg-surface-card/95 backdrop-blur-md border border-hairline rounded-lg p-4 shadow-md max-w-md">
           <div className="flex items-center justify-between gap-2 mb-2">
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-semantic-success animate-ping"></span>
@@ -174,7 +255,7 @@ export const MapTab: React.FC<MapTabProps> = ({
               </span>
             </div>
             <span className="text-[10px] font-mono bg-surface-strong px-2 py-0.5 rounded-pill text-ink font-bold">
-              9 Clinics + 1 Depot
+              9 Clinics + 1 Central Depot
             </span>
           </div>
 
@@ -188,34 +269,34 @@ export const MapTab: React.FC<MapTabProps> = ({
               <span className="text-xs text-muted block">Transit Time</span>
             </div>
             <div className="border-l border-hairline pl-4">
-              <span className="text-xs font-mono font-bold text-semantic-success bg-green-50 px-2 py-1 rounded-sm block">
+              <span className="text-xs font-mono font-bold text-semantic-success bg-green-50 border border-green-200 px-2 py-1 rounded-sm block">
                 COLD-CHAIN PASS
               </span>
             </div>
           </div>
 
-          {/* AI Self-Plan Trigger Button */}
+          {/* AI Self-Plan Trigger Button (Cursor Orange) */}
           <button
             onClick={handleTriggerSelfPlan}
             disabled={isSelfPlanning}
-            className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary-active text-white text-xs font-medium py-2 rounded-md transition-colors shadow-xs"
+            className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary-active text-white text-xs font-medium py-2.5 rounded-md transition-colors shadow-xs"
           >
             <Sparkles className={`w-3.5 h-3.5 ${isSelfPlanning ? 'animate-spin' : ''}`} />
-            <span>{isSelfPlanning ? 'AI Agents Self-Planning...' : '🤖 AI Agent Self-Plan 9-Clinic Route'}</span>
+            <span>{isSelfPlanning ? 'AI Agents Self-Planning in 3D...' : '🤖 AI Agent Self-Plan 9-Clinic Route'}</span>
           </button>
 
-          {/* Live Step Progress Banner */}
+          {/* Multi-Step Telemetry Banner */}
           {planningStep && (
-            <div className="mt-2.5 p-2 bg-canvas-soft border border-hairline rounded-md text-[11px] font-mono text-ink animate-pulse">
+            <div className="mt-2.5 p-2.5 bg-canvas-soft border border-hairline rounded-md text-[11.5px] font-mono text-ink animate-pulse">
               <code>&gt; {planningStep}</code>
             </div>
           )}
         </div>
 
-        {/* Floating Bottom Action Bar: Google Maps GPS & Road Blocker */}
-        <div className="absolute bottom-6 left-4 right-4 md:left-auto md:right-6 z-10 flex flex-wrap items-center gap-2 bg-surface-card/95 backdrop-blur-sm border border-hairline rounded-lg p-2.5 shadow-sm">
+        {/* 🚗 Floating Bottom Action Bar: Google Maps GPS & WhatsApp */}
+        <div className="absolute bottom-6 left-4 right-4 md:left-auto md:right-6 z-10 flex flex-wrap items-center gap-2 bg-surface-card/95 backdrop-blur-md border border-hairline rounded-lg p-2.5 shadow-md">
           
-          {/* 📍 Direct Google Maps Turn-by-Turn GPS Link */}
+          {/* Direct Google Maps Turn-by-Turn GPS Link */}
           <a
             href={routingResult.google_maps_url}
             target="_blank"
@@ -226,7 +307,7 @@ export const MapTab: React.FC<MapTabProps> = ({
             <span>Open Google Maps GPS (9 Stops)</span>
           </a>
 
-          {/* 💬 1-Click WhatsApp Dispatch to Driver */}
+          {/* WhatsApp 1-Click Driver Dispatch */}
           <a
             href={routingResult.whatsapp_nav_share_url}
             target="_blank"
@@ -237,7 +318,7 @@ export const MapTab: React.FC<MapTabProps> = ({
             <span>WhatsApp Route</span>
           </a>
 
-          {/* 🚧 Frontline Human-in-the-Loop Road Blocker Button */}
+          {/* Frontline Road Blocker Modal Button */}
           <button
             onClick={() => setShowBlockerModal(true)}
             className="flex items-center gap-1.5 bg-surface-card hover:bg-canvas-soft border border-hairline text-body hover:text-ink text-xs font-medium px-3 py-2 rounded-md transition-colors"
