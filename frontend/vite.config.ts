@@ -3,7 +3,7 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig({
   plugins: [react()],
-  base: './', // Ensures relative assets load seamlessly on GitHub Pages
+  base: '/KYZER/', // Exact repository base path for GitHub Pages
   server: {
     port: 3000,
   }
