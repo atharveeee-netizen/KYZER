@@ -70,28 +70,42 @@ class ClinicRegisterImagePreprocessor:
                     M, 
                     (w, h), 
                     flags=cv2.INTER_LANCZOS4, 
-                    borderMode=cv2.BORDER_CONSTANT, 
-                    borderValue=(255, 255, 255)
+                    borderMode=cv2.BORDER_REPLICATE
                 )
             else:
                 straightened = img
 
-            # 3. Professional Smooth Illumination Normalization (No harsh 1-bit pixelation)
-            # Estimates ambient lighting background using large Gaussian kernel
             sgray = cv2.cvtColor(straightened, cv2.COLOR_BGR2GRAY)
-            bg = cv2.GaussianBlur(sgray, (61, 61), 0)
-            
-            # Divide foreground by background to remove 100% of shadows and paper grayness
-            normalized = cv2.divide(sgray, bg, scale=245.0)
 
-            # 4. Antialiased Unsharp Masking (Crisp, dark, smooth pen strokes without ringing halos)
+            # 3. Document Bounding Box Auto-Crop (Removes rotated border ghost artifacts)
+            edges_s = cv2.Canny(sgray, 30, 120)
+            contours, _ = cv2.findContours(edges_s, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            contours = sorted(contours, key=cv2.contourArea, reverse=True)
+
+            x, y, bw, bh = 0, 0, w, h
+            for c in contours:
+                bx, by, cbw, cbh = cv2.boundingRect(c)
+                if cbw > w * 0.5 and cbh > h * 0.5:
+                    x, y, bw, bh = bx, by, cbw, cbh
+                    break
+
+            pad = 12
+            x1, y1 = max(0, x - pad), max(0, y - pad)
+            x2, y2 = min(w, x + bw + pad), min(h, y + bh + pad)
+            cropped = sgray[y1:y2, x1:x2] if (x2 - x1 > 100 and y2 - y1 > 100) else sgray
+
+            # 4. Professional Smooth Illumination Normalization (No harsh 1-bit pixelation)
+            bg = cv2.GaussianBlur(cropped, (61, 61), 0)
+            normalized = cv2.divide(cropped, bg, scale=245.0)
+
+            # 5. Antialiased Unsharp Masking (Crisp, dark, smooth pen strokes without ringing halos)
             blurred = cv2.GaussianBlur(normalized, (0, 0), 1.5)
             crisp = cv2.addWeighted(normalized, 1.4, blurred, -0.4, 0)
             crisp_uint8 = np.clip(crisp, 0, 255).astype(np.uint8)
 
             final_bgr = cv2.cvtColor(crisp_uint8, cv2.COLOR_GRAY2BGR)
 
-            # 5. Encode back to JPEG bytes
+            # 6. Encode back to JPEG bytes
             success, encoded_jpg = cv2.imencode(".jpg", final_bgr, [int(cv2.IMWRITE_JPEG_QUALITY), 95])
             if success:
                 logger.info(f"Successfully preprocessed register: smooth normalized ({tilt_angle:.2f} deg).")
