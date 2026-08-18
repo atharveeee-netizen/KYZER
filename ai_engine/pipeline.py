@@ -4,8 +4,8 @@ Orchestrates:
 1. Google Gemini 1.5 Flash Vision OCR (Paper Register -> FHIR JSON)
 2. LightGBM & SEIR Demand Forecaster (P10/P50/P90 Multi-Horizon)
 3. 3-Pillar Compound Anomaly Detector (Medicines + Beds + Staff)
-4. Quantum-Classical Hybrid Optimizer (QUBO-SA Warm-Start + OR-Tools CVRPTW)
-5. TreeSHAP & Gemini Natural Language Rationale Narrator
+4. Quantum-Classical Hybrid Optimizer (QUBO-SA Partitioning + OR-Tools CVRPTW)
+5. Real TreeSHAP & Gemini Natural Language Rationale Narrator
 """
 
 import json
@@ -26,6 +26,7 @@ from ai_engine.detector.cascade_detector import SystemicCascadeAnalyzer, Compoun
 from ai_engine.allocator.hybrid_quantum import HybridQuantumAllocator, HybridOptimizationBenchmark
 from ai_engine.explainer.shap_explainer import HealthSHAPExplainer, DecisionExplanationReport
 from ai_engine.explainer.gemini_narrator import GeminiDecisionNarrator
+from ai_engine.forecaster.features import DemandFeatureEngineer
 
 logger = logging.getLogger("ai_engine.pipeline")
 
@@ -101,7 +102,7 @@ class CareDOMAIPipeline:
             })
 
         # 3. Multi-Horizon Quantile Demand Forecast
-        current_inv = 1450.0  # Units remaining in clinic
+        current_inv = 1450.0
         forecast_res = self.forecaster.predict_future(
             facility_id=target_facility_id,
             item_code=target_item_code,
@@ -113,7 +114,7 @@ class CareDOMAIPipeline:
         # 4. Anomaly Detection
         anomaly_res = self.anomaly_detector.detect_anomalies(df_facility)
 
-        # 5. Compound 3-Pillar Risk Score (Medicines + Beds + Staff)
+        # 5. Compound 3-Pillar Risk Score
         compound_risk = SystemicCascadeAnalyzer.evaluate_facility(
             facility_id=target_facility_id,
             country_code=country_code,
@@ -128,7 +129,7 @@ class CareDOMAIPipeline:
             nurses_expected=ocr_res.staff.nurses_expected
         )
 
-        # 6. Load multi-facility geography for routing
+        # 6. Multi-facility geography for routing
         json_path = DATA_DIR / "brics_facilities_seed.json"
         if json_path.exists():
             with open(json_path, "r", encoding="utf-8") as f:
@@ -147,14 +148,23 @@ class CareDOMAIPipeline:
             unit_batch_size=100
         )
 
-        # 8. TreeSHAP Explanation
-        feat_names = ["epidemic_growth_rate", "rainfall_lag_3d", "consumption_lag_7d", "rolling_mean_7d"]
-        feat_vals = [0.40, 48.5, 32.0, 28.5]
-        explanation = HealthSHAPExplainer.explain_prediction(
-            feature_names=feat_names,
-            feature_values=feat_vals,
-            base_value=35.0,
-            predicted_value=forecast_res.p50_median_expected[0] if forecast_res.p50_median_expected else 65.0
+        # 8. Genuine TreeSHAP Explanation from actual model
+        X_feats, _, feat_cols = DemandFeatureEngineer.create_features_from_history(df_facility)
+        latest_row = X_feats.iloc[[-1]].copy().fillna(0.0) if len(X_feats) > 0 else pd.DataFrame([{col: 0.0 for col in feat_cols}])
+        
+        model_obj = self.forecaster.models.get(0.50, None)
+        base_val = 35.0
+        pred_val = forecast_res.p50_median_expected[0] if forecast_res.p50_median_expected else 45.0
+        
+        explanation = HealthSHAPExplainer.explain_with_model(
+            model=model_obj,
+            feature_names=feat_cols,
+            feature_vector=latest_row,
+            background_data=X_feats,
+            facility_id=target_facility_id,
+            item_code=target_item_code,
+            base_value=base_val,
+            predicted_value=pred_val
         )
 
         # 9. Google Gemini Natural Language Narrative

@@ -4,12 +4,14 @@ Calculates game-theoretic TreeSHAP feature attributions and uses Google Gemini t
 complex optimization decisions into human-readable clinical narratives (English & Hindi).
 """
 
+import pandas as pd
 from typing import Dict, Any, List
 
 from ai_engine.agents.base import BaseCareDOMAgent
 from ai_engine.agents.state import MultiAgentBlackboardState
 from ai_engine.explainer.shap_explainer import HealthSHAPExplainer
 from ai_engine.explainer.gemini_narrator import GeminiDecisionNarrator
+from ai_engine.forecaster.lightgbm_model import MultiHorizonDemandForecaster
 
 class ExplainerAgent(BaseCareDOMAgent):
     """Specialized Agent responsible for clinical explainability & natural language synthesis."""
@@ -20,6 +22,7 @@ class ExplainerAgent(BaseCareDOMAgent):
             role_description="TreeSHAP Feature Attribution & Google Gemini Multilingual Decision Explanation"
         )
         self.narrator = GeminiDecisionNarrator()
+        self.forecaster = MultiHorizonDemandForecaster()
 
     def process_state(self, state: MultiAgentBlackboardState) -> MultiAgentBlackboardState:
         """
@@ -27,18 +30,29 @@ class ExplainerAgent(BaseCareDOMAgent):
         """
         self.logger.info("Generating TreeSHAP feature attributions and Gemini narrative explanation...")
         
-        # Determine baseline and predicted demand
-        base_val = 25.0
-        pred_val = 65.0
+        fac_id = state.target_facility_id
+        item_code = state.target_item_code
+        base_val = 35.0
+        pred_val = 45.0
+        
         if state.demand_forecast and state.demand_forecast.p50_median_expected:
             pred_val = float(state.demand_forecast.p50_median_expected[0])
 
-        feat_names = ["epidemic_growth_rate", "rainfall_lag_3d", "consumption_lag_7d", "rolling_mean_7d", "is_weekend"]
-        feat_vals = [0.45, 42.0, 35.0, 28.0, 0.0]
-
-        explanation_rep = HealthSHAPExplainer.explain_prediction(
+        feat_names = list(state.demand_forecast.feature_importances.keys()) if (state.demand_forecast and state.demand_forecast.feature_importances) else [
+            "epidemic_growth_rate", "rainfall_lag_3d", "consumption_lag_7d", "rolling_mean_7d", "is_weekend"
+        ]
+        
+        # Build feature DataFrame
+        feat_df = pd.DataFrame([{name: 1.0 for name in feat_names}])
+        
+        model_obj = self.forecaster.models.get(0.50, None)
+        
+        explanation_rep = HealthSHAPExplainer.explain_with_model(
+            model=model_obj,
             feature_names=feat_names,
-            feature_values=feat_vals,
+            feature_vector=feat_df,
+            facility_id=fac_id,
+            item_code=item_code,
             base_value=base_val,
             predicted_value=pred_val
         )

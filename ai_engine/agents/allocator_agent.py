@@ -48,15 +48,15 @@ class AllocatorAgent(BaseCareDOMAgent):
         state.allocation_benchmark = benchmark
 
         # Record route details
-        routes_summary = []
-        for r in benchmark.best_routing_solution.routes:
-            routes_summary.append({
-                "vehicle_id": r.vehicle_id,
-                "total_distance_km": r.total_distance_km,
-                "total_transit_min": r.total_time_min,
-                "cold_chain_compliant": r.cold_chain_compliant,
-                "stops_count": len(r.stops)
-            })
+        routes_summary = [
+            {
+                "solver": row.get("Method", ""),
+                "distance_km": row.get("Total Distance (km)", 0.0),
+                "transit_min": row.get("Total Transit (min)", 0.0),
+                "cold_chain_compliant": row.get("Cold-Chain Compliant", True),
+                "runtime_ms": row.get("Runtime (ms)", 0.0)
+            } for row in benchmark.benchmark_table
+        ]
         state.confirmed_dispatch_routes = routes_summary
 
         # Emit confirmation to Explainer Agent
@@ -65,7 +65,7 @@ class AllocatorAgent(BaseCareDOMAgent):
             recipient="ExplainerAgent",
             message_type="DISPATCH_PLAN_CONFIRMED",
             payload={
-                "total_distance_km": benchmark.best_routing_solution.total_network_distance_km,
+                "total_distance_km": benchmark.hybrid_distance_km,
                 "convergence_speedup_pct": benchmark.convergence_speedup_pct,
                 "quantum_hardware_ready": benchmark.quantum_hardware_ready,
                 "routes_generated": len(routes_summary)

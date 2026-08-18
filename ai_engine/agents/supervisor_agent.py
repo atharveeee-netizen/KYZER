@@ -35,12 +35,11 @@ class SupervisorAgent(BaseCareDOMAgent):
             state.error_message = "Multi-agent pipeline incomplete: Missing critical diagnostic components."
             return state
 
-        # If redistribution was needed, verify route safety
+        # If redistribution was needed, verify cold-chain route safety
         if state.requires_emergency_redistribution and state.allocation_benchmark:
-            best_sol = state.allocation_benchmark.best_routing_solution
-            cold_chain_ok = all(r.cold_chain_compliant for r in best_sol.routes)
+            cold_chain_ok = state.allocation_benchmark.hybrid_time_min <= 240.0
             if not cold_chain_ok:
-                self.logger.warning("Supervisor Warning: One or more routes exceed 4-hour cold-chain limit.")
+                self.logger.warning("Supervisor Warning: Hybrid route exceeds 4-hour cold-chain limit.")
 
         state.is_completed = True
         
