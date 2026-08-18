@@ -159,7 +159,7 @@ export const ForecastTab: React.FC<ForecastTabProps> = ({
 
  <div className="text-[11px] text-muted pt-3 border-t border-hairline flex items-center justify-between">
  <span>Training Corpus: 45,990 Verified Records</span>
- <span className="text-semantic-success font-medium">● LightGBM CPU (5.4s)</span>
+ <span className="text-semantic-success font-medium"> LightGBM CPU (5.4s)</span>
  </div>
  </div>
 

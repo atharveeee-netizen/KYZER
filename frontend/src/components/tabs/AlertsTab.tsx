@@ -129,7 +129,7 @@ export const AlertsTab: React.FC<AlertsTabProps> = ({
  {alert.severity} CRITICAL ALERT
  </span>
  <span className="text-xs font-mono text-muted">{alert.facility_name}</span>
- <span className="text-[11px] font-mono text-muted-soft">● {alert.timestamp}</span>
+ <span className="text-[11px] font-mono text-muted-soft"> {alert.timestamp}</span>
  </div>
  <h2 className="text-base font-semibold text-ink">{alert.title}</h2>
  </div>
