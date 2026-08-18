@@ -59,10 +59,19 @@ class IBMQuantumRouter:
         if self.api_token:
             try:
                 from qiskit_ibm_runtime import QiskitRuntimeService
-                self.service = QiskitRuntimeService(channel="ibm_quantum", token=self.api_token)
+                try:
+                    self.service = QiskitRuntimeService(channel="ibm_quantum_platform", token=self.api_token)
+                except Exception:
+                    self.service = QiskitRuntimeService(channel="ibm_quantum", token=self.api_token)
+                
+                # Pick available QPU (e.g. ibm_fez, ibm_marrakesh, ibm_kingston)
+                backends = self.service.backends()
+                backend_names = [b.name for b in backends]
+                chosen_backend = self.backend_name if self.backend_name in backend_names else backend_names[0]
+                self.backend_name = chosen_backend
                 self.backend = self.service.backend(self.backend_name)
                 self.is_live_hardware = True
-                logger.info(f"Connected to live IBM Quantum Hardware: {self.backend_name} ({self.backend.num_qubits} qubits)")
+                logger.info(f"Connected to live IBM Quantum Hardware: {self.backend_name} ({getattr(self.backend, 'num_qubits', 156)} qubits)")
             except Exception as e:
                 logger.warning(f"Could not connect to live IBM Quantum backend ({e}). Using local Qiskit quantum simulator.")
                 self.is_live_hardware = False
@@ -202,14 +211,19 @@ class IBMQuantumRouter:
         bound_circuit = qc.assign_parameters(param_dict)
 
         # 4. Measure bitstring / Quantum Execution
+        meas_circuit = bound_circuit.copy()
+        meas_circuit.measure_all()
+
         if self.is_live_hardware and self.backend:
             try:
                 from qiskit_ibm_runtime import SamplerV2 as Sampler
                 sampler = Sampler(mode=self.backend)
-                transpiled = qiskit.transpile(bound_circuit, self.backend, optimization_level=2)
+                transpiled = qiskit.transpile(meas_circuit, self.backend, optimization_level=1)
                 job = sampler.run([transpiled], shots=shots)
+                logger.info(f"IBM Quantum Job submitted! Job ID: {job.job_id()}")
                 result = job.result()
-                counts = result[0].data.meas.get_counts()
+                pub_result = result[0]
+                counts = pub_result.data.meas.get_counts() if hasattr(pub_result.data, "meas") else pub_result.data.cr.get_counts()
                 best_bitstr = max(counts, key=counts.get)
             except Exception as e:
                 logger.warning(f"Hardware execution failed ({e}). Falling back to local simulator.")

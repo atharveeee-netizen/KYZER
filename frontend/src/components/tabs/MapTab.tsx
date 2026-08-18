@@ -4,11 +4,12 @@ import { Map } from 'react-map-gl/maplibre';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 
-import { PolygonLayer, ArcLayer, PathLayer, ScatterplotLayer, ColumnLayer } from '@deck.gl/layers';
-import { TripsLayer } from '@deck.gl/geo-layers';
+import { PolygonLayer, ArcLayer, PathLayer, ScatterplotLayer } from '@deck.gl/layers';
+import { TripsLayer, Tile3DLayer } from '@deck.gl/geo-layers';
+import { I3SLoader } from '@loaders.gl/i3s';
 import { AmbientLight, PointLight, LightingEffect } from '@deck.gl/core';
 
-import { Navigation, Send, AlertTriangle, Bed, Users, Pill, ShieldAlert, Sparkles, RefreshCw, Layers, Compass, Satellite, Eye, ZoomIn, Building } from 'lucide-react';
+import { Navigation, Send, AlertTriangle, Bed, Users, Pill, ShieldAlert, Sparkles, RefreshCw, Layers, Compass, Satellite, Building2, Box } from 'lucide-react';
 import { HealthFacility, RoutingResult } from '../../types';
 import { generateDenseHighwaySpline } from '../../data/denseRouteSpline';
 
@@ -41,7 +42,11 @@ const material = {
   specularColor: [80, 85, 95] as [number, number, number],
 };
 
-// 3D Architectural Hospital Campus Footprint Generator (Multi-Wing CAD Model)
+// ArcGIS I3S 3D Building Stream Layer URL
+const ARCGIS_I3S_TILESET_URL =
+  'https://tiles.arcgis.com/tiles/z2tnIkrLQ2BRzr6P/arcgis/rest/services/SanFrancisco_Bldgs/SceneServer/layers/0';
+
+// 3D Architectural Hospital Campus Footprint Generator
 function generateCampusComplex(lng: number, lat: number, isP0: boolean, isP1: boolean) {
   const scale = 0.007;
   const baseColor: [number, number, number, number] = isP0 
@@ -50,7 +55,6 @@ function generateCampusComplex(lng: number, lat: number, isP0: boolean, isP1: bo
     ? [245, 158, 11, 235] 
     : [16, 185, 129, 235];
 
-  // 1. Central Multi-Storey Inpatient Ward Block
   const mainWard = [
     [lng - scale, lat - scale * 0.7],
     [lng + scale, lat - scale * 0.7],
@@ -59,7 +63,6 @@ function generateCampusComplex(lng: number, lat: number, isP0: boolean, isP1: bo
     [lng - scale, lat - scale * 0.7],
   ];
 
-  // 2. Emergency Trauma & ICU Block
   const emergencyICU = [
     [lng + scale * 1.1, lat - scale * 0.4],
     [lng + scale * 1.85, lat - scale * 0.4],
@@ -68,7 +71,6 @@ function generateCampusComplex(lng: number, lat: number, isP0: boolean, isP1: bo
     [lng + scale * 1.1, lat - scale * 0.4],
   ];
 
-  // 3. WHO Cold-Chain Vaccine & Medicine Vault
   const vaccineVault = [
     [lng - scale * 1.85, lat - scale * 0.5],
     [lng - scale * 1.1, lat - scale * 0.5],
@@ -77,7 +79,6 @@ function generateCampusComplex(lng: number, lat: number, isP0: boolean, isP1: bo
     [lng - scale * 1.85, lat - scale * 0.5],
   ];
 
-  // 4. Ambulance & Delivery Bay Logistics Hub
   const deliveryBay = [
     [lng - scale * 0.7, lat - scale * 1.4],
     [lng + scale * 0.7, lat - scale * 1.4],
@@ -105,13 +106,14 @@ export const MapTab: React.FC<MapTabProps> = ({
     longitude: 74.08,
     latitude: 18.78,
     zoom: 9.8,
-    pitch: 60, // 3D Camera Tilt (60 degrees)
+    pitch: 60,
     bearing: -18,
     maxPitch: 85,
-    minZoom: 5,
-    maxZoom: 20,
+    minZoom: 2,
+    maxZoom: 22,
   });
 
+  const [activeMode, setActiveMode] = useState<'PUNE_FLEET' | 'I3S_3D_BUILDINGS'>('PUNE_FLEET');
   const [time, setTime] = useState(0);
   const [isSelfPlanning, setIsSelfPlanning] = useState(false);
   const [planningStep, setPlanningStep] = useState<string | null>(null);
@@ -136,7 +138,7 @@ export const MapTab: React.FC<MapTabProps> = ({
     ? splineData.pathWithTimestamps[splineData.pathWithTimestamps.length - 1][2] 
     : 1800;
 
-  // 60fps Continuous Clock for TripsLayer Animated Neon Flow
+  // 60fps Continuous Clock for TripsLayer
   useEffect(() => {
     let curTime = 0;
     const animate = () => {
@@ -172,10 +174,9 @@ export const MapTab: React.FC<MapTabProps> = ({
     return list;
   }, [puneClinics]);
 
-  // 2. 3D Trips Data with Dense Road Timestamps (Dual Neon Trails)
+  // 2. 3D Trips Data with Dense Road Timestamps
   const trips = useMemo(() => {
     if (splineData.pathWithTimestamps.length === 0) return [];
-    
     const path = splineData.pathWithTimestamps.map(p => [p[0], p[1]] as [number, number]);
     const timestamps = splineData.pathWithTimestamps.map(p => p[2]);
 
@@ -200,101 +201,138 @@ export const MapTab: React.FC<MapTabProps> = ({
   }, [puneClinics]);
 
   // 4. Deck.gl Layers Configuration
-  const layers = [
-    // Layer 1: Dense Highway Route Glow Ribbon (Underglow)
-    new PathLayer({
-      id: 'dense-highway-glow',
-      data: [{ path: splineData.denseLineCoordinates }],
-      getPath: (d: any) => d.path,
-      getColor: [6, 182, 212, 120], // Neon Cyan Glow
-      getWidth: 700,
-      widthUnits: 'meters',
-      capRounded: true,
-      jointRounded: true,
-    }),
+  const layers = useMemo(() => {
+    if (activeMode === 'I3S_3D_BUILDINGS') {
+      // Official Deck.gl ArcGIS I3S / 3D Tiles Layer
+      return [
+        new Tile3DLayer({
+          id: 'tile-3d-i3s-layer',
+          data: ARCGIS_I3S_TILESET_URL,
+          loaders: [I3SLoader],
+          loadOptions: {
+            i3s: { useCompressedTextures: false },
+          },
+          opacity: 0.95,
+          pickable: true,
+        }),
+      ];
+    }
 
-    // Layer 2: visgl/deck.gl Animated TripsLayer (Tron-Style High-Speed Light Trail)
-    new TripsLayer({
-      id: 'quantum-trips-layer',
-      data: trips,
-      getPath: (d: any) => d.path,
-      getTimestamps: (d: any) => d.timestamps,
-      getColor: (d: any) => (d.vendor === 0 ? [253, 128, 93] : [23, 184, 190]), // Neon Orange / Cyan
-      opacity: 0.95,
-      widthMinPixels: 4,
-      rounded: true,
-      trailLength: 260,
-      currentTime: time,
-      shadowEnabled: false,
-    }),
+    // Default: Pune Healthcare 3D Fleet Twin
+    return [
+      // Layer 1: Dense Highway Route Glow Ribbon
+      new PathLayer({
+        id: 'dense-highway-glow',
+        data: [{ path: splineData.denseLineCoordinates }],
+        getPath: (d: any) => d.path,
+        getColor: [6, 182, 212, 120],
+        getWidth: 700,
+        widthUnits: 'meters',
+        capRounded: true,
+        jointRounded: true,
+      }),
 
-    // Layer 3: 3D Architectural Hospital Buildings with Real-Time Lighting
-    new PolygonLayer({
-      id: '3d-hospital-buildings',
-      data: buildings,
-      extruded: true,
-      wireframe: true,
-      filled: true,
-      opacity: 0.88,
-      getPolygon: (f: any) => f.polygon,
-      getElevation: (f: any) => f.height,
-      getFillColor: (f: any) => f.color,
-      getLineColor: [255, 255, 255, 180],
-      getLineWidth: 1.5,
-      lineWidthUnits: 'pixels',
-      material,
-      pickable: true,
-      onClick: (info: any) => {
-        if (info.object?.facility) {
-          onFacilitySelect(info.object.facility);
-          // Micro Campus Drone Zoom (75° pitch, close range)
-          setViewState(prev => ({
-            ...prev,
-            longitude: info.object.facility.longitude,
-            latitude: info.object.facility.latitude,
-            zoom: 13.5,
-            pitch: 75,
-            duration: 1400,
-          }));
-        }
-      },
-    }),
+      // Layer 2: Animated TripsLayer (visgl/deck.gl Tron-Style Trails)
+      new TripsLayer({
+        id: 'quantum-trips-layer',
+        data: trips,
+        getPath: (d: any) => d.path,
+        getTimestamps: (d: any) => d.timestamps,
+        getColor: (d: any) => (d.vendor === 0 ? [253, 128, 93] : [23, 184, 190]),
+        opacity: 0.95,
+        widthMinPixels: 4,
+        rounded: true,
+        trailLength: 260,
+        currentTime: time,
+        shadowEnabled: false,
+      }),
 
-    // Layer 4: 3D Parabolic Transfer Arcs in Space
-    new ArcLayer({
-      id: '3d-transfer-arcs',
-      data: arcs,
-      getSourcePosition: (d: any) => d.from,
-      getTargetPosition: (d: any) => d.to,
-      getSourceColor: [23, 184, 190, 240],
-      getTargetColor: [253, 128, 93, 240],
-      getWidth: 4.5,
-      getHeight: 0.65, // High 3D arch
-      pickable: true,
-    }),
+      // Layer 3: 3D Architectural Hospital Buildings
+      new PolygonLayer({
+        id: '3d-hospital-buildings',
+        data: buildings,
+        extruded: true,
+        wireframe: true,
+        filled: true,
+        opacity: 0.88,
+        getPolygon: (f: any) => f.polygon,
+        getElevation: (f: any) => f.height,
+        getFillColor: (f: any) => f.color,
+        getLineColor: [255, 255, 255, 180],
+        getLineWidth: 1.5,
+        lineWidthUnits: 'pixels',
+        material,
+        pickable: true,
+        onClick: (info: any) => {
+          if (info.object?.facility) {
+            onFacilitySelect(info.object.facility);
+            setViewState(prev => ({
+              ...prev,
+              longitude: info.object.facility.longitude,
+              latitude: info.object.facility.latitude,
+              zoom: 13.5,
+              pitch: 75,
+            }));
+          }
+        },
+      }),
 
-    // Layer 5: Ground Pulsing Radar Rings at Critical Clinics
-    new ScatterplotLayer({
-      id: 'radar-rings',
-      data: puneClinics.filter(f => f.risk_tier === 'P0_CRITICAL'),
-      getPosition: (d: any) => [d.longitude, d.latitude],
-      getRadius: 2400 + Math.sin(time * 0.05) * 800,
-      getFillColor: [239, 68, 68, 45],
-      getLineColor: [239, 68, 68, 220],
-      stroked: true,
-      filled: true,
-      lineWidthMinPixels: 2,
-      radiusUnits: 'meters',
-    }),
-  ];
+      // Layer 4: 3D Parabolic Transfer Arcs
+      new ArcLayer({
+        id: '3d-transfer-arcs',
+        data: arcs,
+        getSourcePosition: (d: any) => d.from,
+        getTargetPosition: (d: any) => d.to,
+        getSourceColor: [23, 184, 190, 240],
+        getTargetColor: [253, 128, 93, 240],
+        getWidth: 4.5,
+        getHeight: 0.65,
+        pickable: true,
+      }),
 
-  // Camera Controls
-  const handleSnapMacro = () => {
-    setViewState(prev => ({ ...prev, longitude: 74.08, latitude: 18.78, zoom: 9.8, pitch: 60, bearing: -18 }));
+      // Layer 5: Ground Pulsing Radar Rings
+      new ScatterplotLayer({
+        id: 'radar-rings',
+        data: puneClinics.filter(f => f.risk_tier === 'P0_CRITICAL'),
+        getPosition: (d: any) => [d.longitude, d.latitude],
+        getRadius: 2400 + Math.sin(time * 0.05) * 800,
+        getFillColor: [239, 68, 68, 45],
+        getLineColor: [239, 68, 68, 220],
+        stroked: true,
+        filled: true,
+        lineWidthMinPixels: 2,
+        radiusUnits: 'meters',
+      }),
+    ];
+  }, [activeMode, splineData, trips, buildings, arcs, puneClinics, time, onFacilitySelect]);
+
+  // Mode Switchers
+  const handleSwitchToI3S = () => {
+    setActiveMode('I3S_3D_BUILDINGS');
+    setViewState({
+      latitude: 37.78,
+      longitude: -122.4,
+      zoom: 15.5,
+      pitch: 45,
+      bearing: 10,
+      maxPitch: 85,
+      minZoom: 2,
+      maxZoom: 22,
+    });
   };
 
-  const handleSnap2D = () => {
-    setViewState(prev => ({ ...prev, pitch: 0, bearing: 0 }));
+  const handleSwitchToPuneFleet = () => {
+    setActiveMode('PUNE_FLEET');
+    setViewState({
+      longitude: 74.08,
+      latitude: 18.78,
+      zoom: 9.8,
+      pitch: 60,
+      bearing: -18,
+      maxPitch: 85,
+      minZoom: 2,
+      maxZoom: 22,
+    });
   };
 
   const handleToggleOrbit = () => {
@@ -312,7 +350,7 @@ export const MapTab: React.FC<MapTabProps> = ({
     }
   };
 
-  // AI 9-Clinic Self-Planning Simulation (Sequential 3D Drone Flight)
+  // AI 9-Clinic Self-Planning Simulation
   const handleTriggerSelfPlan = () => {
     setIsSelfPlanning(true);
     setPlanningStep('Step 1/4: ForecasterAgent evaluating 9-clinic demand surges...');
@@ -377,8 +415,8 @@ export const MapTab: React.FC<MapTabProps> = ({
   return (
     <div className="relative h-[calc(100vh-140px)] w-full flex flex-col md:flex-row overflow-hidden border-b border-hairline bg-canvas">
       
-      {/* 🗺️ Deck.gl WebGL 3D Canvas with Carto Dark Matter Vector Basemap */}
-      <div className="flex-1 relative h-full bg-[#0c0a09]">
+      {/* 🗺️ Deck.gl WebGL 3D Canvas */}
+      <div className="flex-1 relative h-full bg-[#061714]">
         <DeckGL
           viewState={viewState as any}
           onViewStateChange={(e: any) => setViewState(e.viewState)}
@@ -425,30 +463,40 @@ export const MapTab: React.FC<MapTabProps> = ({
           />
         </DeckGL>
 
-        {/* 🎮 3D Camera Controls Toolbar (Top Right) */}
+        {/* 🎮 3D Layer & Camera Toolbar (Top Right) */}
         <div className="absolute top-4 right-4 z-10 flex items-center bg-surface-card/95 backdrop-blur-md border border-hairline rounded-lg p-1.5 shadow-md text-xs font-mono gap-1">
+          
+          {/* Mode Switcher: Pune Fleet Twin vs ArcGIS I3S 3D Mesh */}
           <button
-            onClick={handleSnapMacro}
-            className="px-3 py-1.5 rounded-md bg-primary text-white font-bold flex items-center gap-1.5 hover:bg-primary-active transition-colors"
+            onClick={handleSwitchToPuneFleet}
+            className={`px-3 py-1.5 rounded-md flex items-center gap-1.5 transition-colors font-bold ${
+              activeMode === 'PUNE_FLEET'
+                ? 'bg-primary text-white'
+                : 'text-ink hover:bg-canvas-soft'
+            }`}
           >
-            <Compass className="w-3.5 h-3.5" />
-            <span>District 3D (60°)</span>
+            <Box className="w-3.5 h-3.5" />
+            <span>Pune Fleet Twin (3D)</span>
+          </button>
+
+          <button
+            onClick={handleSwitchToI3S}
+            className={`px-3 py-1.5 rounded-md flex items-center gap-1.5 transition-colors font-bold ${
+              activeMode === 'I3S_3D_BUILDINGS'
+                ? 'bg-primary text-white'
+                : 'text-ink hover:bg-canvas-soft'
+            }`}
+          >
+            <Building2 className="w-3.5 h-3.5" />
+            <span>ArcGIS I3S (3D Mesh)</span>
           </button>
           
           <button
             onClick={handleToggleOrbit}
-            className={`px-3 py-1.5 rounded-md flex items-center gap-1.5 transition-colors ${isOrbiting ? 'bg-amber-500 text-white font-bold animate-pulse' : 'text-ink hover:bg-canvas-soft'}`}
+            className={`px-3 py-1.5 rounded-md flex items-center gap-1.5 transition-colors border-l border-hairline ml-1 ${isOrbiting ? 'bg-amber-500 text-white font-bold animate-pulse' : 'text-ink hover:bg-canvas-soft'}`}
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isOrbiting ? 'animate-spin' : ''}`} />
             <span>{isOrbiting ? 'Stop Orbit' : '360° Orbit'}</span>
-          </button>
-
-          <button
-            onClick={handleSnap2D}
-            className="px-2.5 py-1.5 rounded-md text-ink hover:bg-canvas-soft transition-colors flex items-center gap-1 border-l border-hairline ml-1"
-          >
-            <Layers className="w-3.5 h-3.5 text-muted" />
-            <span>2D Flat</span>
           </button>
 
           <button
@@ -460,92 +508,102 @@ export const MapTab: React.FC<MapTabProps> = ({
           </button>
         </div>
 
-        {/* 🛰️ 3D Floating HUD: 9 Clinics AI Telemetry (Top Left) */}
+        {/* 🛰️ 3D Floating HUD: Telemetry (Top Left) */}
         <div className="absolute top-4 left-4 z-10 bg-surface-card/95 backdrop-blur-md border border-hairline rounded-lg p-4 shadow-md max-w-md">
           <div className="flex items-center justify-between gap-2 mb-2">
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-semantic-success animate-ping"></span>
               <span className="text-[11px] font-mono uppercase tracking-wider text-muted font-semibold">
-                visgl/deck.gl 3D Fleet Twin
+                {activeMode === 'I3S_3D_BUILDINGS' ? 'Deck.gl Tile3DLayer (I3SLoader Active)' : 'Deck.gl 3D Fleet Twin'}
               </span>
             </div>
             <span className="text-[10px] font-mono bg-surface-strong px-2 py-0.5 rounded-pill text-ink font-bold">
-              Dense Spline & 3D Campus
+              {activeMode === 'I3S_3D_BUILDINGS' ? 'ArcGIS 3D Mesh' : 'Spline & 3D Campus'}
             </span>
           </div>
 
-          <div className="flex items-baseline gap-4 mb-3">
-            <div>
-              <span className="text-2xl font-display text-ink font-semibold">159.15 km</span>
-              <span className="text-xs text-muted block">9-Clinic Tour</span>
-            </div>
-            <div className="border-l border-hairline pl-4">
-              <span className="text-2xl font-display text-ink font-semibold">178.4 min</span>
-              <span className="text-xs text-muted block">Transit Time</span>
-            </div>
-            <div className="border-l border-hairline pl-4">
-              <span className="text-xs font-mono font-bold text-semantic-success bg-green-50 border border-green-200 px-2 py-1 rounded-sm block">
-                COLD-CHAIN PASS
-              </span>
-            </div>
-          </div>
+          {activeMode === 'PUNE_FLEET' ? (
+            <>
+              <div className="flex items-baseline gap-4 mb-3">
+                <div>
+                  <span className="text-2xl font-display text-ink font-semibold">159.15 km</span>
+                  <span className="text-xs text-muted block">9-Clinic Tour</span>
+                </div>
+                <div className="border-l border-hairline pl-4">
+                  <span className="text-2xl font-display text-ink font-semibold">178.4 min</span>
+                  <span className="text-xs text-muted block">Transit Time</span>
+                </div>
+                <div className="border-l border-hairline pl-4">
+                  <span className="text-xs font-mono font-bold text-semantic-success bg-green-50 border border-green-200 px-2 py-1 rounded-sm block">
+                    COLD-CHAIN PASS
+                  </span>
+                </div>
+              </div>
 
-          {/* AI Self-Plan Trigger Button (Cursor Orange) */}
-          <button
-            onClick={handleTriggerSelfPlan}
-            disabled={isSelfPlanning}
-            className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary-active text-white text-xs font-medium py-2.5 rounded-md transition-colors shadow-xs"
-          >
-            <Sparkles className={`w-3.5 h-3.5 ${isSelfPlanning ? 'animate-spin' : ''}`} />
-            <span>{isSelfPlanning ? 'AI Agents Self-Planning in 3D...' : 'AI Agent Self-Plan 9-Clinic Route'}</span>
-          </button>
+              <button
+                onClick={handleTriggerSelfPlan}
+                disabled={isSelfPlanning}
+                className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary-active text-white text-xs font-medium py-2.5 rounded-md transition-colors shadow-xs"
+              >
+                <Sparkles className={`w-3.5 h-3.5 ${isSelfPlanning ? 'animate-spin' : ''}`} />
+                <span>{isSelfPlanning ? 'AI Agents Self-Planning in 3D...' : 'AI Agent Self-Plan 9-Clinic Route'}</span>
+              </button>
 
-          {/* Multi-Step Telemetry Banner */}
-          {planningStep && (
-            <div className="mt-2.5 p-2.5 bg-canvas-soft border border-hairline rounded-md text-[11.5px] font-mono text-ink animate-pulse">
-              <code>&gt; {planningStep}</code>
+              {planningStep && (
+                <div className="mt-2.5 p-2.5 bg-canvas-soft border border-hairline rounded-md text-[11.5px] font-mono text-ink animate-pulse">
+                  <code>&gt; {planningStep}</code>
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="text-xs text-body space-y-2">
+              <p>
+                Streaming live Level-of-Detail (LOD2) 3D building meshes via <b>@deck.gl/geo-layers Tile3DLayer</b> and <b>@loaders.gl/i3s</b>.
+              </p>
+              <div className="p-2 bg-canvas-soft rounded-md font-mono text-[11px] text-ink">
+                <code>Endpoint: ArcGIS SceneServer / 3D Tiles</code>
+              </div>
             </div>
           )}
         </div>
 
         {/* 🚗 Floating Bottom Action Bar: Google Maps GPS & WhatsApp */}
-        <div className="absolute bottom-6 left-4 right-4 md:left-auto md:right-6 z-10 flex flex-wrap items-center gap-2 bg-surface-card/95 backdrop-blur-md border border-hairline rounded-lg p-2.5 shadow-md">
-          
-          {/* Direct Google Maps Turn-by-Turn GPS Link */}
-          <a
-            href={routingResult.google_maps_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-1.5 bg-ink hover:bg-black text-canvas text-xs font-medium px-4 py-2 rounded-md transition-colors shadow-xs"
-          >
-            <Navigation className="w-3.5 h-3.5 text-primary" />
-            <span>Open Google Maps GPS (9 Stops)</span>
-          </a>
+        {activeMode === 'PUNE_FLEET' && (
+          <div className="absolute bottom-6 left-4 right-4 md:left-auto md:right-6 z-10 flex flex-wrap items-center gap-2 bg-surface-card/95 backdrop-blur-md border border-hairline rounded-lg p-2.5 shadow-md">
+            
+            <a
+              href={routingResult.google_maps_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 bg-ink hover:bg-black text-canvas text-xs font-medium px-4 py-2 rounded-md transition-colors shadow-xs"
+            >
+              <Navigation className="w-3.5 h-3.5 text-primary" />
+              <span>Open Google Maps GPS (9 Stops)</span>
+            </a>
 
-          {/* WhatsApp 1-Click Driver Dispatch */}
-          <a
-            href={routingResult.whatsapp_nav_share_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-1.5 bg-surface-card hover:bg-canvas-soft border border-hairline-strong text-ink text-xs font-medium px-3.5 py-2 rounded-md transition-colors"
-          >
-            <Send className="w-3.5 h-3.5 text-semantic-success" />
-            <span>WhatsApp Route</span>
-          </a>
+            <a
+              href={routingResult.whatsapp_nav_share_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 bg-surface-card hover:bg-canvas-soft border border-hairline-strong text-ink text-xs font-medium px-3.5 py-2 rounded-md transition-colors"
+            >
+              <Send className="w-3.5 h-3.5 text-semantic-success" />
+              <span>WhatsApp Route</span>
+            </a>
 
-          {/* Frontline Road Blocker Modal Button */}
-          <button
-            onClick={() => setShowBlockerModal(true)}
-            className="flex items-center gap-1.5 bg-surface-card hover:bg-canvas-soft border border-hairline text-body hover:text-ink text-xs font-medium px-3 py-2 rounded-md transition-colors"
-          >
-            <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
-            <span>Flag Road Blocked</span>
-          </button>
-        </div>
+            <button
+              onClick={() => setShowBlockerModal(true)}
+              className="flex items-center gap-1.5 bg-surface-card hover:bg-canvas-soft border border-hairline text-body hover:text-ink text-xs font-medium px-3 py-2 rounded-md transition-colors"
+            >
+              <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
+              <span>Flag Road Blocked</span>
+            </button>
+          </div>
+        )}
       </div>
 
       {/* 📋 Right Slide-Over Clinic Inspector */}
-      {selectedFacility && (
+      {selectedFacility && activeMode === 'PUNE_FLEET' && (
         <aside className="w-full md:w-80 bg-surface-card border-l border-hairline p-5 overflow-y-auto flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between mb-2">
