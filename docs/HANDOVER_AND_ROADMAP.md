@@ -48,16 +48,11 @@ In rural BRICS nations (India, South Africa, Brazil), over **74% of Primary Heal
   - Automatically synthesizes official Google Maps Turn-by-Turn GPS Navigation URLs.
 - **Explainability & Safety (`explainer/` & `agents/supervisor.py`)**: TreeSHAP feature attributions and a strict **$1.5\times$ safety stock buffer** audit preventing donor clinics from being stripped into deficit.
 
-### B. FastAPI Backend (`backend/app/main.py`) — Lead: Person 2
-- High-throughput async REST API wrapping the AI engine as an in-memory singleton.
-- Exposes all core endpoints:
-  - `POST /api/v1/routing/plan`: 9-clinic autonomous route planning.
-  - `GET /api/v1/facilities?country=IND`: 10 Pune facilities with live stock, beds, and staff.
-  - `POST /api/v1/ai/run`: End-to-end multi-agent execution.
-  - `GET /api/v1/forecast/{facility_id}`: 7-day quantile prediction + TreeSHAP.
-  - `POST /api/v1/ocr/upload`: Multipart image upload and extraction.
-  - `GET /api/v1/alerts/stream`: Server-Sent Events (SSE) live alert feed.
-- Documented PostGIS geospatial schema and transactional row locking (`FOR UPDATE`).
+### B. PostgreSQL, PostGIS & Neon Cloud Backend (`backend/`) — Lead: Person 2
+- **Live Neon Serverless PostgreSQL & PostGIS Instance**: Fully deployed with PostGIS 3.4 spatial geometry columns (`GEOMETRY(Point, 4326)`) and GIST spatial indices across all 18 BRICS health facilities.
+- **FEFO Transactional Allocation Engine**: Real database ledger execution with row-level locking (`FOR UPDATE`) to prevent race conditions during emergency stock reallocation across staggered batches.
+- **Production Container Packaging**: Built and tested a lightweight **185MB Linux Docker container** ready for immediate 1-click deployment on Google Cloud Run (`asia-south1`).
+- **High-Throughput FastAPI REST Server**: Exposes live database endpoints (`/facilities`, `/inventory`, `/redistribute`) combined with mounted AI engine routes (`/ai/run`, `/routing/plan`, `/forecast`, `/ocr/upload`, `/alerts/stream`).
 
 ### C. 3D Frontend Command Center (`frontend/`) — Lead: Person 3
 - **Live Hosted URL**: [https://atharveeee-netizen.github.io/KYZER/](https://atharveeee-netizen.github.io/KYZER/)
