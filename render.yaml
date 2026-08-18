@@ -1,0 +1,30 @@
+services:
+  # Service A: Database & Inventory API (FastAPI + Neon PostgreSQL)
+  - type: web
+    name: caredom-db-service
+    env: python
+    region: singapore
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn backend.app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: ENVIRONMENT
+        value: production
+
+  # Service B: AI & Quantum Engine (FastAPI AI Routes)
+  - type: web
+    name: caredom-ai-service
+    env: python
+    region: singapore
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn backend.app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: IBM_QUANTUM_TOKEN
+        sync: false
+      - key: ENVIRONMENT
+        value: production

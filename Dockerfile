@@ -6,7 +6,7 @@
 FROM python:3.10-slim-bullseye AS base
 
 # Prevent Python from writing .pyc files and enable unbuffered logging
-ENV PYTHONTDONTWRITEBYTECODE=1 \
+ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     DEBIAN_FRONTEND=noninteractive \
     PORT=8000
@@ -28,12 +28,13 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
-# Copy application source trees
+# Copy only existing application source trees
 COPY ai_engine/ ./ai_engine/
 COPY backend/ ./backend/
-COPY data/ ./data/
 COPY docs/ ./docs/
-RUN mkdir -p ./voice
+
+# Create runtime directories
+RUN mkdir -p ./voice ./data ./outputs
 
 # Expose port for Cloud Run and local containers
 EXPOSE 8000
