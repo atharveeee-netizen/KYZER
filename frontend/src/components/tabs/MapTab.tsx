@@ -9,8 +9,8 @@ import { TripsLayer, Tile3DLayer } from '@deck.gl/geo-layers';
 import { I3SLoader } from '@loaders.gl/i3s';
 import { AmbientLight, PointLight, LightingEffect } from '@deck.gl/core';
 
-import { Sparkles, Navigation, Pill, Bed, Activity, RefreshCw, X, CheckCircle2 } from 'lucide-react';
-import { generateOrthogonalStreetPath } from '../../data/denseRouteSpline';
+import { Sparkles, Navigation, Pill, Bed, Activity, RefreshCw, X, CheckCircle2, Route } from 'lucide-react';
+import { computeShortestRoadPath, RouteResult } from '../../services/roadRouter';
 import { HealthFacility, RoutingResult } from '../../types';
 
 interface MapTabProps {
@@ -39,7 +39,7 @@ const lightingEffect = new LightingEffect({ ambientLight, pointLight });
 const TILESET_URL =
   'https://tiles.arcgis.com/tiles/z2tnIkrLQ2BRzr6P/arcgis/rest/services/SanFrancisco_Bldgs/SceneServer/layers/0';
 
-// Initial Street-Level ViewState (Positioned over street grid)
+// Initial Street-Level ViewState
 const INITIAL_VIEW_STATE = {
   latitude: 37.776,
   longitude: -122.408,
@@ -112,48 +112,34 @@ export const MapTab: React.FC<MapTabProps> = () => {
   const [simStep, setSimStep] = useState<number>(0);
   const [simMessage, setSimMessage] = useState<string | null>(null);
   const [activeTransfer, setActiveTransfer] = useState<{ from: UrbanClinic; to: UrbanClinic; units: number } | null>(null);
+  const [activeRouteResult, setActiveRouteResult] = useState<RouteResult | null>(null);
   const [selectedClinic, setSelectedClinic] = useState<UrbanClinic | null>(null);
 
   const [time, setTime] = useState(0);
-  const animFrameRef = useRef<number | null>(null);
 
-  // Exact Street Centerline Intersections: Zero Building Clipping
-  // Follows King St -> 4th St -> Townsend St -> 7th St -> Brannan St -> 9th St -> Division St -> Mission St -> Market St
-  const streetWaypoints: [number, number][] = useMemo(() => [
-    [-122.3925, 37.7785], // 1. Start: 3rd St & King St (PHC-URB-04)
-    [-122.3970, 37.7760], // 2. Along King St to 4th St
-    [-122.3995, 37.7788], // 3. Turn NW on 4th St to Townsend St
-    [-122.4022, 37.7768], // 4. Turn SW on Townsend St past 5th St
-    [-122.4048, 37.7748], // 5. Along Townsend St to 6th St
-    [-122.4074, 37.7728], // 6. Along Townsend St to 7th St
-    [-122.4098, 37.7755], // 7. Turn NW on 7th St to Brannan St
-    [-122.4124, 37.7735], // 8. Turn SW on Brannan St past 8th St
-    [-122.4150, 37.7715], // 9. Along Brannan St to 9th St
-    [-122.4172, 37.7740], // 10. Turn NW on 9th St to Division St
-    [-122.4185, 37.7715], // 11. Turn SW on Division St to 10th St
-    [-122.4190, 37.7680], // 12. Arrive: Mission St (PHC-URB-03 Delivery Stop)
-    [-122.4180, 37.7745], // 13. Turn North on South Van Ness Ave to Market St
-    [-122.4155, 37.7765], // 14. Turn NE on Market St at 10th St
-    [-122.4120, 37.7795], // 15. Along Market St at 8th St
-    [-122.4070, 37.7840], // 16. Along Market St at 5th St
-    [-122.4012, 37.7885], // 17. Arrive: Central Medical Depot (3rd & Market)
-  ], []);
+  // Compute Shortest Road Route using Dijkstra/A* algorithm when transfer is active
+  useEffect(() => {
+    if (activeTransfer) {
+      const result = computeShortestRoadPath(
+        activeTransfer.from.coordinates,
+        activeTransfer.to.coordinates
+      );
+      setActiveRouteResult(result);
+    } else {
+      setActiveRouteResult(null);
+    }
+  }, [activeTransfer]);
 
-  // Dense Orthogonal Path along exact road centerlines (step interval = 3.5m)
-  const splineData = useMemo(() => {
-    return generateOrthogonalStreetPath(streetWaypoints, 3.5);
-  }, [streetWaypoints]);
-
-  const loopLength = splineData.pathWithTimestamps.length > 0 
-    ? splineData.pathWithTimestamps[splineData.pathWithTimestamps.length - 1][2] 
+  const loopLength = activeRouteResult && activeRouteResult.pathWithTimestamps.length > 0
+    ? activeRouteResult.pathWithTimestamps[activeRouteResult.pathWithTimestamps.length - 1][2]
     : 1600;
 
-  // 60fps Clock for TripsLayer animation strictly on the road
+  // 60fps Clock for TripsLayer animation strictly along computed road network
   useEffect(() => {
     let curTime = 0;
     let animId: number;
     const animate = () => {
-      curTime = (curTime + 2.0) % (loopLength || 1600);
+      curTime = (curTime + 1.8) % (loopLength || 1600);
       setTime(curTime);
       animId = requestAnimationFrame(animate);
     };
@@ -164,11 +150,11 @@ export const MapTab: React.FC<MapTabProps> = () => {
     };
   }, [loopLength]);
 
-  // Handle On-Spot Uber-Style AI Road Route Simulation
+  // Handle On-Spot Dijkstra AI Road Route Simulation
   const handleTriggerSimulation = () => {
     setIsSimulating(true);
     setSimStep(1);
-    setSimMessage('Anomaly Detected: Mission Clinic (PHC-URB-03) paracetamol critical (85 tabs, 0.8 days left)!');
+    setSimMessage('Step 1: Anomaly Detected at Mission Clinic (PHC-URB-03) (85 tabs, 0.8 days left)!');
 
     // Focus camera on Stockout Clinic
     setViewState(prev => ({
@@ -182,7 +168,7 @@ export const MapTab: React.FC<MapTabProps> = () => {
 
     setTimeout(() => {
       setSimStep(2);
-      setSimMessage('SupervisorAgent evaluating nearest road donor: Waterfront Annex has 3,400 tabs (1.9x buffer).');
+      setSimMessage('Step 2: SupervisorAgent qualified nearest donor: Waterfront Annex (3,400 tabs, 1.9x buffer).');
       // Pan camera to show Donor
       setViewState(prev => ({
         ...prev,
@@ -196,16 +182,17 @@ export const MapTab: React.FC<MapTabProps> = () => {
 
     setTimeout(() => {
       setSimStep(3);
-      setSimMessage('Shortest Road Route Computed: 3.82 km / 7.4 min via King St, Townsend St & Mission St.');
-      
       const donor = clinics.find(c => c.id === 'PHC-URB-04')!;
       const recipient = clinics.find(c => c.id === 'PHC-URB-03')!;
+      const res = computeShortestRoadPath(donor.coordinates, recipient.coordinates);
+      
+      setSimMessage(`Step 3: Dijkstra Algorithm computed shortest road path (${res.totalDistanceKm} km, ${res.estimatedTimeMin} min) via ${res.streetSequence.slice(0, 3).join(', ')}.`);
       setActiveTransfer({ from: donor, to: recipient, units: 500 });
     }, 3000);
 
     setTimeout(() => {
       setSimStep(4);
-      setSimMessage('Emergency Logistics Van Dispatched: Active road navigation with live cold-chain telemetry.');
+      setSimMessage('Step 4: Emergency Logistics Van Dispatched on asphalt with live cold-chain telemetry.');
       // Frame entire street corridor
       setViewState({
         latitude: 37.776,
@@ -222,6 +209,7 @@ export const MapTab: React.FC<MapTabProps> = () => {
 
   const handleResetSimulation = () => {
     setActiveTransfer(null);
+    setActiveRouteResult(null);
     setSimStep(0);
     setSimMessage(null);
     setSelectedClinic(null);
@@ -230,15 +218,15 @@ export const MapTab: React.FC<MapTabProps> = () => {
 
   // 3D Trips Data for Street-Level Navigation (100% Grounded)
   const tripsData = useMemo(() => {
-    if (!activeTransfer || splineData.pathWithTimestamps.length === 0) return [];
-    const path = splineData.pathWithTimestamps.map(p => [p[0], p[1]] as [number, number]);
-    const timestamps = splineData.pathWithTimestamps.map(p => p[2]);
+    if (!activeRouteResult || activeRouteResult.pathWithTimestamps.length === 0) return [];
+    const path = activeRouteResult.pathWithTimestamps.map(p => [p[0], p[1]] as [number, number]);
+    const timestamps = activeRouteResult.pathWithTimestamps.map(p => p[2]);
 
     return [
       { vendor: 0, path, timestamps },
       { vendor: 1, path: [...path].reverse(), timestamps },
     ];
-  }, [activeTransfer, splineData]);
+  }, [activeRouteResult]);
 
   // Deck.gl Layer Pipeline (100% Grounded on Road Centerlines - ZERO Sky Arcs)
   const layers = useMemo(() => {
@@ -257,7 +245,7 @@ export const MapTab: React.FC<MapTabProps> = () => {
       // 2. Glowing Road Corridor Base Ribbon (Underlay on Asphalt)
       new PathLayer({
         id: 'street-route-base-glow',
-        data: activeTransfer ? [{ path: splineData.denseLineCoordinates }] : [],
+        data: activeRouteResult ? [{ path: activeRouteResult.denseCoordinates }] : [],
         getPath: (d: any) => d.path,
         getColor: [6, 182, 212, 100],
         getWidth: 20,
@@ -269,7 +257,7 @@ export const MapTab: React.FC<MapTabProps> = () => {
       // 3. Crisp Road Centerline Ribbon
       new PathLayer({
         id: 'street-route-centerline',
-        data: activeTransfer ? [{ path: splineData.denseLineCoordinates }] : [],
+        data: activeRouteResult ? [{ path: activeRouteResult.denseCoordinates }] : [],
         getPath: (d: any) => d.path,
         getColor: [6, 182, 212, 240],
         getWidth: 6,
@@ -288,7 +276,7 @@ export const MapTab: React.FC<MapTabProps> = () => {
         opacity: 0.98,
         widthMinPixels: 6,
         rounded: true,
-        trailLength: 260,
+        trailLength: 240,
         currentTime: time,
         shadowEnabled: false,
       }),
@@ -341,7 +329,7 @@ export const MapTab: React.FC<MapTabProps> = () => {
         },
       }),
     ];
-  }, [clinics, activeTransfer, tripsData, splineData, time]);
+  }, [clinics, activeRouteResult, tripsData, time]);
 
   return (
     <div className="relative h-[calc(100vh-80px)] w-full flex flex-col md:flex-row overflow-hidden border-b border-hairline bg-canvas">
@@ -392,16 +380,16 @@ export const MapTab: React.FC<MapTabProps> = () => {
             <div className="flex items-center gap-2">
               <span className={`w-2.5 h-2.5 rounded-full ${activeTransfer ? 'bg-emerald-400 animate-ping' : 'bg-sky-400'}`}></span>
               <span className="text-xs font-mono font-bold tracking-wider uppercase text-zinc-200">
-                Uber-Style Road Routing
+                Dijkstra Road Router
               </span>
             </div>
             <span className="text-[10px] font-mono bg-white/10 px-2 py-0.5 rounded text-sky-300 font-semibold">
-              Street Centerlines
+              Graph Network
             </span>
           </div>
 
           <p className="text-xs text-zinc-300 leading-relaxed mb-4">
-            Simulate real-time drug depletion at <b>Mission Clinic</b> and optimize ground delivery transit through city streets in real time.
+            Simulate real-time drug depletion at <b>Mission Clinic</b> and run Dijkstra shortest road routing between donor and recipient PHCs.
           </p>
 
           {/* Action Buttons */}
@@ -412,7 +400,7 @@ export const MapTab: React.FC<MapTabProps> = () => {
               className="w-full flex items-center justify-center gap-1.5 bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white text-xs font-semibold py-2.5 px-3 rounded-lg transition-all shadow-md active:scale-95 disabled:opacity-50"
             >
               <Sparkles className={`w-3.5 h-3.5 ${isSimulating ? 'animate-spin' : ''}`} />
-              <span>{isSimulating ? 'Routing...' : 'Optimize Road Route'}</span>
+              <span>{isSimulating ? 'Routing...' : 'Find Shortest Path'}</span>
             </button>
 
             <button
@@ -424,21 +412,30 @@ export const MapTab: React.FC<MapTabProps> = () => {
             </button>
           </div>
 
-          {/* Live Road Telemetry Metrics (When Route is Active) */}
-          {activeTransfer && (
+          {/* Live Dijkstra Routing Telemetry Metrics (When Route is Active) */}
+          {activeRouteResult && (
             <div className="pt-3 border-t border-white/15 space-y-2">
               <div className="grid grid-cols-3 gap-2 text-center">
                 <div className="bg-white/5 p-2 rounded-md">
-                  <span className="text-[10px] text-zinc-400 font-mono block">STREET DIST</span>
-                  <span className="text-sm font-bold text-white font-mono">3.82 km</span>
+                  <span className="text-[10px] text-zinc-400 font-mono block">DIJKSTRA DIST</span>
+                  <span className="text-sm font-bold text-white font-mono">{activeRouteResult.totalDistanceKm} km</span>
                 </div>
                 <div className="bg-white/5 p-2 rounded-md">
                   <span className="text-[10px] text-zinc-400 font-mono block">DRIVE TIME</span>
-                  <span className="text-sm font-bold text-white font-mono">7.4 min</span>
+                  <span className="text-sm font-bold text-white font-mono">{activeRouteResult.estimatedTimeMin} min</span>
                 </div>
                 <div className="bg-white/5 p-2 rounded-md">
-                  <span className="text-[10px] text-zinc-400 font-mono block">TRANSFER</span>
-                  <span className="text-sm font-bold text-emerald-400 font-mono">500 tabs</span>
+                  <span className="text-[10px] text-zinc-400 font-mono block">INTERSECTIONS</span>
+                  <span className="text-sm font-bold text-emerald-400 font-mono">{activeRouteResult.nodePath.length} nodes</span>
+                </div>
+              </div>
+
+              {/* Street Sequence Traversed */}
+              <div className="p-2 bg-white/5 border border-white/10 rounded-md text-[10px] font-mono text-zinc-300 flex items-start gap-1.5">
+                <Route className="w-3.5 h-3.5 text-sky-400 shrink-0 mt-0.5" />
+                <div>
+                  <span className="text-zinc-400 block mb-0.5">Computed Street Sequence:</span>
+                  <span className="text-sky-300 font-semibold">{activeRouteResult.streetSequence.join(' -> ')}</span>
                 </div>
               </div>
 
@@ -465,7 +462,7 @@ export const MapTab: React.FC<MapTabProps> = () => {
           {/* AI Orchestration Step Log */}
           {simMessage && (
             <div className="mt-3 p-2.5 bg-black/60 border border-orange-500/40 rounded-md text-[11px] font-mono text-orange-300 animate-pulse leading-relaxed">
-              <code>&gt; Step {simStep}/4: {simMessage}</code>
+              <code>&gt; {simMessage}</code>
             </div>
           )}
         </div>
