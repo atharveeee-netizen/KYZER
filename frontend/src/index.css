@@ -58,6 +58,14 @@ body {
  border-radius: 3px;
 }
 
+/* Hide all MapLibre / Mapbox attribution pills */
+.maplibregl-ctrl-attrib,
+.maplibregl-ctrl-bottom-right,
+.maplibregl-ctrl-attrib-button,
+.mapboxgl-ctrl-attrib {
+  display: none !important;
+}
+
 ::-webkit-scrollbar-thumb:hover {
  background: var(--color-muted);
 }

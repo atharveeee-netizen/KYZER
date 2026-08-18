@@ -381,6 +381,7 @@ export const MapTab: React.FC<MapTabProps> = () => {
             reuseMaps
             mapLib={maplibregl as any}
             mapStyle="https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json"
+            attributionControl={false}
           />
         </DeckGL>
 
