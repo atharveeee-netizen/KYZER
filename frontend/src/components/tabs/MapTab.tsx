@@ -4,12 +4,13 @@ import { Map } from 'react-map-gl/maplibre';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 
-import { PolygonLayer, ArcLayer, ColumnLayer, ScatterplotLayer } from '@deck.gl/layers';
+import { PolygonLayer, ArcLayer, PathLayer, ScatterplotLayer, ColumnLayer } from '@deck.gl/layers';
 import { TripsLayer } from '@deck.gl/geo-layers';
 import { AmbientLight, PointLight, LightingEffect } from '@deck.gl/core';
 
-import { Navigation, Send, AlertTriangle, Bed, Users, Pill, ShieldAlert, Sparkles, RefreshCw, Layers, Compass, Satellite } from 'lucide-react';
+import { Navigation, Send, AlertTriangle, Bed, Users, Pill, ShieldAlert, Sparkles, RefreshCw, Layers, Compass, Satellite, Eye, ZoomIn, Building } from 'lucide-react';
 import { HealthFacility, RoutingResult } from '../../types';
+import { generateDenseHighwaySpline } from '../../data/denseRouteSpline';
 
 interface MapTabProps {
   facilities: HealthFacility[];
@@ -19,72 +20,77 @@ interface MapTabProps {
   onRerouteRequest: (blockedRoadName: string) => void;
 }
 
-// visgl/deck.gl Lighting Setup
+// 3D Lighting Setup (visgl/deck.gl Official Specification)
 const ambientLight = new AmbientLight({
   color: [255, 255, 255],
-  intensity: 1.0,
+  intensity: 1.1,
 });
 
 const pointLight = new PointLight({
-  color: [255, 255, 255],
-  intensity: 2.0,
-  position: [74.08, 18.78, 10000],
+  color: [255, 245, 230],
+  intensity: 2.2,
+  position: [74.08, 18.78, 12000],
 });
 
 const lightingEffect = new LightingEffect({ ambientLight, pointLight });
 
-const DEFAULT_THEME = {
-  buildingColor: [74, 80, 87, 230] as [number, number, number, number],
-  trailColor0: [253, 128, 93] as [number, number, number], // Neon Orange
-  trailColor1: [23, 184, 190] as [number, number, number], // Neon Cyan
-  material: {
-    ambient: 0.15,
-    diffuse: 0.7,
-    shininess: 32,
-    specularColor: [60, 64, 70] as [number, number, number],
-  },
-  effects: [lightingEffect],
+const material = {
+  ambient: 0.2,
+  diffuse: 0.75,
+  shininess: 38,
+  specularColor: [80, 85, 95] as [number, number, number],
 };
 
-const INITIAL_VIEW_STATE = {
-  longitude: 74.08,
-  latitude: 18.78,
-  zoom: 9.8,
-  pitch: 55,
-  bearing: -15,
-  maxPitch: 85,
-  minZoom: 6,
-  maxZoom: 20,
-};
+// 3D Architectural Hospital Campus Footprint Generator (Multi-Wing CAD Model)
+function generateCampusComplex(lng: number, lat: number, isP0: boolean, isP1: boolean) {
+  const scale = 0.007;
+  const baseColor: [number, number, number, number] = isP0 
+    ? [239, 68, 68, 235] 
+    : isP1 
+    ? [245, 158, 11, 235] 
+    : [16, 185, 129, 235];
 
-// Helper: Generate 3D Building Campus Complex footprint around each clinic
-function generateBuildingComplex(lng: number, lat: number, scale = 0.007) {
-  const mainBlock = [
+  // 1. Central Multi-Storey Inpatient Ward Block
+  const mainWard = [
     [lng - scale, lat - scale * 0.7],
     [lng + scale, lat - scale * 0.7],
     [lng + scale, lat + scale * 0.7],
     [lng - scale, lat + scale * 0.7],
     [lng - scale, lat - scale * 0.7],
   ];
-  const emergencyWing = [
+
+  // 2. Emergency Trauma & ICU Block
+  const emergencyICU = [
     [lng + scale * 1.1, lat - scale * 0.4],
-    [lng + scale * 1.8, lat - scale * 0.4],
-    [lng + scale * 1.8, lat + scale * 0.5],
-    [lng + scale * 1.1, lat + scale * 0.5],
+    [lng + scale * 1.85, lat - scale * 0.4],
+    [lng + scale * 1.85, lat + scale * 0.55],
+    [lng + scale * 1.1, lat + scale * 0.55],
     [lng + scale * 1.1, lat - scale * 0.4],
   ];
+
+  // 3. WHO Cold-Chain Vaccine & Medicine Vault
   const vaccineVault = [
-    [lng - scale * 1.8, lat - scale * 0.5],
+    [lng - scale * 1.85, lat - scale * 0.5],
     [lng - scale * 1.1, lat - scale * 0.5],
-    [lng - scale * 1.1, lat + scale * 0.3],
-    [lng - scale * 1.8, lat + scale * 0.3],
-    [lng - scale * 1.8, lat - scale * 0.5],
+    [lng - scale * 1.1, lat + scale * 0.35],
+    [lng - scale * 1.85, lat + scale * 0.35],
+    [lng - scale * 1.85, lat - scale * 0.5],
+  ];
+
+  // 4. Ambulance & Delivery Bay Logistics Hub
+  const deliveryBay = [
+    [lng - scale * 0.7, lat - scale * 1.4],
+    [lng + scale * 0.7, lat - scale * 1.4],
+    [lng + scale * 0.7, lat - scale * 0.8],
+    [lng - scale * 0.7, lat - scale * 0.8],
+    [lng - scale * 0.7, lat - scale * 1.4],
   ];
 
   return [
-    { polygon: mainBlock, height: 350, type: 'MAIN_HOSPITAL' },
-    { polygon: emergencyWing, height: 500, type: 'ICU_TRAUMA_WING' },
-    { polygon: vaccineVault, height: 220, type: 'WHO_VACCINE_VAULT' },
+    { polygon: mainWard, height: isP0 ? 420 : 300, color: baseColor, wing: 'Main Hospital Ward' },
+    { polygon: emergencyICU, height: isP0 ? 580 : 400, color: [245, 78, 0, 240] as [number, number, number, number], wing: 'Emergency Trauma & ICU' },
+    { polygon: vaccineVault, height: 220, color: [6, 182, 212, 240] as [number, number, number, number], wing: 'WHO Cold-Chain Vault' },
+    { polygon: deliveryBay, height: 140, color: [74, 80, 87, 230] as [number, number, number, number], wing: 'Ambulance & Logistics Bay' },
   ];
 }
 
@@ -95,11 +101,22 @@ export const MapTab: React.FC<MapTabProps> = ({
   selectedFacility,
   onRerouteRequest,
 }) => {
-  const [viewState, setViewState] = useState(INITIAL_VIEW_STATE);
+  const [viewState, setViewState] = useState({
+    longitude: 74.08,
+    latitude: 18.78,
+    zoom: 9.8,
+    pitch: 60, // 3D Camera Tilt (60 degrees)
+    bearing: -18,
+    maxPitch: 85,
+    minZoom: 5,
+    maxZoom: 20,
+  });
+
   const [time, setTime] = useState(0);
   const [isSelfPlanning, setIsSelfPlanning] = useState(false);
   const [planningStep, setPlanningStep] = useState<string | null>(null);
   const [isOrbiting, setIsOrbiting] = useState(false);
+  const [basemapStyle, setBasemapStyle] = useState<'DARK' | 'SATELLITE'>('DARK');
   const [showBlockerModal, setShowBlockerModal] = useState(false);
   const [roadNote, setRoadNote] = useState('Ghod River Bridge Submerged (Rainfall >45mm)');
 
@@ -109,85 +126,66 @@ export const MapTab: React.FC<MapTabProps> = ({
   // 10 Pune District Clinics
   const puneClinics = facilities.filter(f => f.country === 'IND');
 
-  // Continuous 60fps clock for TripsLayer
-  const loopLength = 1800;
-  const animationSpeed = 2.0;
+  // Generate 800+ Point Dense Winding Highway Spline
+  const splineData = useMemo(() => {
+    const rawWaypoints = puneClinics.map(f => [f.longitude, f.latitude] as [number, number]);
+    return generateDenseHighwaySpline(rawWaypoints, 75);
+  }, [puneClinics]);
 
+  const loopLength = splineData.pathWithTimestamps.length > 0 
+    ? splineData.pathWithTimestamps[splineData.pathWithTimestamps.length - 1][2] 
+    : 1800;
+
+  // 60fps Continuous Clock for TripsLayer Animated Neon Flow
   useEffect(() => {
-    let currentTime = 0;
-    const animateLoop = () => {
-      currentTime = (currentTime + animationSpeed) % loopLength;
-      setTime(currentTime);
-      animFrameRef.current = requestAnimationFrame(animateLoop);
+    let curTime = 0;
+    const animate = () => {
+      curTime = (curTime + 3.0) % (loopLength || 1800);
+      setTime(curTime);
+      animFrameRef.current = requestAnimationFrame(animate);
     };
-    animFrameRef.current = requestAnimationFrame(animateLoop);
+    animFrameRef.current = requestAnimationFrame(animate);
 
     return () => {
       if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
     };
-  }, [loopLength, animationSpeed]);
+  }, [loopLength]);
 
-  // 1. Buildings Data (visgl/deck.gl format)
+  // 1. 3D Architectural Hospital Buildings Data
   const buildings = useMemo(() => {
     const list: any[] = [];
     puneClinics.forEach((fac, idx) => {
       const isP0 = fac.risk_tier === 'P0_CRITICAL';
       const isP1 = fac.risk_tier === 'P1_WARNING';
-      const color: [number, number, number, number] = isP0 
-        ? [239, 68, 68, 230] 
-        : isP1 
-        ? [245, 158, 11, 230] 
-        : [16, 185, 129, 230];
-
-      const complexes = generateBuildingComplex(fac.longitude, fac.latitude);
-      complexes.forEach((comp) => {
+      const wings = generateCampusComplex(fac.longitude, fac.latitude, isP0, isP1);
+      
+      wings.forEach(w => {
         list.push({
-          polygon: comp.polygon,
-          height: comp.height * (isP0 ? 1.6 : 1.2),
-          color,
+          polygon: w.polygon,
+          height: w.height,
+          color: w.color,
           facility: fac,
-          name: `${idx + 1}. ${fac.name} (${comp.type})`,
+          name: `${idx + 1}. ${fac.name} (${w.wing})`,
         });
       });
     });
     return list;
   }, [puneClinics]);
 
-  // 2. Trips Data (visgl/deck.gl TripsLayer format)
+  // 2. 3D Trips Data with Dense Road Timestamps (Dual Neon Trails)
   const trips = useMemo(() => {
-    if (puneClinics.length === 0) return [];
-    const waypoints = puneClinics.map(f => [f.longitude, f.latitude]);
-    waypoints.push(waypoints[0]); // Return circuit
-
-    const path0: [number, number][] = [];
-    const timestamps0: number[] = [];
-    let curTime = 0;
-
-    for (let i = 0; i < waypoints.length; i++) {
-      path0.push([waypoints[i][0], waypoints[i][1]]);
-      timestamps0.push(curTime);
-      curTime += 180;
-    }
-
-    // Secondary counter-clockwise patrol trip
-    const waypointsRev = [...waypoints].reverse();
-    const path1: [number, number][] = [];
-    const timestamps1: number[] = [];
-    curTime = 0;
-
-    for (let i = 0; i < waypointsRev.length; i++) {
-      path1.push([waypointsRev[i][0], waypointsRev[i][1]]);
-      timestamps1.push(curTime);
-      curTime += 180;
-    }
+    if (splineData.pathWithTimestamps.length === 0) return [];
+    
+    const path = splineData.pathWithTimestamps.map(p => [p[0], p[1]] as [number, number]);
+    const timestamps = splineData.pathWithTimestamps.map(p => p[2]);
 
     return [
-      { vendor: 0, path: path0, timestamps: timestamps0 },
-      { vendor: 1, path: path1, timestamps: timestamps1 },
+      { vendor: 0, path, timestamps },
+      { vendor: 1, path: [...path].reverse(), timestamps },
     ];
-  }, [puneClinics]);
+  }, [splineData]);
 
-  // 3. Parabolic Transfer Arcs
+  // 3. 3D Parabolic Transfer Arcs
   const arcs = useMemo(() => {
     const donor = puneClinics.find(f => f.facility_id === 'PHC-PUN-008') || puneClinics[0];
     const recipients = puneClinics.filter(f => f.risk_tier === 'P0_CRITICAL');
@@ -201,73 +199,88 @@ export const MapTab: React.FC<MapTabProps> = ({
     }));
   }, [puneClinics]);
 
-  // Deck.gl Layer Pipeline
+  // 4. Deck.gl Layers Configuration
   const layers = [
-    // 3D Animated TripsLayer (visgl/deck.gl official implementation)
+    // Layer 1: Dense Highway Route Glow Ribbon (Underglow)
+    new PathLayer({
+      id: 'dense-highway-glow',
+      data: [{ path: splineData.denseLineCoordinates }],
+      getPath: (d: any) => d.path,
+      getColor: [6, 182, 212, 120], // Neon Cyan Glow
+      getWidth: 700,
+      widthUnits: 'meters',
+      capRounded: true,
+      jointRounded: true,
+    }),
+
+    // Layer 2: visgl/deck.gl Animated TripsLayer (Tron-Style High-Speed Light Trail)
     new TripsLayer({
-      id: 'trips',
+      id: 'quantum-trips-layer',
       data: trips,
       getPath: (d: any) => d.path,
       getTimestamps: (d: any) => d.timestamps,
-      getColor: (d: any) => (d.vendor === 0 ? DEFAULT_THEME.trailColor0 : DEFAULT_THEME.trailColor1),
+      getColor: (d: any) => (d.vendor === 0 ? [253, 128, 93] : [23, 184, 190]), // Neon Orange / Cyan
       opacity: 0.95,
       widthMinPixels: 4,
       rounded: true,
-      trailLength: 200,
+      trailLength: 260,
       currentTime: time,
       shadowEnabled: false,
     }),
 
-    // 3D Extruded Buildings (visgl/deck.gl official implementation)
+    // Layer 3: 3D Architectural Hospital Buildings with Real-Time Lighting
     new PolygonLayer({
-      id: 'buildings',
+      id: '3d-hospital-buildings',
       data: buildings,
       extruded: true,
       wireframe: true,
-      opacity: 0.85,
+      filled: true,
+      opacity: 0.88,
       getPolygon: (f: any) => f.polygon,
       getElevation: (f: any) => f.height,
       getFillColor: (f: any) => f.color,
       getLineColor: [255, 255, 255, 180],
       getLineWidth: 1.5,
       lineWidthUnits: 'pixels',
-      material: DEFAULT_THEME.material,
+      material,
       pickable: true,
       onClick: (info: any) => {
         if (info.object?.facility) {
           onFacilitySelect(info.object.facility);
+          // Micro Campus Drone Zoom (75° pitch, close range)
           setViewState(prev => ({
             ...prev,
             longitude: info.object.facility.longitude,
             latitude: info.object.facility.latitude,
-            zoom: 12,
-            pitch: 65,
+            zoom: 13.5,
+            pitch: 75,
+            duration: 1400,
           }));
         }
       },
     }),
 
-    // 3D Parabolic Transfer Arcs
+    // Layer 4: 3D Parabolic Transfer Arcs in Space
     new ArcLayer({
-      id: 'transfer-arcs',
+      id: '3d-transfer-arcs',
       data: arcs,
       getSourcePosition: (d: any) => d.from,
       getTargetPosition: (d: any) => d.to,
       getSourceColor: [23, 184, 190, 240],
       getTargetColor: [253, 128, 93, 240],
-      getWidth: 4,
-      getHeight: 0.6,
+      getWidth: 4.5,
+      getHeight: 0.65, // High 3D arch
       pickable: true,
     }),
 
-    // Ground Radar Rings
+    // Layer 5: Ground Pulsing Radar Rings at Critical Clinics
     new ScatterplotLayer({
       id: 'radar-rings',
       data: puneClinics.filter(f => f.risk_tier === 'P0_CRITICAL'),
       getPosition: (d: any) => [d.longitude, d.latitude],
-      getRadius: 2200 + Math.sin(time * 0.05) * 600,
-      getFillColor: [239, 68, 68, 50],
-      getLineColor: [239, 68, 68, 200],
+      getRadius: 2400 + Math.sin(time * 0.05) * 800,
+      getFillColor: [239, 68, 68, 45],
+      getLineColor: [239, 68, 68, 220],
       stroked: true,
       filled: true,
       lineWidthMinPixels: 2,
@@ -275,9 +288,9 @@ export const MapTab: React.FC<MapTabProps> = ({
     }),
   ];
 
-  // 3D Camera Controls
-  const handleSnap3D = () => {
-    setViewState(prev => ({ ...prev, pitch: 65, bearing: -15, zoom: 9.8 }));
+  // Camera Controls
+  const handleSnapMacro = () => {
+    setViewState(prev => ({ ...prev, longitude: 74.08, latitude: 18.78, zoom: 9.8, pitch: 60, bearing: -18 }));
   };
 
   const handleSnap2D = () => {
@@ -299,7 +312,7 @@ export const MapTab: React.FC<MapTabProps> = ({
     }
   };
 
-  // AI 9-Clinic Self-Planning Simulation
+  // AI 9-Clinic Self-Planning Simulation (Sequential 3D Drone Flight)
   const handleTriggerSelfPlan = () => {
     setIsSelfPlanning(true);
     setPlanningStep('Step 1/4: ForecasterAgent evaluating 9-clinic demand surges...');
@@ -309,8 +322,8 @@ export const MapTab: React.FC<MapTabProps> = ({
         ...prev,
         longitude: puneClinics[1].longitude,
         latitude: puneClinics[1].latitude,
-        zoom: 11.5,
-        pitch: 70,
+        zoom: 12.5,
+        pitch: 72,
       }));
     }
 
@@ -321,8 +334,8 @@ export const MapTab: React.FC<MapTabProps> = ({
           ...prev,
           longitude: puneClinics[4].longitude,
           latitude: puneClinics[4].latitude,
-          zoom: 11.8,
-          pitch: 72,
+          zoom: 12.8,
+          pitch: 74,
           bearing: 45,
         }));
       }
@@ -335,7 +348,7 @@ export const MapTab: React.FC<MapTabProps> = ({
           ...prev,
           longitude: puneClinics[7].longitude,
           latitude: puneClinics[7].latitude,
-          zoom: 11.5,
+          zoom: 12.5,
           pitch: 68,
           bearing: -90,
         }));
@@ -349,13 +362,17 @@ export const MapTab: React.FC<MapTabProps> = ({
         longitude: 74.08,
         latitude: 18.78,
         zoom: 9.8,
-        pitch: 55,
-        bearing: -15,
+        pitch: 60,
+        bearing: -18,
       }));
       setIsSelfPlanning(false);
       setTimeout(() => setPlanningStep(null), 4000);
     }, 3900);
   };
+
+  const mapStyleUrl = basemapStyle === 'DARK'
+    ? 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json'
+    : 'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json';
 
   return (
     <div className="relative h-[calc(100vh-140px)] w-full flex flex-col md:flex-row overflow-hidden border-b border-hairline bg-canvas">
@@ -367,17 +384,17 @@ export const MapTab: React.FC<MapTabProps> = ({
           onViewStateChange={(e: any) => setViewState(e.viewState)}
           controller={true}
           layers={layers as any}
-          effects={DEFAULT_THEME.effects}
+          effects={[lightingEffect]}
           getTooltip={({ object }: any) => {
             if (!object) return null;
             if (object.facility) {
               const fac = object.facility as HealthFacility;
               return {
                 html: `
-                  <div style="background: rgba(28,27,23,0.95); backdrop-filter: blur(8px); padding: 10px 14px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); color: #fff; font-family: monospace; font-size: 11px; box-shadow: 0 8px 24px rgba(0,0,0,0.6);">
-                    <div style="font-weight: 700; font-size: 13px; color: #f54e00; margin-bottom: 4px;">${fac.name}</div>
-                    <div style="color: #a1a1aa; margin-bottom: 6px;">ID: ${fac.facility_id} | ${fac.district}</div>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 6px;">
+                  <div style="background: rgba(24,24,27,0.96); backdrop-filter: blur(10px); padding: 10px 14px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); color: #fff; font-family: monospace; font-size: 11px; box-shadow: 0 8px 24px rgba(0,0,0,0.7);">
+                    <div style="font-weight: 700; font-size: 13px; color: #f54e00; margin-bottom: 3px;">${fac.name}</div>
+                    <div style="color: #a1a1aa; margin-bottom: 6px;">ID: ${fac.facility_id} | ${fac.district} District</div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; border-top: 1px solid rgba(255,255,255,0.12); padding-top: 6px;">
                       <div>Paracetamol: <b style="color:#fff;">${fac.current_stock_pcm500} tabs</b></div>
                       <div>Days Left: <b style="color:${fac.days_to_stockout <= 2 ? '#ef4444' : '#10b981'};">${fac.days_to_stockout}d</b></div>
                       <div>Bed Occupancy: <b style="color:#fff;">${fac.occupied_beds}/${fac.total_beds}</b></div>
@@ -390,7 +407,7 @@ export const MapTab: React.FC<MapTabProps> = ({
             if (object.fromName) {
               return {
                 html: `
-                  <div style="background: rgba(28,27,23,0.95); padding: 8px 12px; border-radius: 6px; border: 1px solid #10b981; color: #fff; font-family: monospace; font-size: 11px;">
+                  <div style="background: rgba(24,24,27,0.96); padding: 8px 12px; border-radius: 6px; border: 1px solid #10b981; color: #fff; font-family: monospace; font-size: 11px;">
                     <span style="color:#10b981; font-weight: bold;">3D Redistribution Arc</span><br/>
                     <b>${object.fromName}</b> to <b>${object.toName}</b><br/>
                     Transfer: <b>${object.units} units Paracetamol</b>
@@ -404,18 +421,18 @@ export const MapTab: React.FC<MapTabProps> = ({
           <Map
             reuseMaps
             mapLib={maplibregl as any}
-            mapStyle="https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json"
+            mapStyle={mapStyleUrl}
           />
         </DeckGL>
 
         {/* 🎮 3D Camera Controls Toolbar (Top Right) */}
         <div className="absolute top-4 right-4 z-10 flex items-center bg-surface-card/95 backdrop-blur-md border border-hairline rounded-lg p-1.5 shadow-md text-xs font-mono gap-1">
           <button
-            onClick={handleSnap3D}
+            onClick={handleSnapMacro}
             className="px-3 py-1.5 rounded-md bg-primary text-white font-bold flex items-center gap-1.5 hover:bg-primary-active transition-colors"
           >
             <Compass className="w-3.5 h-3.5" />
-            <span>3D Tilt (65°)</span>
+            <span>District 3D (60°)</span>
           </button>
           
           <button
@@ -433,6 +450,14 @@ export const MapTab: React.FC<MapTabProps> = ({
             <Layers className="w-3.5 h-3.5 text-muted" />
             <span>2D Flat</span>
           </button>
+
+          <button
+            onClick={() => setBasemapStyle(prev => prev === 'DARK' ? 'SATELLITE' : 'DARK')}
+            className="px-2.5 py-1.5 rounded-md text-ink hover:bg-canvas-soft transition-colors flex items-center gap-1 border-l border-hairline ml-1"
+          >
+            <Satellite className="w-3.5 h-3.5 text-primary" />
+            <span>{basemapStyle === 'DARK' ? 'Voyager' : 'Dark Matter'}</span>
+          </button>
         </div>
 
         {/* 🛰️ 3D Floating HUD: 9 Clinics AI Telemetry (Top Left) */}
@@ -441,11 +466,11 @@ export const MapTab: React.FC<MapTabProps> = ({
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-semantic-success animate-ping"></span>
               <span className="text-[11px] font-mono uppercase tracking-wider text-muted font-semibold">
-                visgl/deck.gl 3D Trips Engine
+                visgl/deck.gl 3D Fleet Twin
               </span>
             </div>
             <span className="text-[10px] font-mono bg-surface-strong px-2 py-0.5 rounded-pill text-ink font-bold">
-              Trips & Buildings Active
+              Dense Spline & 3D Campus
             </span>
           </div>
 
