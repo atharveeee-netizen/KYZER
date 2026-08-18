@@ -80,7 +80,10 @@ class GeminiRegisterExtractor:
             req = urllib.request.Request(
                 req_url,
                 data=req_data,
-                headers={"Content-Type": "application/json"},
+                headers={
+                    "Content-Type": "application/json",
+                    "X-goog-api-key": self.api_key
+                },
                 method="POST"
             )
 

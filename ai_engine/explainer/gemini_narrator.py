@@ -62,7 +62,10 @@ class GeminiDecisionNarrator:
             req = urllib.request.Request(
                 f"{self.endpoint_url}?key={self.api_key}",
                 data=req_data,
-                headers={"Content-Type": "application/json"},
+                headers={
+                    "Content-Type": "application/json",
+                    "X-goog-api-key": self.api_key
+                },
                 method="POST"
             )
 

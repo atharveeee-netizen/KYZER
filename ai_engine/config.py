@@ -13,6 +13,21 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 AI_ENGINE_DIR = Path(__file__).resolve().parent
 DATA_DIR = AI_ENGINE_DIR / "data"
 
+# Automatically parse .env if present
+env_file = BASE_DIR / ".env"
+if env_file.exists():
+    try:
+        with open(env_file, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith("#") and "=" in line:
+                    k, v = line.split("=", 1)
+                    k, v = k.strip(), v.strip()
+                    if k not in os.environ:
+                        os.environ[k] = v
+    except Exception:
+        pass
+
 class Settings(BaseModel):
     """Global configuration settings for AI Engine components."""
     
