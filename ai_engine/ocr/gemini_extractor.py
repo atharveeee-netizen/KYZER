@@ -45,8 +45,12 @@ class GeminiRegisterExtractor:
             return self._generate_simulated_extraction(facility_hint, country_hint, start_time)
 
         try:
-            # Encode image to Base64
-            b64_image = base64.b64encode(image_bytes).decode("utf-8")
+            # 1. Preprocess raw camera image (Auto-Deskew, CLAHE contrast, Bilateral denoise)
+            from ai_engine.ocr.image_preprocessor import ClinicRegisterImagePreprocessor
+            processed_bytes = ClinicRegisterImagePreprocessor.preprocess_image_bytes(image_bytes)
+
+            # 2. Encode preprocessed image to Base64
+            b64_image = base64.b64encode(processed_bytes).decode("utf-8")
             
             # Prepare payload for Gemini 1.5 Flash
             payload = {

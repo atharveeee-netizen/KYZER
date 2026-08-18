@@ -35,18 +35,19 @@ class GeminiDecisionNarrator:
             return self._generate_simulated_narrative(explanation, target_language)
 
         prompt = f"""
-        You are an AI Clinical Assistant explaining an automated medicine restocking recommendation to a District Health Officer in India.
-        Translate these mathematical metrics into a concise 2-3 sentence clinical briefing:
+        You are an AI Clinical Assistant explaining an automated medicine restocking recommendation to a District Health Officer and ASHA health workers in Maharashtra, India.
+        Translate these mathematical metrics into concise clinical briefings in English, Hindi, and Marathi (मराठी):
         - Medicine: {explanation.item_code}
         - Base Daily Consumption: {explanation.base_expected_consumption} units
         - Predicted Demand Spike: {explanation.predicted_demand} units
         - Key Factor: {explanation.primary_driver_summary}
         - Top Factors: {json.dumps([f.model_dump() for f in explanation.top_contributing_factors])}
 
-        Provide two sections:
-        1. 'english_narrative': Professional 2-sentence explanation.
-        2. 'hindi_narrative': Simple Hindi translation in Devanagari script for local ASHA workers.
-        Return strictly JSON with keys "english_narrative" and "hindi_narrative".
+        Provide three sections:
+        1. 'english_narrative': Professional 2-sentence explanation in English.
+        2. 'hindi_narrative': Simple Hindi translation in Devanagari script for national health officers.
+        3. 'marathi_narrative': Authentic Marathi (मराठी) translation in Devanagari script for local ASHA workers in Maharashtra.
+        Return strictly JSON with keys "english_narrative", "hindi_narrative", and "marathi_narrative".
         """
 
         try:
@@ -75,7 +76,10 @@ class GeminiDecisionNarrator:
                 cand_text = cand_text[:-3]
             cand_text = cand_text.strip()
             
-            return json.loads(cand_text)
+            parsed = json.loads(cand_text)
+            if "marathi_narrative" not in parsed:
+                parsed["marathi_narrative"] = self._generate_simulated_narrative(explanation, "mr")["marathi_narrative"]
+            return parsed
 
         except Exception as e:
             logger.warning(f"Gemini narrator call failed ({e}). Returning high-fidelity template narrative.")
@@ -92,6 +96,7 @@ class GeminiDecisionNarrator:
         top_driver_name = "general_demand"
         top_factor_desc_en = "observed clinic consumption patterns"
         top_factor_desc_hi = "हाल के उपभोग के रुझानों"
+        top_factor_desc_mr = "नजीकच्या काळातील औषध वापराचा कल"
 
         if explanation.top_contributing_factors:
             top_f = explanation.top_contributing_factors[0]
@@ -102,21 +107,27 @@ class GeminiDecisionNarrator:
                 if val > 5.0:
                     top_factor_desc_en = f"heavy local rainfall ({val:.1f} mm) accelerating waterborne cases"
                     top_factor_desc_hi = f"भारी वर्षा ({val:.1f} मिमी) और मौसमी जलभराव"
+                    top_factor_desc_mr = f"झालेला मुसळधार पाऊस ({val:.1f} मिमी) आणि साथीचे आजार"
                 else:
                     top_factor_desc_en = "dry-weather clinical distribution cycles"
                     top_factor_desc_hi = "सामान्य मौसमी वितरण चक्र"
+                    top_factor_desc_mr = "कोरड्या हवामानातील नियमित वाटप चक्र"
             elif "epidemic" in top_driver_name or "cases" in top_driver_name:
                 top_factor_desc_en = f"regional epidemiological surge (growth rate {val:+.1f}%)"
                 top_factor_desc_hi = f"क्षेत्रीय बीमारी में तीव्र वृद्धि (वृद्धि दर {val:+.1f}%)"
+                top_factor_desc_mr = f"परिसरातील संसर्गजन्य रोगांचा वाढता प्रादुर्भाव (वाढ दर {val:+.1f}%)"
             elif "rolling_mean" in top_driver_name or "rolling" in top_driver_name:
                 top_factor_desc_en = f"sustained 7-day rolling consumption baseline ({val:.1f} units/day)"
                 top_factor_desc_hi = f"पिछले 7 दिनों की निरंतर उच्च मांग ({val:.1f} यूनिट/दिन)"
+                top_factor_desc_mr = f"गेल्या ७ दिवसांमधील सतत वाढती सरासरी मागणी ({val:.1f} युनिट्स/दिवस)"
             elif "lag" in top_driver_name:
                 top_factor_desc_en = f"recent historical dispensing velocity ({val:.1f} units)"
                 top_factor_desc_hi = f"हाल ही में दवाओं की बढ़ी हुई खपत ({val:.1f} यूनिट)"
+                top_factor_desc_mr = f"मागील काही दिवसांत झालेला वाढीव औषध वापर ({val:.1f} युनिट्स)"
             elif "is_weekend" in top_driver_name or "day_of_week" in top_driver_name:
                 top_factor_desc_en = "weekend clinic patient volume influx"
                 top_factor_desc_hi = "सप्ताहांत में मरीजों की बढ़ी हुई संख्या"
+                top_factor_desc_mr = "शनिवार-रविवार दरम्यान वाढलेली रुग्णसंख्या"
 
         en = (
             f"Demand for {explanation.item_code} at {explanation.facility_id} is projected to change from "
@@ -129,8 +140,15 @@ class GeminiDecisionNarrator:
             f"{explanation.predicted_demand} यूनिट होने का अनुमान है। मुख्य कारण {top_factor_desc_hi} है। "
             f"अतिरिक्त स्टॉक वाले निकटवर्ती स्वास्थ्य केंद्र से स्वचालित पुनर्वितरण की सिफारिश की जाती है।"
         )
+
+        mr = (
+            f"{explanation.facility_id} येथे {explanation.item_code} ची मागणी {explanation.base_expected_consumption} वरून "
+            f"{explanation.predicted_demand} युनिट्सपर्यंत वाढण्याचा अंदाज आहे. याचे मुख्य कारण {top_factor_desc_mr} हे आहे. "
+            f"शिल्लक साठा असलेल्या जवळच्या आरोग्य केंद्राकडून तातडीने औषध पुनर्वाटप करण्याचे आदेश दिले आहेत."
+        )
         
         return {
             "english_narrative": en,
-            "hindi_narrative": hi
+            "hindi_narrative": hi,
+            "marathi_narrative": mr
         }

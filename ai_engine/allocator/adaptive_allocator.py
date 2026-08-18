@@ -356,8 +356,17 @@ class AdaptiveRouteAllocator:
         )
 
     @staticmethod
-    def _compute_distance_matrix(facilities: List[Dict[str, Any]]) -> List[List[float]]:
-        """Calculates Haversine road-approximated distance matrix across all nodes."""
+    def _compute_distance_matrix(facilities: List[Dict[str, Any]], district_hint: str = "PUNE") -> List[List[float]]:
+        """Calculates Topographically Calibrated road distance matrix across all nodes."""
+        TERRAIN_TORTUOSITY_MULTIPLIERS = {
+            "PUNE": 1.38,           # Western Ghats hilly terrain
+            "SATARA": 1.45,         # Mountainous passes
+            "MAHARASHTRA_RURAL": 1.35,
+            "URBAN": 1.20,
+            "DEFAULT": 1.30
+        }
+        mult = TERRAIN_TORTUOSITY_MULTIPLIERS.get(district_hint.upper(), TERRAIN_TORTUOSITY_MULTIPLIERS["DEFAULT"])
+        
         N = len(facilities)
         matrix = [[0.0] * N for _ in range(N)]
         for i in range(N):
@@ -366,12 +375,12 @@ class AdaptiveRouteAllocator:
             for j in range(i + 1, N):
                 lat2 = facilities[j].get("latitude", facilities[j].get("lat", 18.52))
                 lon2 = facilities[j].get("longitude", facilities[j].get("lng", 73.85))
-                # Haversine distance with 1.35x rural winding road factor
+                # Haversine distance with topographically calibrated tortuosity factor
                 dlat = math.radians(lat2 - lat1)
                 dlon = math.radians(lon2 - lon1)
                 a = math.sin(dlat / 2)**2 + math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * math.sin(dlon / 2)**2
                 c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
-                dist = round(6371.0 * c * 1.35, 2)
+                dist = round(6371.0 * c * mult, 2)
                 matrix[i][j] = dist
                 matrix[j][i] = dist
         return matrix

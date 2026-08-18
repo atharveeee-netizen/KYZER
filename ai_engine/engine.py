@@ -163,7 +163,8 @@ class CareDOMEngine:
             "clinical_explainability": {
                 "primary_driver": summary.explanation.primary_driver_summary,
                 "english_narrative": summary.narrative.get("english_narrative", ""),
-                "hindi_narrative": summary.narrative.get("hindi_narrative", "")
+                "hindi_narrative": summary.narrative.get("hindi_narrative", ""),
+                "marathi_narrative": summary.narrative.get("marathi_narrative", "")
             }
         }
 
