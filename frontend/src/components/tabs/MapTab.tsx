@@ -9,7 +9,7 @@ import { TripsLayer, Tile3DLayer } from '@deck.gl/geo-layers';
 import { I3SLoader } from '@loaders.gl/i3s';
 import { AmbientLight, PointLight, LightingEffect } from '@deck.gl/core';
 
-import { Sparkles, Navigation, Pill, Bed, Activity, RefreshCw, X, CheckCircle2, Route, Cpu } from 'lucide-react';
+import { Sparkles, Navigation, Pill, Bed, Activity, RefreshCw, X, CheckCircle2, Route, Cpu, MousePointerClick } from 'lucide-react';
 import { fetchOSRMShortestRoute, RouteResult } from '../../services/roadRouter';
 import { HealthFacility, RoutingResult } from '../../types';
 
@@ -108,6 +108,10 @@ const INITIAL_CLINICS: UrbanClinic[] = [
 export const MapTab: React.FC<MapTabProps> = () => {
   const [viewState, setViewState] = useState(INITIAL_VIEW_STATE);
   const [clinics] = useState<UrbanClinic[]>(INITIAL_CLINICS);
+  const [routingMode, setRoutingMode] = useState<'AI_AGENT' | 'MANUAL_SELECT'>('AI_AGENT');
+  const [manualOrigin, setManualOrigin] = useState<UrbanClinic | null>(null);
+  const [manualDestination, setManualDestination] = useState<UrbanClinic | null>(null);
+
   const [isSimulating, setIsSimulating] = useState(false);
   const [simStep, setSimStep] = useState<number>(0);
   const [simMessage, setSimMessage] = useState<string | null>(null);
@@ -155,8 +159,32 @@ export const MapTab: React.FC<MapTabProps> = () => {
     };
   }, [loopLength]);
 
-  // Handle On-Spot OSRM AI Road Route Simulation
+  // Handle Clinic Pin Click
+  const handleClinicClick = (clinic: UrbanClinic) => {
+    setSelectedClinic(clinic);
+
+    if (routingMode === 'MANUAL_SELECT') {
+      if (!manualOrigin || (manualOrigin && manualDestination)) {
+        // Step 1: Select Origin
+        setManualOrigin(clinic);
+        setManualDestination(null);
+        setActiveTransfer(null);
+        setActiveRouteResult(null);
+        setSimMessage(`Origin selected: ${clinic.name}. Now click destination clinic on map.`);
+      } else if (manualOrigin && !manualDestination && manualOrigin.id !== clinic.id) {
+        // Step 2: Select Destination & Compute OSRM Route
+        setManualDestination(clinic);
+        setActiveTransfer({ from: manualOrigin, to: clinic, units: 450 });
+        setSimMessage(`Manual Route Computed: ${manualOrigin.name} -> ${clinic.name} via OSRM Engine.`);
+      }
+    }
+  };
+
+  // Handle Autonomous AI Agent Outbreak Simulation
   const handleTriggerSimulation = async () => {
+    setRoutingMode('AI_AGENT');
+    setManualOrigin(null);
+    setManualDestination(null);
     setIsSimulating(true);
     setSimStep(1);
     setSimMessage('Step 1: Anomaly Detected at Mission Clinic (PHC-URB-03) (85 tabs, 0.8 days left)!');
@@ -216,6 +244,8 @@ export const MapTab: React.FC<MapTabProps> = () => {
   const handleResetSimulation = () => {
     setActiveTransfer(null);
     setActiveRouteResult(null);
+    setManualOrigin(null);
+    setManualDestination(null);
     setSimStep(0);
     setSimMessage(null);
     setSelectedClinic(null);
@@ -287,22 +317,28 @@ export const MapTab: React.FC<MapTabProps> = () => {
         shadowEnabled: false,
       }),
 
-      // 5. Ground Level Clinic Radar Beacons (Pulsing Red for Stockout, Emerald for Donor/Depot)
+      // 5. Ground Level Clinic Radar Beacons (Pulsing Red for Stockout/Dest, Emerald for Donor/Origin)
       new ScatterplotLayer({
         id: 'clinic-ground-radar-rings',
         data: clinics,
         getPosition: (d: UrbanClinic) => [d.coordinates[0], d.coordinates[1], 2],
         getRadius: (d: UrbanClinic) => {
+          if (manualOrigin?.id === d.id) return 130 + Math.sin(time * 0.1) * 30;
+          if (manualDestination?.id === d.id) return 130 + Math.cos(time * 0.1) * 30;
           if (d.role === 'STOCKOUT') return 120 + Math.sin(time * 0.08) * 35;
           if (d.role === 'DONOR') return 100 + Math.cos(time * 0.08) * 25;
           return 80;
         },
         getFillColor: (d: UrbanClinic) => {
+          if (manualOrigin?.id === d.id) return [16, 185, 129, 120];
+          if (manualDestination?.id === d.id) return [239, 68, 68, 120];
           if (d.role === 'STOCKOUT') return [239, 68, 68, 85];
           if (d.role === 'DONOR') return [16, 185, 129, 85];
           return [59, 130, 246, 65];
         },
         getLineColor: (d: UrbanClinic) => {
+          if (manualOrigin?.id === d.id) return [16, 185, 129, 255];
+          if (manualDestination?.id === d.id) return [239, 68, 68, 255];
           if (d.role === 'STOCKOUT') return [239, 68, 68, 255];
           if (d.role === 'DONOR') return [16, 185, 129, 255];
           return [59, 130, 246, 220];
@@ -313,7 +349,7 @@ export const MapTab: React.FC<MapTabProps> = () => {
         radiusUnits: 'meters',
         pickable: true,
         onClick: (info: any) => {
-          if (info.object) setSelectedClinic(info.object);
+          if (info.object) handleClinicClick(info.object);
         },
       }),
 
@@ -324,6 +360,8 @@ export const MapTab: React.FC<MapTabProps> = () => {
         getPosition: (d: UrbanClinic) => [d.coordinates[0], d.coordinates[1], 10],
         getRadius: 26,
         getFillColor: (d: UrbanClinic) => {
+          if (manualOrigin?.id === d.id) return [16, 185, 129, 255];
+          if (manualDestination?.id === d.id) return [239, 68, 68, 255];
           if (d.role === 'STOCKOUT') return [239, 68, 68, 255];
           if (d.role === 'DONOR') return [16, 185, 129, 255];
           return [59, 130, 246, 255];
@@ -331,11 +369,11 @@ export const MapTab: React.FC<MapTabProps> = () => {
         radiusUnits: 'meters',
         pickable: true,
         onClick: (info: any) => {
-          if (info.object) setSelectedClinic(info.object);
+          if (info.object) handleClinicClick(info.object);
         },
       }),
     ];
-  }, [clinics, activeRouteResult, tripsData, time]);
+  }, [clinics, activeRouteResult, tripsData, manualOrigin, manualDestination, time]);
 
   return (
     <div className="relative h-[calc(100vh-80px)] w-full flex flex-col md:flex-row overflow-hidden border-b border-hairline bg-canvas">
@@ -353,10 +391,14 @@ export const MapTab: React.FC<MapTabProps> = () => {
             if (!object) return null;
             if (object.name && object.role) {
               const c = object as UrbanClinic;
+              const isOrigin = manualOrigin?.id === c.id;
+              const isDest = manualDestination?.id === c.id;
               return {
                 html: `
                   <div style="background: rgba(24,24,27,0.96); backdrop-filter: blur(10px); padding: 10px 14px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); color: #fff; font-family: monospace; font-size: 11px; box-shadow: 0 8px 24px rgba(0,0,0,0.7);">
-                    <div style="font-weight: 700; font-size: 13px; color: ${c.role === 'STOCKOUT' ? '#ef4444' : c.role === 'DONOR' ? '#10b981' : '#38bdf8'}; margin-bottom: 3px;">${c.name}</div>
+                    <div style="font-weight: 700; font-size: 13px; color: ${isOrigin ? '#10b981' : isDest ? '#ef4444' : c.role === 'STOCKOUT' ? '#ef4444' : c.role === 'DONOR' ? '#10b981' : '#38bdf8'}; margin-bottom: 3px;">
+                      ${c.name} ${isOrigin ? '(ORIGIN)' : isDest ? '(DESTINATION)' : ''}
+                    </div>
                     <div style="color: #a1a1aa; margin-bottom: 6px;">Role: <b>${c.role}</b> | ID: ${c.id}</div>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; border-top: 1px solid rgba(255,255,255,0.12); padding-top: 6px;">
                       <div>Stock: <b style="color:#fff;">${c.stock} tabs</b></div>
@@ -364,6 +406,7 @@ export const MapTab: React.FC<MapTabProps> = () => {
                       <div>Beds: <b style="color:#fff;">${c.beds.occupied}/${c.beds.total}</b></div>
                       <div>Tier: <b style="color:${c.riskTier === 'P0_CRITICAL' ? '#ef4444' : '#10b981'};">${c.riskTier}</b></div>
                     </div>
+                    <div style="margin-top: 6px; color: #38bdf8; font-size: 10px;">Click pin to select as Origin / Destination</div>
                   </div>
                 `,
               };
@@ -379,45 +422,114 @@ export const MapTab: React.FC<MapTabProps> = () => {
           />
         </DeckGL>
 
-        {/* Floating OSRM Road Route Controller & Telemetry HUD (Top Left) */}
+        {/* Floating AI & Manual Route Controller HUD (Top Left) */}
         <div className="absolute top-4 left-4 z-10 bg-[#18181b]/95 backdrop-blur-md border border-white/20 rounded-xl p-5 shadow-2xl max-w-sm text-white font-sans">
           
           <div className="flex items-center justify-between gap-2 mb-3">
             <div className="flex items-center gap-2">
               <span className={`w-2.5 h-2.5 rounded-full ${activeTransfer ? 'bg-emerald-400 animate-ping' : 'bg-sky-400'}`}></span>
               <span className="text-xs font-mono font-bold tracking-wider uppercase text-zinc-200">
-                OSRM Routing Engine
+                OSRM Road Network
               </span>
             </div>
             <span className="text-[10px] font-mono bg-white/10 px-2 py-0.5 rounded text-sky-300 font-semibold flex items-center gap-1">
               <Cpu className="w-3 h-3 text-sky-400" />
-              <span>OSRM Driving API</span>
+              <span>OSRM Engine</span>
             </span>
           </div>
 
-          <p className="text-xs text-zinc-300 leading-relaxed mb-4">
-            Simulate real-time drug depletion at <b>Mission Clinic</b> and run OSRM shortest road routing across the street network.
-          </p>
-
-          {/* Action Buttons */}
-          <div className="grid grid-cols-2 gap-2 mb-3">
+          {/* Mode Switcher Tabs */}
+          <div className="grid grid-cols-2 gap-1.5 p-1 bg-white/5 border border-white/10 rounded-lg mb-3">
             <button
-              onClick={handleTriggerSimulation}
-              disabled={isSimulating}
-              className="w-full flex items-center justify-center gap-1.5 bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white text-xs font-semibold py-2.5 px-3 rounded-lg transition-all shadow-md active:scale-95 disabled:opacity-50"
+              onClick={() => {
+                setRoutingMode('AI_AGENT');
+                setManualOrigin(null);
+                setManualDestination(null);
+              }}
+              className={`flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-md text-[11px] font-semibold transition-all ${
+                routingMode === 'AI_AGENT'
+                  ? 'bg-orange-600 text-white shadow-xs'
+                  : 'text-zinc-400 hover:text-white'
+              }`}
             >
-              <Sparkles className={`w-3.5 h-3.5 ${isSimulating ? 'animate-spin' : ''}`} />
-              <span>{isSimulating ? 'Routing...' : 'Run OSRM Route'}</span>
+              <Sparkles className="w-3 h-3" />
+              <span>AI Auto-Plan</span>
             </button>
 
             <button
-              onClick={handleResetSimulation}
-              className="w-full flex items-center justify-center gap-1.5 bg-white/10 hover:bg-white/15 text-zinc-200 text-xs font-medium py-2.5 px-3 rounded-lg transition-all"
+              onClick={() => {
+                setRoutingMode('MANUAL_SELECT');
+                setActiveTransfer(null);
+                setActiveRouteResult(null);
+                setSimMessage('Manual Mode: Click any clinic on the map to set Origin, then click another for Destination.');
+              }}
+              className={`flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-md text-[11px] font-semibold transition-all ${
+                routingMode === 'MANUAL_SELECT'
+                  ? 'bg-sky-600 text-white shadow-xs'
+                  : 'text-zinc-400 hover:text-white'
+              }`}
             >
-              <RefreshCw className="w-3.5 h-3.5" />
-              <span>Reset State</span>
+              <MousePointerClick className="w-3 h-3" />
+              <span>Manual 2-Point</span>
             </button>
           </div>
+
+          {/* Mode Description & Actions */}
+          {routingMode === 'AI_AGENT' ? (
+            <div>
+              <p className="text-xs text-zinc-300 leading-relaxed mb-3">
+                Autonomous 5-Agent Pipeline: Evaluates critical stockout at <b>Mission Clinic</b>, checks donor safety buffer, and dispatches shortest OSRM street route.
+              </p>
+
+              <div className="grid grid-cols-2 gap-2 mb-3">
+                <button
+                  onClick={handleTriggerSimulation}
+                  disabled={isSimulating}
+                  className="w-full flex items-center justify-center gap-1.5 bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white text-xs font-semibold py-2 px-3 rounded-lg transition-all shadow-md active:scale-95 disabled:opacity-50"
+                >
+                  <Sparkles className={`w-3.5 h-3.5 ${isSimulating ? 'animate-spin' : ''}`} />
+                  <span>{isSimulating ? 'Routing...' : 'Run AI Route'}</span>
+                </button>
+
+                <button
+                  onClick={handleResetSimulation}
+                  className="w-full flex items-center justify-center gap-1.5 bg-white/10 hover:bg-white/15 text-zinc-200 text-xs font-medium py-2 px-3 rounded-lg transition-all"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" />
+                  <span>Reset</span>
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div>
+              <p className="text-xs text-zinc-300 leading-relaxed mb-3">
+                Interactive Point-to-Point: Click any <b>Origin clinic pin</b> on the 3D map, then click any <b>Destination clinic pin</b> to calculate the shortest road path.
+              </p>
+
+              <div className="p-2.5 bg-white/5 border border-white/10 rounded-lg text-[11px] font-mono mb-3 space-y-1.5">
+                <div className="flex justify-between items-center">
+                  <span className="text-zinc-400">1. Origin:</span>
+                  <b className={manualOrigin ? 'text-emerald-400' : 'text-zinc-500'}>
+                    {manualOrigin ? manualOrigin.name : 'Click pin on map...'}
+                  </b>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-zinc-400">2. Destination:</span>
+                  <b className={manualDestination ? 'text-red-400' : 'text-zinc-500'}>
+                    {manualDestination ? manualDestination.name : 'Click pin on map...'}
+                  </b>
+                </div>
+              </div>
+
+              <button
+                onClick={handleResetSimulation}
+                className="w-full flex items-center justify-center gap-1.5 bg-white/10 hover:bg-white/15 text-zinc-200 text-xs font-medium py-2 px-3 rounded-lg transition-all mb-3"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+                <span>Clear Selection</span>
+              </button>
+            </div>
+          )}
 
           {/* Live OSRM Routing Telemetry Metrics (When Route is Active) */}
           {activeRouteResult && (
@@ -454,21 +566,23 @@ export const MapTab: React.FC<MapTabProps> = () => {
                 <b className="text-emerald-400">PASSED (3.1°C)</b>
               </div>
 
-              <a
-                href="https://www.google.com/maps/dir/37.7785,-122.3925/37.7680,-122.4190"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full flex items-center justify-center gap-1.5 bg-white text-zinc-900 hover:bg-zinc-100 text-xs font-bold py-2 rounded-md transition-colors shadow-xs"
-              >
-                <Navigation className="w-3.5 h-3.5 text-blue-600" />
-                <span>Open Google Maps GPS (Turn-by-Turn)</span>
-              </a>
+              {activeTransfer && (
+                <a
+                  href={`https://www.google.com/maps/dir/${activeTransfer.from.coordinates[1]},${activeTransfer.from.coordinates[0]}/${activeTransfer.to.coordinates[1]},${activeTransfer.to.coordinates[0]}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full flex items-center justify-center gap-1.5 bg-white text-zinc-900 hover:bg-zinc-100 text-xs font-bold py-2 rounded-md transition-colors shadow-xs"
+                >
+                  <Navigation className="w-3.5 h-3.5 text-blue-600" />
+                  <span>Open Google Maps GPS (Turn-by-Turn)</span>
+                </a>
+              )}
             </div>
           )}
 
-          {/* AI Orchestration Step Log */}
+          {/* Orchestration / User Prompt Log */}
           {simMessage && (
-            <div className="mt-3 p-2.5 bg-black/60 border border-orange-500/40 rounded-md text-[11px] font-mono text-orange-300 animate-pulse leading-relaxed">
+            <div className="mt-3 p-2.5 bg-black/60 border border-sky-500/40 rounded-md text-[11px] font-mono text-sky-300 animate-pulse leading-relaxed">
               <code>&gt; {simMessage}</code>
             </div>
           )}
