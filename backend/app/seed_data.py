@@ -33,9 +33,30 @@ real in each:
 Two fields the source data does not carry at all, because Postgres requires
 them NOT NULL: `batch_number` and `expiry_date` for CSV-derived batches (no
 per-batch bookkeeping exists in a daily consumption time series). These are
-filled with an explicit, clearly-synthetic convention (`SEED-<facility>-
-<item>`, expiry = seed date + 180 days) rather than left blank — called out
-here so it's never mistaken for real batch data.
+filled with an explicit, clearly-synthetic convention rather than left
+blank — called out here so it's never mistaken for real batch data.
+
+To demonstrate FEFO (allocate_fefo_stock in db/schema.sql needs multiple
+batches per facility/item to have anything to order by expiry), each
+CSV-derived pair's single `stock_remaining` total is split into 1-3 batches
+by `_split_batches()` below: the parts always sum to exactly the original
+total (nothing invented), batch numbers get a `-1`/`-2`/`-3` suffix, and
+expiry dates are staggered via `SYNTHETIC_EXPIRY_OFFSETS_DAYS` so ORDER BY
+expiry_date ASC has something meaningful to demonstrate. The 5 real
+OCR-derived batches (PHC-PUN-002) are deliberately left unsplit — that
+register recorded one real batch reading per item, and splitting it would
+fabricate batch-level detail the source document doesn't contain.
+
+Batch inserts use ON CONFLICT (facility_id, item_code, batch_number) DO
+NOTHING so reseeding is always additive, never destructive: once real OCR
+ingest starts writing rows for facilities beyond PHC-PUN-002, a rerun of
+this seeder must not be able to touch them. The one exception is a
+one-time, narrowly-targeted delete of the pre-split single-batch rows this
+seeder itself used to write (exact match on the old `SEED-<facility>-
+<item>` name, no suffix) — needed so an already-seeded database doesn't end
+up with both the old single batch and the new split batches double-counting
+the same stock. It only ever matches this seeder's own old naming, never a
+real ingested batch, and becomes a permanent no-op after the first rerun.
 """
 import asyncio
 import csv
@@ -54,7 +75,31 @@ CONSUMPTION_CSV = DATA_DIR / "brics_consumption_history_seed.csv"
 CACHED_REGISTERS_DIR = DATA_DIR / "cached_registers"
 
 SEED_DATE = date(2026, 8, 18)  # matches the cached register's date_of_record
-SYNTHETIC_SHELF_LIFE_DAYS = 180
+
+# Synthetic expiry offsets from SEED_DATE, keyed by how many sub-batches a
+# facility/item pair is split into (see _split_batches). Index 0 is the
+# earliest-expiring (oldest) portion, the last is the freshest. n=1 keeps
+# the original single 180-day shelf life for pairs too small to split.
+SYNTHETIC_EXPIRY_OFFSETS_DAYS = {
+    1: [180],
+    2: [90, 210],
+    3: [60, 150, 240],
+}
+
+
+def _split_batches(qty: int) -> list[int]:
+    """Partition a real stock_remaining total into 1-3 batches without
+    inventing quantity: the parts always sum to exactly `qty`."""
+    if qty < 10:
+        n = 1
+    elif qty < 30:
+        n = 2
+    else:
+        n = 3
+    base = qty // n
+    parts = [base] * n
+    parts[-1] += qty - base * n  # remainder absorbed into the freshest batch
+    return parts
 
 # Transcribed verbatim from ai_engine/data/real_data_loader.py's
 # ATC_TO_CAREDOM_MEDICINES (the canonical 7-item formulary used to generate
@@ -173,12 +218,13 @@ async def seed_inventory_batches(
 ) -> None:
     facility_ids = {f["facility_id"] for f in facilities}
     latest_stock = _latest_stock_by_facility_item(facility_ids)
-    synthetic_expiry = SEED_DATE + timedelta(days=SYNTHETIC_SHELF_LIFE_DAYS)
 
     rows = []
+    legacy_batch_numbers = []  # one-time cleanup of the pre-split naming, see module docstring
     covered: set[tuple[str, str]] = set()
 
-    # 1. Real batch-level data from OCR-digitized registers takes priority.
+    # 1. Real batch-level data from OCR-digitized registers takes priority,
+    #    and is never split (see module docstring).
     for fac_id, reg in registers.items():
         for med in reg["medicines"]:
             rows.append((
@@ -189,7 +235,8 @@ async def seed_inventory_batches(
     print(f"  inventory_batches: {len(rows)} from real OCR registers ({list(registers.keys())})")
 
     # 2. Fill every other (facility, catalog item) pair from the CSV's
-    #    latest known stock_remaining, with a clearly-synthetic batch id/expiry.
+    #    latest known stock_remaining, split into 1-3 synthetic batches with
+    #    staggered expiry (see _split_batches / SYNTHETIC_EXPIRY_OFFSETS_DAYS).
     csv_derived = 0
     for fac in facilities:
         fac_id = fac["facility_id"]
@@ -200,18 +247,28 @@ async def seed_inventory_batches(
             qty = latest_stock.get(key)
             if qty is None:
                 continue
-            rows.append((
-                fac_id, item["item_code"], f"SEED-{fac_id}-{item['item_code']}",
-                qty, synthetic_expiry,
-            ))
-            csv_derived += 1
-    print(f"  inventory_batches: {csv_derived} from CSV latest stock_remaining (synthetic batch id/expiry)")
+            legacy_batch_numbers.append((fac_id, item["item_code"], f"SEED-{fac_id}-{item['item_code']}"))
+            parts = _split_batches(qty)
+            offsets = SYNTHETIC_EXPIRY_OFFSETS_DAYS[len(parts)]
+            for i, (part_qty, offset) in enumerate(zip(parts, offsets), start=1):
+                rows.append((
+                    fac_id, item["item_code"], f"SEED-{fac_id}-{item['item_code']}-{i}",
+                    part_qty, SEED_DATE + timedelta(days=offset),
+                ))
+                csv_derived += 1
+    print(f"  inventory_batches: {csv_derived} from CSV latest stock_remaining "
+          f"(split into 1-3 synthetic batches, staggered expiry)")
 
+    await conn.executemany(
+        "DELETE FROM inventory_batches WHERE facility_id = $1 AND item_code = $2 AND batch_number = $3",
+        legacy_batch_numbers,
+    )
     await conn.executemany(
         """
         INSERT INTO inventory_batches
             (facility_id, item_code, batch_number, quantity_available, expiry_date)
         VALUES ($1, $2, $3, $4, $5)
+        ON CONFLICT (facility_id, item_code, batch_number) DO NOTHING
         """,
         rows,
     )

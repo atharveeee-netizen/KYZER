@@ -7,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import get_settings
 from app.database import close_db, connect_db
-from app.routes import dashboard_routes, redistribution_routes
+from app.routes import dashboard_routes, inventory_routes, redistribution_routes
 
 
 @asynccontextmanager
@@ -29,6 +29,7 @@ app.add_middleware(
 )
 
 app.include_router(dashboard_routes.router)
+app.include_router(inventory_routes.router)
 app.include_router(redistribution_routes.router)
 
 
