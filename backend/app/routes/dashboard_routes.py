@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, Query
 
 from app.database import get_db
 
-router = APIRouter(prefix="/api/v1/facilities", tags=["Dashboard"])
+router = APIRouter(prefix="/api/v1/inventory", tags=["Inventory"])
 
 _DASHBOARD_QUERY = """
 SELECT
@@ -73,7 +73,7 @@ def _row_to_dict(row: asyncpg.Record) -> dict:
     }
 
 
-@router.get("/dashboard")
+@router.get("")
 async def get_facilities_dashboard(
     country_code: str | None = Query(default=None, min_length=3, max_length=3),
     db: asyncpg.Connection = Depends(get_db),
