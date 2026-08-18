@@ -18,9 +18,11 @@ qiskit-ibm-runtime>=0.20.0
 # Computer Vision & Image Processing
 opencv-python-headless>=4.9.0
 pillow>=10.2.0
+python-multipart>=0.0.9
 
 # Backend, Config & Data Validation
 fastapi>=0.110.0
+uvicorn>=0.20.0
 uvicorn[standard]>=0.28.0
 pydantic>=2.5.0
 pydantic-settings>=2.2.0
