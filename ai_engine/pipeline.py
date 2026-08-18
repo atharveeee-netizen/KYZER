@@ -12,6 +12,7 @@ import json
 import time
 import logging
 import pandas as pd
+import numpy as np
 from typing import Dict, Any, List, Optional
 from pathlib import Path
 from pydantic import BaseModel, Field
@@ -55,7 +56,7 @@ class CareDOMAIPipeline:
         self,
         country_code: str = "IND",
         target_facility_id: str = "PHC-PUN-002",
-        target_item_code: str = "MED-ORS-PKG",
+        target_item_code: str = "MED-PCM-500",
         register_image_bytes: Optional[bytes] = None
     ) -> PipelineExecutionSummary:
         """
@@ -85,13 +86,14 @@ class CareDOMAIPipeline:
             ].copy()
             if len(df_facility) == 0:
                 df_facility = df_all[df_all["item_code"] == target_item_code].copy()
+            if len(df_facility) == 0:
+                df_facility = df_all.copy()
         else:
-            # Synthetic fallback DataFrame
             df_facility = pd.DataFrame({
                 "date": pd.date_range(end=pd.Timestamp.now(), periods=30),
                 "facility_id": target_facility_id,
                 "item_code": target_item_code,
-                "consumption": np.random.poisson(25, 30),
+                "consumption": np.random.poisson(35, 30),
                 "stock_remaining": [120 - i * 3 for i in range(30)],
                 "rainfall_mm": [45.0 if i % 7 == 0 else 5.0 for i in range(30)],
                 "active_epidemic_cases": [12 if i > 20 else 2 for i in range(30)],
@@ -99,7 +101,7 @@ class CareDOMAIPipeline:
             })
 
         # 3. Multi-Horizon Quantile Demand Forecast
-        current_inv = 85.0  # Units remaining in clinic
+        current_inv = 1450.0  # Units remaining in clinic
         forecast_res = self.forecaster.predict_future(
             facility_id=target_facility_id,
             item_code=target_item_code,
@@ -115,7 +117,7 @@ class CareDOMAIPipeline:
         compound_risk = SystemicCascadeAnalyzer.evaluate_facility(
             facility_id=target_facility_id,
             country_code=country_code,
-            stock_days_left=2.5,
+            stock_days_left=3.5,
             general_occupied=ocr_res.beds.general_occupied,
             general_total=ocr_res.beds.general_total,
             icu_occupied=ocr_res.beds.icu_occupied,
@@ -151,7 +153,7 @@ class CareDOMAIPipeline:
         explanation = HealthSHAPExplainer.explain_prediction(
             feature_names=feat_names,
             feature_values=feat_vals,
-            base_value=25.0,
+            base_value=35.0,
             predicted_value=forecast_res.p50_median_expected[0] if forecast_res.p50_median_expected else 65.0
         )
 

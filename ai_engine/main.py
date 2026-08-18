@@ -4,9 +4,6 @@ Demonstrates end-to-end execution of all 5 AI components with benchmarks.
 """
 
 import sys
-import io
-
-# Ensure UTF-8 output on Windows terminals
 if hasattr(sys.stdout, 'reconfigure'):
     try:
         sys.stdout.reconfigure(encoding='utf-8')
@@ -40,7 +37,7 @@ def main():
     summary = pipeline.run_full_pipeline(
         country_code="IND",
         target_facility_id="PHC-PUN-002",
-        target_item_code="MED-ORS-PKG"
+        target_item_code="MED-PCM-500"
     )
     tot_time = time.perf_counter() - st
     
