@@ -69,35 +69,32 @@ class ClinicRegisterImagePreprocessor:
                     img, 
                     M, 
                     (w, h), 
-                    flags=cv2.INTER_CUBIC, 
+                    flags=cv2.INTER_LANCZOS4, 
                     borderMode=cv2.BORDER_CONSTANT, 
-                    borderValue=(245, 245, 245)
+                    borderValue=(255, 255, 255)
                 )
             else:
                 straightened = img
 
-            # 3. Morphological Background Whitening (Eliminates paper shadows & yellowing)
+            # 3. Professional Smooth Illumination Normalization (No harsh 1-bit pixelation)
+            # Estimates ambient lighting background using large Gaussian kernel
             sgray = cv2.cvtColor(straightened, cv2.COLOR_BGR2GRAY)
-            dilated = cv2.dilate(sgray, np.ones((7, 7), np.uint8))
-            bg = cv2.medianBlur(dilated, 21)
-            diff = 255 - cv2.absdiff(sgray, bg)
-            normalized_gray = cv2.normalize(diff, None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_8UC1)
+            bg = cv2.GaussianBlur(sgray, (61, 61), 0)
+            
+            # Divide foreground by background to remove 100% of shadows and paper grayness
+            normalized = cv2.divide(sgray, bg, scale=245.0)
 
-            # 4. Adaptive Document Contrast & Crisp Ink Sharpening
-            clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(8, 8))
-            contrast_boosted = clahe.apply(normalized_gray)
-            binary_mask = cv2.adaptiveThreshold(
-                contrast_boosted, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 21, 10
-            )
+            # 4. Antialiased Unsharp Masking (Crisp, dark, smooth pen strokes without ringing halos)
+            blurred = cv2.GaussianBlur(normalized, (0, 0), 1.5)
+            crisp = cv2.addWeighted(normalized, 1.4, blurred, -0.4, 0)
+            crisp_uint8 = np.clip(crisp, 0, 255).astype(np.uint8)
 
-            # Blend 45% contrast grayscale with 55% crisp binary ink (CamScanner effect)
-            final_enhanced = cv2.addWeighted(contrast_boosted, 0.45, binary_mask, 0.55, 0)
-            final_bgr = cv2.cvtColor(final_enhanced, cv2.COLOR_GRAY2BGR)
+            final_bgr = cv2.cvtColor(crisp_uint8, cv2.COLOR_GRAY2BGR)
 
             # 5. Encode back to JPEG bytes
             success, encoded_jpg = cv2.imencode(".jpg", final_bgr, [int(cv2.IMWRITE_JPEG_QUALITY), 95])
             if success:
-                logger.info(f"Successfully preprocessed register: straightened ({tilt_angle:.2f} deg) & whitened.")
+                logger.info(f"Successfully preprocessed register: smooth normalized ({tilt_angle:.2f} deg).")
                 return encoded_jpg.tobytes()
             return image_bytes
 
