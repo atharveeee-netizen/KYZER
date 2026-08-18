@@ -3,61 +3,61 @@
 @tailwind utilities;
 
 :root {
-  --color-canvas: #f7f7f4;
-  --color-canvas-soft: #fafaf7;
-  --color-surface-card: #ffffff;
-  --color-surface-strong: #e6e5e0;
-  --color-hairline: #e6e5e0;
-  --color-hairline-soft: #efeee8;
-  --color-hairline-strong: #cfcdc4;
-  --color-ink: #26251e;
-  --color-body: #5a5852;
-  --color-body-strong: #26251e;
-  --color-muted: #807d72;
-  --color-muted-soft: #a09c92;
+ --color-canvas: #f7f7f4;
+ --color-canvas-soft: #fafaf7;
+ --color-surface-card: #ffffff;
+ --color-surface-strong: #e6e5e0;
+ --color-hairline: #e6e5e0;
+ --color-hairline-soft: #efeee8;
+ --color-hairline-strong: #cfcdc4;
+ --color-ink: #26251e;
+ --color-body: #5a5852;
+ --color-body-strong: #26251e;
+ --color-muted: #807d72;
+ --color-muted-soft: #a09c92;
 }
 
 .dark {
-  --color-canvas: #12110e;
-  --color-canvas-soft: #1a1916;
-  --color-surface-card: #1c1b17;
-  --color-surface-strong: #2a2924;
-  --color-hairline: #2e2d27;
-  --color-hairline-soft: #25241f;
-  --color-hairline-strong: #3d3b34;
-  --color-ink: #f7f7f4;
-  --color-body: #b8b5aa;
-  --color-body-strong: #f7f7f4;
-  --color-muted: #858276;
-  --color-muted-soft: #636157;
+ --color-canvas: #12110e;
+ --color-canvas-soft: #1a1916;
+ --color-surface-card: #1c1b17;
+ --color-surface-strong: #2a2924;
+ --color-hairline: #2e2d27;
+ --color-hairline-soft: #25241f;
+ --color-hairline-strong: #3d3b34;
+ --color-ink: #f7f7f4;
+ --color-body: #b8b5aa;
+ --color-body-strong: #f7f7f4;
+ --color-muted: #858276;
+ --color-muted-soft: #636157;
 }
 
 body {
-  background-color: var(--color-canvas);
-  color: var(--color-ink);
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  margin: 0;
-  padding: 0;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  transition: background-color 0.2s ease, color 0.2s ease;
+ background-color: var(--color-canvas);
+ color: var(--color-ink);
+ font-family: 'Inter', system-ui, -apple-system, sans-serif;
+ margin: 0;
+ padding: 0;
+ -webkit-font-smoothing: antialiased;
+ -moz-osx-font-smoothing: grayscale;
+ transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 /* Custom scrollbars matching theme */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+ width: 6px;
+ height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--color-canvas);
+ background: var(--color-canvas);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--color-hairline-strong);
-  border-radius: 3px;
+ background: var(--color-hairline-strong);
+ border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--color-muted);
+ background: var(--color-muted);
 }
