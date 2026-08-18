@@ -1,0 +1,26 @@
+{
+  "name": "kyzer-caredom",
+  "version": "2.0.0",
+  "description": "CareDOM: BRICS-Federated Smart Health Centre Management & Autonomous Supply Chain Platform (Google AI + Quantum QUBO)",
+  "scripts": {
+    "ai:test": "python -m ai_engine.main",
+    "ai:seed": "python -m ai_engine.data.seed_generator",
+    "backend:dev": "uvicorn backend.app.main:app --reload --port 8000",
+    "frontend:dev": "cd frontend && npm run dev",
+    "dev": "concurrently \"npm run backend:dev\" \"npm run frontend:dev\""
+  },
+  "keywords": [
+    "healthcare",
+    "google-ai",
+    "gemini-vision",
+    "brics",
+    "quantum-computing",
+    "qubo",
+    "supply-chain",
+    "postgis",
+    "fastapi",
+    "react-19"
+  ],
+  "author": "Team KYZER",
+  "license": "Apache-2.0"
+}

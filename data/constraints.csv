@@ -1,0 +1,8 @@
+Constraint_Type,Target,Max_Limit,Min_Limit
+Sector_Cap,US Equities,0.35,0.05
+Sector_Cap,Global Fixed Income,0.4,0.05
+Sector_Cap,Real Estate,0.2,0.05
+Sector_Cap,Commodities,0.15,0.05
+Sector_Cap,Emerging Markets,0.25,0.05
+Global_Guardrail,Max_Turnover,0.4,0.0
+Global_Guardrail,Min_ESG_Score,100.0,70.0

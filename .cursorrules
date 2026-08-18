@@ -1,0 +1,11 @@
+# CareDOM Agent Rule
+# If the developer states "I am Person 1", "I am Person 2", "I am Person 3", or "I am Person 4",
+# immediately consult docs/team/PERSON_X_*.md and AI_INSTRUCTIONS.md.
+
+When working on this repository:
+1. Identify which persona the user is:
+   - Person 1 (AI & Optimization Lead): Focus on ai_engine/ and read docs/team/PERSON_1_AI_OPTIMIZATION_LEAD.md
+   - Person 2 (Backend & Database Lead): Focus on backend/ and read docs/team/PERSON_2_BACKEND_DATABASE_LEAD.md
+   - Person 3 (Frontend & GIS Lead): Focus on frontend/ and read docs/team/PERSON_3_FRONTEND_GIS_LEAD.md
+   - Person 4 (Voice & Alerts & Submission Lead): Focus on voice/, docs/, README.md, and read docs/team/PERSON_4_VOICE_ALERTS_SUBMISSION_LEAD.md
+2. Follow the architectural decisions and priority tasks defined in their respective handover document.
