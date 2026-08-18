@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import DeckGL from '@deck.gl/react';
 import { Map } from 'react-map-gl/maplibre';
 import maplibregl from 'maplibre-gl';
@@ -6,7 +6,6 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 
 import { Tile3DLayer } from '@deck.gl/geo-layers';
 import { I3SLoader } from '@loaders.gl/i3s';
-import { AmbientLight, PointLight, LightingEffect } from '@deck.gl/core';
 import { Building2, Globe } from 'lucide-react';
 import { HealthFacility, RoutingResult } from '../../types';
 
@@ -18,50 +17,31 @@ interface MapTabProps {
   onRerouteRequest?: (blockedRoadName: string) => void;
 }
 
-// 3D Lighting Setup (visgl/deck.gl Official Specification)
-const ambientLight = new AmbientLight({
-  color: [255, 255, 255],
-  intensity: 1.2,
-});
-
-const pointLight = new PointLight({
-  color: [255, 245, 230],
-  intensity: 2.0,
-  position: [-122.4, 37.78, 12000],
-});
-
-const lightingEffect = new LightingEffect({ ambientLight, pointLight });
-
-// Official ArcGIS I3S 3D Building Stream Layer URL
-const I3S_3D_BUILDINGS_URL =
+// Official ArcGIS I3S 3D Building Stream Layer URL (visgl/deck.gl)
+const TILESET_URL =
   'https://tiles.arcgis.com/tiles/z2tnIkrLQ2BRzr6P/arcgis/rest/services/SanFrancisco_Bldgs/SceneServer/layers/0';
 
-// Initial ViewState for LoD2 3D Buildings
+// Official Exact Initial ViewState from visgl/deck.gl I3S Example (Downtown Street Level)
 const INITIAL_VIEW_STATE = {
-  latitude: 37.765,
-  longitude: -122.44,
-  zoom: 14.2,
-  pitch: 58,
-  bearing: 42,
-  maxPitch: 85,
-  minZoom: 10,
-  maxZoom: 22,
+  latitude: 37.78,
+  longitude: -122.4,
+  zoom: 15.5,
+  pitch: 30,
+  bearing: 0,
+  minZoom: 14,
+  maxZoom: 20,
 };
 
 export const MapTab: React.FC<MapTabProps> = () => {
-  const [viewState, setViewState] = useState(INITIAL_VIEW_STATE);
-
-  // Deck.gl Tile3DLayer with I3SLoader
+  // Official visgl/deck.gl Tile3DLayer architecture
   const layers = [
     new Tile3DLayer({
-      id: 'tile-3d-i3s-layer',
-      data: I3S_3D_BUILDINGS_URL,
+      id: 'tile-3d-layer',
+      data: TILESET_URL,
       loaders: [I3SLoader],
       loadOptions: {
         i3s: { useCompressedTextures: false },
       },
-      opacity: 0.96,
-      pickable: true,
     }),
   ];
 
@@ -72,11 +52,9 @@ export const MapTab: React.FC<MapTabProps> = () => {
       <div className="flex-1 relative h-full bg-[#061714]">
         <DeckGL
           style={{ backgroundColor: '#061714' }}
-          viewState={viewState as any}
-          onViewStateChange={(e: any) => setViewState(e.viewState)}
+          initialViewState={INITIAL_VIEW_STATE as any}
           controller={true}
           layers={layers as any}
-          effects={[lightingEffect]}
         >
           <Map
             reuseMaps
@@ -85,8 +63,8 @@ export const MapTab: React.FC<MapTabProps> = () => {
           />
         </DeckGL>
 
-        {/* 🏢 Clean HUD Card (Sanitized: Zero San Francisco references) */}
-        <div className="absolute top-4 left-4 z-10 bg-[#1c1d21]/95 backdrop-blur-md border border-white/20 rounded-xl p-5 shadow-2xl max-w-sm text-white font-sans">
+        {/* 🏢 Clean HUD Card (Sanitized) */}
+        <div className="absolute top-4 left-4 z-10 bg-[#1c1d21]/95 backdrop-blur-md border border-white/20 rounded-xl p-5 shadow-2xl max-w-sm text-white font-sans pointer-events-auto">
           <h2 className="text-base font-bold text-sky-400 mb-1.5 tracking-tight flex items-center gap-2">
             <Building2 className="w-4 h-4 text-sky-400" />
             <span>3D Urban Infrastructure Digital Twin</span>
