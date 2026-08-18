@@ -28,6 +28,21 @@ class GeminiRegisterExtractor:
         self.model_name = settings.GEMINI_MODEL_VISION
         self.endpoint_url = f"https://generativelanguage.googleapis.com/v1beta/models/{self.model_name}:generateContent"
 
+    def extract_from_image(
+        self, 
+        image_bytes: bytes, 
+        mime_type: str = "image/jpeg",
+        facility_hint: str = "PHC-Rampur-101",
+        country_hint: str = "IND"
+    ) -> ClinicRegisterExtractionResult:
+        """Alias for extract_from_image_bytes for FastAPI router compatibility."""
+        return self.extract_from_image_bytes(
+            image_bytes=image_bytes,
+            mime_type=mime_type,
+            facility_hint=facility_hint,
+            country_hint=country_hint
+        )
+
     def extract_from_image_bytes(
         self, 
         image_bytes: bytes, 

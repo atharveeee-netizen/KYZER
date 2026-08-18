@@ -150,10 +150,26 @@ async def upload_register_photo(file: UploadFile = File(...)):
     for persisting a structured extraction result to Postgres."""
     engine = get_engine()
     contents = await file.read()
-    extraction_result = engine.ocr_engine.extract_from_image(contents)
+    
+    if hasattr(engine, "ocr_engine") and engine.ocr_engine:
+        extraction_result = engine.ocr_engine.extract_from_image(contents)
+    elif hasattr(engine, "ocr_extractor") and engine.ocr_extractor:
+        extraction_result = engine.ocr_extractor.extract_from_image(contents)
+    else:
+        from ai_engine.ocr.gemini_extractor import GeminiRegisterExtractor
+        extractor = GeminiRegisterExtractor()
+        extraction_result = extractor.extract_from_image(contents)
+
+    res_data = (
+        extraction_result.model_dump()
+        if hasattr(extraction_result, "model_dump")
+        else extraction_result.dict()
+        if hasattr(extraction_result, "dict")
+        else extraction_result
+    )
     return {
         "status": "SUCCESS",
-        "extraction": extraction_result.dict() if hasattr(extraction_result, "dict") else extraction_result
+        "extraction": res_data
     }
 
 @ai_router.get("/alerts/stream", tags=["Real-Time Alerts"])

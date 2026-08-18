@@ -27,6 +27,7 @@ from typing import Dict, Any, List, Optional
 from ai_engine.config import AI_ENGINE_DIR, DATA_DIR, settings
 from ai_engine.pipeline import CareDOMAIPipeline, PipelineExecutionSummary
 from ai_engine.agents.workflow import MultiAgentWorkflowEngine
+from ai_engine.ocr.gemini_extractor import GeminiRegisterExtractor
 from ai_engine.quantum.check_env import get_quantum_mode, get_quantum_capabilities
 
 logger = logging.getLogger("ai_engine.bridge")
@@ -48,9 +49,11 @@ class CareDOMEngine:
         self.models_dir = AI_ENGINE_DIR / "models"
         self._loaded = False
         
-        # Core Pipeline & Multi-Agent Engines
+        # Core Pipeline & Multi-Agent & Perception Engines
         self.pipeline = CareDOMAIPipeline()
         self.workflow_engine = MultiAgentWorkflowEngine()
+        self.ocr_engine = GeminiRegisterExtractor()
+        self.ocr_extractor = self.ocr_engine
 
         if pre_load_models:
             self._load_serialized_models()
