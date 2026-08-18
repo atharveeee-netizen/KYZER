@@ -12,22 +12,35 @@ if hasattr(sys.stdout, 'reconfigure'):
 
 import time
 import json
+import argparse
+import asyncio
 from ai_engine.agents.workflow import MultiAgentWorkflowEngine
 
 def main():
+    parser = argparse.ArgumentParser(description="Test CareDOM Multi-Agent System")
+    parser.add_argument("--async-mode", "--async", dest="async_mode", action="store_true", help="Execute in asynchronous parallel mode")
+    args = parser.parse_args()
+
     print("=" * 85)
-    print("🤖 CareDOM Autonomous Multi-Agent Collaborative System — Execution Test")
+    print(f"🤖 CareDOM Autonomous Multi-Agent Collaborative System — Execution Test ({'ASYNC' if args.async_mode else 'SYNC'})")
     print("Team KYZER | Build with AI: Code for Communities 2")
     print("=" * 85)
 
     engine = MultiAgentWorkflowEngine()
 
     st = time.perf_counter()
-    state = engine.run_workflow(
-        country_code="IND",
-        target_facility_id="PHC-PUN-002",
-        target_item_code="MED-ORS-PKG"
-    )
+    if args.async_mode:
+        state = asyncio.run(engine.run_workflow_async(
+            country_code="IND",
+            target_facility_id="PHC-PUN-002",
+            target_item_code="MED-ORS-PKG"
+        ))
+    else:
+        state = engine.run_workflow(
+            country_code="IND",
+            target_facility_id="PHC-PUN-002",
+            target_item_code="MED-ORS-PKG"
+        )
     elapsed_sec = time.perf_counter() - st
 
     print(f"\n[WORKFLOW ID]: {state.workflow_id}")

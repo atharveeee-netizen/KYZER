@@ -56,10 +56,21 @@ class DemandFeatureEngineer:
         else:
             df["is_dh"] = df["facility_id"].map(lambda x: 1 if "DH" in str(x) else 0).astype(int)
 
-        # Calendar features
+        # Calendar & Seasonality features
         df["day_of_week"] = df["date"].dt.dayofweek
         df["month"] = df["date"].dt.month
         df["is_weekend"] = df["day_of_week"].isin([5, 6]).astype(int)
+        df["day_of_year"] = df["date"].dt.dayofyear
+        df["day_of_year_sin"] = np.sin(2 * np.pi * df["day_of_year"] / 365.25)
+        df["day_of_year_cos"] = np.cos(2 * np.pi * df["day_of_year"] / 365.25)
+
+        # Holiday indicator
+        if "is_holiday" in df.columns:
+            df["is_holiday"] = df["is_holiday"].astype(int)
+        else:
+            # Standard Indian Gazette Holidays heuristic (Jan 26, Aug 15, Oct 2, Nov Diwali, etc)
+            holidays = df["date"].dt.strftime("%m-%d").isin(["01-26", "08-15", "10-02", "11-01", "12-25"])
+            df["is_holiday"] = (holidays | (df["day_of_week"] == 6)).astype(int)
         
         # Lag features (1d, 2d, 3d, 7d, 14d)
         for lag in [1, 2, 3, 7, 14]:
@@ -100,7 +111,7 @@ class DemandFeatureEngineer:
 
         feature_cols = [
             "facility_encoded", "item_encoded", "category_encoded", "is_dh",
-            "day_of_week", "month", "is_weekend",
+            "day_of_week", "month", "is_weekend", "day_of_year_sin", "day_of_year_cos", "is_holiday",
             "consumption_lag_1d", "consumption_lag_2d", "consumption_lag_3d",
             "consumption_lag_7d", "consumption_lag_14d",
             "rolling_mean_7d", "rolling_std_7d", "rolling_max_14d", "rolling_mean_14d",

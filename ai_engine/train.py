@@ -49,8 +49,10 @@ def train_forecaster_suite(df_history: pd.DataFrame) -> Dict[str, Any]:
     df_sorted = df_history.sort_values(by=["facility_id", "item_code", "date"]).reset_index(drop=True)
     if "date" in df_sorted.columns:
         dates_sorted = np.sort(df_sorted["date"].unique())
-        split_date = dates_sorted[int(len(dates_sorted) * 0.8)]
-        # Precise temporal split matching X index
+        split_idx = int(len(dates_sorted) * 0.8)
+        split_date = dates_sorted[split_idx]
+        
+        # Chronological mask
         is_train = X.index < int(len(X) * 0.8)
         X_train, y_train = X[is_train], y[is_train]
         X_test, y_test = X[~is_train], y[~is_train]
@@ -76,12 +78,14 @@ def train_forecaster_suite(df_history: pd.DataFrame) -> Dict[str, Any]:
                 # L1 Loss directly minimizes MAE, optimizing WAPE mathematically
                 model = lgb.LGBMRegressor(
                     objective="regression_l1",
-                    n_estimators=300,
-                    learning_rate=0.03,
-                    num_leaves=45,
-                    min_child_samples=10,
+                    n_estimators=450,
+                    learning_rate=0.025,
+                    num_leaves=63,
+                    min_child_samples=15,
                     subsample=0.85,
                     colsample_bytree=0.85,
+                    reg_alpha=0.1,
+                    reg_lambda=0.1,
                     random_state=42,
                     verbosity=-1
                 )
@@ -89,12 +93,14 @@ def train_forecaster_suite(df_history: pd.DataFrame) -> Dict[str, Any]:
                 model = lgb.LGBMRegressor(
                     objective="quantile",
                     alpha=alpha,
-                    n_estimators=300,
-                    learning_rate=0.03,
-                    num_leaves=45,
-                    min_child_samples=10,
+                    n_estimators=400,
+                    learning_rate=0.025,
+                    num_leaves=63,
+                    min_child_samples=15,
                     subsample=0.85,
                     colsample_bytree=0.85,
+                    reg_alpha=0.1,
+                    reg_lambda=0.1,
                     random_state=42,
                     verbosity=-1
                 )

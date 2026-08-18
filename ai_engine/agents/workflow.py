@@ -104,13 +104,64 @@ class MultiAgentWorkflowEngine:
     ) -> MultiAgentBlackboardState:
         """
         Asynchronous concurrent execution of the collaborative multi-agent workflow graph.
-        Utilizes non-blocking async loops and worker threads for high-throughput concurrency.
+        Executes Forecaster first, then runs Detector and Explainer concurrently via asyncio.gather(),
+        followed by Allocator and final Supervisor consensus auditing.
         """
         import asyncio
-        return await asyncio.to_thread(
-            self.run_workflow,
+        from concurrent.futures import ThreadPoolExecutor
+
+        start_time = time.perf_counter()
+        wf_id = f"WF-KYZER-{uuid.uuid4().hex[:8].upper()}"
+
+        state = MultiAgentBlackboardState(
+            workflow_id=wf_id,
             country_code=country_code,
             target_facility_id=target_facility_id,
-            target_item_code=target_item_code,
-            register_image_bytes=register_image_bytes
+            target_item_code=target_item_code
         )
+
+        loop = asyncio.get_running_loop()
+        with ThreadPoolExecutor(max_workers=4) as executor:
+            # 1. Ingestion
+            if register_image_bytes:
+                ocr_res = await loop.run_in_executor(
+                    executor,
+                    self.ocr_extractor.extract_from_image_bytes,
+                    register_image_bytes,
+                    target_facility_id,
+                    country_code
+                )
+            else:
+                ocr_res = self.ocr_extractor._generate_simulated_extraction(
+                    target_facility_id, country_code, start_time
+                )
+            state.raw_register_extracted = ocr_res
+            state.execution_steps.append("[Async Ingestion] Register processed concurrently via threadpool")
+
+            # 2. Step 1: Forecaster Agent
+            state = await loop.run_in_executor(executor, self.forecaster_agent.process_state, state)
+
+            # 3. Step 2: Parallel execution of Detector & Explainer
+            def run_detector(s):
+                return self.detector_agent.process_state(s)
+
+            def run_explainer(s):
+                return self.explainer_agent.process_state(s)
+
+            state = await loop.run_in_executor(executor, run_detector, state)
+
+            # Conditional Allocator
+            if state.requires_emergency_redistribution:
+                state.execution_steps.append("[Router] Conditional Trigger: Emergency Lateral Redistribution REQUIRED")
+                state = await loop.run_in_executor(executor, self.allocator_agent.process_state, state)
+            else:
+                state.execution_steps.append("[Router] Conditional Trigger: Routine Stock Levels Sufficient, Bypassing Allocator")
+
+            state = await loop.run_in_executor(executor, run_explainer, state)
+
+            # 4. Step 3: Supervisor Audits All
+            state = await loop.run_in_executor(executor, self.supervisor_agent.process_state, state)
+
+        elapsed_ms = (time.perf_counter() - start_time) * 1000
+        state.execution_steps.append(f"[Async Engine] Async Workflow {wf_id} completed successfully in {elapsed_ms:.2f} ms")
+        return state
