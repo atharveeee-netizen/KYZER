@@ -8,11 +8,25 @@ import numpy as np
 from typing import Dict, Any, List, Tuple
 from pydantic import BaseModel, Field
 
+class QUBOVariableMeta(BaseModel):
+    """Metadata mapping for a single binary transfer variable x_{ij}."""
+    index: int
+    label: str
+    donor_node_id: int
+    receiver_node_id: int
+    donor_facility_id: str
+    receiver_facility_id: str
+    donor_name: str
+    receiver_name: str
+    distance_km: float
+    batch_size: int
+
 class QUBOInstance(BaseModel):
     """Quadratic Unconstrained Binary Optimization mathematical structure."""
     num_variables: int
     Q_matrix: List[List[float]]
     variable_labels: List[str]
+    variable_details: List[QUBOVariableMeta] = Field(default_factory=list)
     donor_indices: List[int]
     receiver_indices: List[int]
     penalties: Dict[str, float]
@@ -41,9 +55,29 @@ class QUBOFormulator:
         
         # Variable mapping: index k = i * num_receivers + j
         var_labels = []
+        var_details = []
         for i in range(num_donors):
+            d_node = donor_nodes[i]
+            d_idx = d_node["node_id"]
             for j in range(num_receivers):
-                var_labels.append(f"x_{donor_nodes[i]['facility_id']}->{receiver_nodes[j]['facility_id']}")
+                r_node = receiver_nodes[j]
+                r_idx = r_node["node_id"]
+                dist = distance_matrix[d_idx][r_idx]
+                k = i * num_receivers + j
+                label = f"x_{d_node['facility_id']}->{r_node['facility_id']}"
+                var_labels.append(label)
+                var_details.append(QUBOVariableMeta(
+                    index=k,
+                    label=label,
+                    donor_node_id=d_idx,
+                    receiver_node_id=r_idx,
+                    donor_facility_id=d_node["facility_id"],
+                    receiver_facility_id=r_node["facility_id"],
+                    donor_name=d_node.get("name", d_node["facility_id"]),
+                    receiver_name=r_node.get("name", r_node["facility_id"]),
+                    distance_km=float(dist),
+                    batch_size=unit_transfer_batch_size
+                ))
 
         Q = np.zeros((total_vars, total_vars), dtype=float)
 
@@ -88,6 +122,7 @@ class QUBOFormulator:
             num_variables=total_vars,
             Q_matrix=Q.tolist(),
             variable_labels=var_labels,
+            variable_details=var_details,
             donor_indices=[d["node_id"] for d in donor_nodes],
             receiver_indices=[r["node_id"] for r in receiver_nodes],
             penalties={

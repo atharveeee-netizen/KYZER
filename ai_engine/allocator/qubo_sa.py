@@ -115,11 +115,35 @@ class QUBOSimulatedAnnealer:
         for idx, bit in enumerate(best_x):
             if bit == 1:
                 label = qubo_instance.variable_labels[idx]
-                selected_transfers.append({
-                    "variable": label,
-                    "index": idx,
-                    "active": True
-                })
+                if qubo_instance.variable_details and idx < len(qubo_instance.variable_details):
+                    meta = qubo_instance.variable_details[idx]
+                    selected_transfers.append({
+                        "variable": label,
+                        "index": idx,
+                        "donor_facility_id": meta.donor_facility_id,
+                        "receiver_facility_id": meta.receiver_facility_id,
+                        "donor_name": meta.donor_name,
+                        "receiver_name": meta.receiver_name,
+                        "distance_km": meta.distance_km,
+                        "batch_size": meta.batch_size,
+                        "active": True
+                    })
+                else:
+                    # Fallback parser for label "x_DONOR->RECEIVER"
+                    parts = label.replace("x_", "").split("->")
+                    d_id = parts[0] if len(parts) > 0 else ""
+                    r_id = parts[1] if len(parts) > 1 else ""
+                    selected_transfers.append({
+                        "variable": label,
+                        "index": idx,
+                        "donor_facility_id": d_id,
+                        "receiver_facility_id": r_id,
+                        "donor_name": d_id,
+                        "receiver_name": r_id,
+                        "distance_km": 25.0,
+                        "batch_size": 100,
+                        "active": True
+                    })
 
         # Calculate hardware embedding
         physical_qubits = int(n * 3.5)

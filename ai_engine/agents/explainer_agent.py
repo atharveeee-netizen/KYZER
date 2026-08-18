@@ -8,7 +8,7 @@ import pandas as pd
 from typing import Dict, Any, List
 
 from ai_engine.agents.base import BaseCareDOMAgent
-from ai_engine.agents.state import MultiAgentBlackboardState
+from ai_engine.agents.state import MultiAgentBlackboardState, AgentLifecycleState
 from ai_engine.explainer.shap_explainer import HealthSHAPExplainer
 from ai_engine.explainer.gemini_narrator import GeminiDecisionNarrator
 from ai_engine.forecaster.lightgbm_model import MultiHorizonDemandForecaster
@@ -28,6 +28,7 @@ class ExplainerAgent(BaseCareDOMAgent):
         """
         Synthesizes mathematical Shapley values and generates plain-language narratives.
         """
+        state.transition_to(AgentLifecycleState.EXPLAINING, self.agent_name, "Computing game-theoretic TreeSHAP attributions and Gemini clinical narratives")
         self.logger.info("Generating TreeSHAP feature attributions and Gemini narrative explanation...")
         
         fac_id = state.target_facility_id
@@ -38,19 +39,38 @@ class ExplainerAgent(BaseCareDOMAgent):
         if state.demand_forecast and state.demand_forecast.p50_median_expected:
             pred_val = float(state.demand_forecast.p50_median_expected[0])
 
-        feat_names = list(state.demand_forecast.feature_importances.keys()) if (state.demand_forecast and state.demand_forecast.feature_importances) else [
-            "epidemic_growth_rate", "rainfall_lag_3d", "consumption_lag_7d", "rolling_mean_7d", "is_weekend"
-        ]
-        
-        # Build feature DataFrame
-        feat_df = pd.DataFrame([{name: 1.0 for name in feat_names}])
+        # Extract genuine feature values from the forecaster's latest engineered feature vector
+        if state.demand_forecast and state.demand_forecast.latest_feature_vector:
+            real_features = state.demand_forecast.latest_feature_vector
+            feat_names = list(real_features.keys())
+            feat_df = pd.DataFrame([real_features])
+        else:
+            feat_names = list(state.demand_forecast.feature_importances.keys()) if (state.demand_forecast and state.demand_forecast.feature_importances) else [
+                "day_of_week", "month", "is_weekend", "consumption_lag_1d", "consumption_lag_7d", "rolling_mean_7d", "rainfall_lag_3d", "epidemic_growth_rate"
+            ]
+            feat_df = pd.DataFrame([{name: 25.0 if "consumption" in name or "rolling" in name else 1.0 for name in feat_names}])
         
         model_obj = self.forecaster.models.get(0.50, None)
         
+        # Load empirical background data for TreeSHAP expected value reference
+        bg_df = None
+        from ai_engine.config import DATA_DIR
+        csv_path = DATA_DIR / "brics_consumption_history_seed.csv"
+        if csv_path.exists():
+            try:
+                from ai_engine.forecaster.features import DemandFeatureEngineer
+                sample_hist = pd.read_csv(csv_path).head(300)
+                bg_X, _, _ = DemandFeatureEngineer.create_features_from_history(sample_hist)
+                if len(bg_X) > 10:
+                    bg_df = bg_X
+            except Exception:
+                bg_df = None
+
         explanation_rep = HealthSHAPExplainer.explain_with_model(
             model=model_obj,
             feature_names=feat_names,
             feature_vector=feat_df,
+            background_data=bg_df,
             facility_id=fac_id,
             item_code=item_code,
             base_value=base_val,

@@ -1,8 +1,9 @@
 {
-  "transmission_rate_beta": 0.478,
-  "incubation_rate_sigma": 0.2,
-  "recovery_treated_gamma1": 0.25,
-  "recovery_untreated_gamma0": 0.1,
-  "empirical_r0": 1.91,
-  "cascade_amplification_factor": 2.5
+  "transmission_rate_beta": 0.361,
+  "incubation_rate_sigma": 0.1699,
+  "recovery_treated_gamma1": 0.35,
+  "recovery_untreated_gamma0": 0.14,
+  "empirical_r0": 1.03,
+  "cascade_amplification_factor": 2.5,
+  "optimization_loss_mse": 0.085
 }

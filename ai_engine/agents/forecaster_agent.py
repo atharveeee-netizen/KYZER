@@ -10,9 +10,8 @@ from pathlib import Path
 
 from ai_engine.config import DATA_DIR
 from ai_engine.agents.base import BaseCareDOMAgent
-from ai_engine.agents.state import MultiAgentBlackboardState
+from ai_engine.agents.state import MultiAgentBlackboardState, AgentLifecycleState
 from ai_engine.forecaster.lightgbm_model import MultiHorizonDemandForecaster
-from ai_engine.forecaster.seir_coupling import SEIRCouplingModel, SEIRSimulationParameters
 
 class ForecasterAgent(BaseCareDOMAgent):
     """Specialized Agent responsible for probabilistic medicine demand forecasting."""
@@ -28,6 +27,7 @@ class ForecasterAgent(BaseCareDOMAgent):
         """
         Executes forecasting pipeline and updates shared blackboard state.
         """
+        state.transition_to(AgentLifecycleState.FORECASTING, self.agent_name, f"Generating quantile forecast for {state.target_item_code}")
         self.logger.info(f"Generating demand forecast for {state.target_item_code} at {state.target_facility_id}...")
         
         # Load historical series
@@ -76,13 +76,14 @@ class ForecasterAgent(BaseCareDOMAgent):
         self.emit_message(
             state=state,
             recipient="DetectorAgent",
-            message_type="DEMAND_FORECAST_EMITTED",
+            message_type="DEMAND_FORECAST_COMPLETED",
             payload={
                 "facility_id": state.target_facility_id,
                 "item_code": state.target_item_code,
                 "p50_expected": forecast_res.total_expected_demand,
                 "p90_stress": forecast_res.total_stress_demand,
-                "risk_tier": forecast_res.stockout_risk_level
+                "risk_tier": forecast_res.stockout_risk_level,
+                "feature_vector": forecast_res.latest_feature_vector
             },
             priority=priority
         )

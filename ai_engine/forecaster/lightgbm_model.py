@@ -33,6 +33,7 @@ class QuantileForecastResult(BaseModel):
     stockout_risk_level: str
     seir_cascade_risk: float
     feature_importances: Dict[str, float] = Field(default_factory=dict)
+    latest_feature_vector: Dict[str, float] = Field(default_factory=dict)
 
 class MultiHorizonDemandForecaster:
     """Trains and executes multi-quantile LightGBM models with SEIR dynamical coupling."""
@@ -40,7 +41,13 @@ class MultiHorizonDemandForecaster:
     def __init__(self, alphas: Optional[List[float]] = None):
         self.alphas = alphas or settings.QUANTILE_ALPHAS
         self.models: Dict[float, Any] = {}
-        self.feature_names: List[str] = []
+        self.feature_names: List[str] = [
+            "day_of_week", "month", "is_weekend",
+            "consumption_lag_1d", "consumption_lag_2d", "consumption_lag_3d",
+            "consumption_lag_7d", "consumption_lag_14d",
+            "rolling_mean_7d", "rolling_std_7d", "rolling_max_14d",
+            "rainfall_lag_3d", "heavy_rain_flag", "epidemic_growth_rate"
+        ]
         self.is_trained: bool = False
         self.engine_name: str = "LightGBM"
         
@@ -50,31 +57,29 @@ class MultiHorizonDemandForecaster:
             try:
                 with open(bundle_file, "rb") as f:
                     bundle = pickle.load(f)
-                self.models = bundle.get("models", {})
-                self.feature_names = bundle.get("feature_names", [])
-                self.alphas = bundle.get("alphas", self.alphas)
-                self.engine_name = bundle.get("engine", "LightGBM")
-                self.is_trained = len(self.models) > 0
-            except Exception:
-                pass
+                    self.models = bundle.get("models", {})
+                    self.feature_names = bundle.get("features", self.feature_names)
+                    self.engine_name = bundle.get("engine", "LightGBM Quantile Regressor")
+                    self.is_trained = True
+                logger.info(f"Loaded trained models from {bundle_file}")
+            except Exception as e:
+                logger.warning(f"Could not load model bundle: {e}")
 
     def train(self, df_history: pd.DataFrame) -> Dict[str, Any]:
-        """Trains models for each quantile alpha (0.1, 0.5, 0.9)."""
+        """Trains multi-quantile gradient boosted trees across alpha levels [0.10, 0.50, 0.90]."""
         X, y, self.feature_names = DemandFeatureEngineer.create_features_from_history(df_history)
-        
         if len(X) < 10:
-            self.is_trained = True
-            return {"status": "trained_heuristic", "samples": len(X)}
+            logger.warning("Insufficient historical records for training.")
+            return {"status": "insufficient_data"}
 
-        # Try LightGBM
         has_lgb = False
         try:
             import lightgbm as lgb
             has_lgb = True
             self.engine_name = "LightGBM Quantile Regressor"
         except ImportError:
-            from sklearn.ensemble import GradientBoostingRegressor
-            self.engine_name = "Scikit-Learn GradientBoosting"
+            has_lgb = False
+            self.engine_name = "Scikit-Learn GradientBoosting Quantile"
 
         for alpha in self.alphas:
             if has_lgb:
@@ -120,12 +125,12 @@ class MultiHorizonDemandForecaster:
     ) -> QuantileForecastResult:
         """
         Generates 7-day multi-horizon quantile forecast with SEIR epidemic coupling
-        and autoregressive rolling step prediction.
+        and true recursive autoregressive rolling step prediction.
         """
         if not self.is_trained or not self.models:
             self.train(recent_history)
 
-        # 1. Execute Coupled SEIR Outbreak Model
+        # 1. Execute Coupled SEIR Outbreak Model to project future epidemic dynamics
         epi_cases = int(recent_history["active_epidemic_cases"].iloc[-1]) if "active_epidemic_cases" in recent_history.columns and len(recent_history) > 0 else 5
         seir_params = SEIRSimulationParameters(
             population=45000,
@@ -135,58 +140,113 @@ class MultiHorizonDemandForecaster:
         )
         seir_sim = SEIRCouplingModel(seir_params).simulate(days=horizon_days + 1)
         seir_cascade_risk = seir_sim.get("cascade_risk_score", 0.15)
-        seir_demand_curve = seir_sim.get("projected_demand", [30.0] * (horizon_days + 1))
+        seir_infected_curve = seir_sim.get("infected", [max(epi_cases, 2)] * (horizon_days + 1))
 
-        # 2. Base 1-step Quantile Forecast
-        X, y, feat_cols = DemandFeatureEngineer.create_features_from_history(recent_history)
+        # 2. Extract Rolling Consumption and Environmental Buffers
+        df_sorted = recent_history.sort_values(by="date").copy() if "date" in recent_history.columns else recent_history.copy()
         
-        p10_base, p50_base, p90_base = 20.0, 35.0, 55.0
-        if len(X) > 0 and 0.50 in self.models:
-            latest_fv = X.iloc[[-1]].copy().fillna(0.0)
-            try:
-                p10_raw = float(self.models[0.10].predict(latest_fv)[0])
-                p50_raw = float(self.models[0.50].predict(latest_fv)[0])
-                p90_raw = float(self.models[0.90].predict(latest_fv)[0])
-                if not np.isnan(p50_raw) and p50_raw > 0:
-                    p10_base = max(1.0, p10_raw)
-                    p50_base = max(p10_base, p50_raw)
-                    p90_base = max(p50_base, p90_raw)
-            except Exception:
-                pass
-        elif len(recent_history) > 0 and "consumption" in recent_history.columns:
-            valid_cons = recent_history["consumption"].dropna()
-            if len(valid_cons) > 0:
-                base_c = float(valid_cons.iloc[-14:].mean())
-                p10_base = max(1.0, base_c * 0.8)
-                p50_base = max(p10_base, base_c * 1.1)
-                p90_base = max(p50_base, base_c * 1.6)
+        cons_buffer = list(df_sorted["consumption"].dropna().values) if "consumption" in df_sorted.columns else [30.0] * 30
+        if len(cons_buffer) < 14:
+            cons_buffer = [30.0] * (14 - len(cons_buffer)) + cons_buffer
 
-        # 3. Autoregressive Horizon Trajectory with SEIR Dynamic Stress
-        p10_seq, p50_seq, p90_seq, dates = [], [], [], []
+        rain_buffer = list(df_sorted["rainfall_mm"].dropna().values) if "rainfall_mm" in df_sorted.columns else [2.0] * 30
+        if len(rain_buffer) < 7:
+            rain_buffer = [2.0] * (7 - len(rain_buffer)) + rain_buffer
+
         start_date = pd.Timestamp.now().floor('D')
         
+        # 3. Recursive Autoregressive Multi-Horizon Forecasting Loop
+        p10_seq, p50_seq, p90_seq, dates = [], [], [], []
+        latest_feature_dict = {}
+
         for d in range(1, horizon_days + 1):
             future_dt = start_date + pd.Timedelta(days=d)
-            dates.append(future_dt.strftime("%Y-%m-%d"))
+            dt_str = future_dt.strftime("%Y-%m-%d")
+            dates.append(dt_str)
+
+            # Reconstruct exact dynamic feature vector for day d
+            dow = future_dt.dayofweek
+            month = future_dt.month
+            is_wknd = 1 if dow in [5, 6] else 0
+
+            # Lags from rolling consumption buffer
+            lag1 = float(cons_buffer[-1])
+            lag2 = float(cons_buffer[-2])
+            lag3 = float(cons_buffer[-3])
+            lag7 = float(cons_buffer[-7])
+            lag14 = float(cons_buffer[-14])
+
+            # Rolling stats on last 7 and 14 days
+            last7 = cons_buffer[-7:]
+            last14 = cons_buffer[-14:]
+            r_mean7 = float(np.mean(last7))
+            r_std7 = float(np.std(last7)) if len(last7) > 1 else 0.0
+            r_max14 = float(np.max(last14))
+
+            # Dynamic meteorological & SEIR features
+            rain_lag3 = float(rain_buffer[-3]) if len(rain_buffer) >= 3 else 2.0
+            heavy_rain = 1 if rain_lag3 > 30.0 else 0
             
-            # Weekend adjustment
-            dow_mult = 0.70 if future_dt.dayofweek in [5, 6] else 1.05
-            
-            # SEIR dynamic epidemic surge multiplier (day-by-day infection growth)
-            epi_mult = 1.0 + (seir_demand_curve[min(d, len(seir_demand_curve)-1)] / max(seir_demand_curve[0], 1.0) - 1.0) * 0.40
-            
-            p10_val = round(max(1.0, p10_base * dow_mult), 1)
-            p50_val = round(max(p10_val, p50_base * dow_mult * (1.0 + (epi_mult - 1.0) * 0.5)), 1)
-            p90_val = round(max(p50_val, p90_base * dow_mult * epi_mult), 1)
-            
+            # Dynamic epidemic growth from SEIR ODE state
+            cur_inf = float(seir_infected_curve[min(d, len(seir_infected_curve)-1)])
+            prev_inf = float(seir_infected_curve[min(d-1, len(seir_infected_curve)-1)])
+            epi_growth = (cur_inf - prev_inf) / max(prev_inf, 1.0)
+
+            # Feature dictionary for step d
+            step_features = {
+                "day_of_week": float(dow),
+                "month": float(month),
+                "is_weekend": float(is_wknd),
+                "consumption_lag_1d": lag1,
+                "consumption_lag_2d": lag2,
+                "consumption_lag_3d": lag3,
+                "consumption_lag_7d": lag7,
+                "consumption_lag_14d": lag14,
+                "rolling_mean_7d": r_mean7,
+                "rolling_std_7d": r_std7,
+                "rolling_max_14d": r_max14,
+                "rainfall_lag_3d": rain_lag3,
+                "heavy_rain_flag": float(heavy_rain),
+                "epidemic_growth_rate": float(epi_growth)
+            }
+
+            if d == 1:
+                latest_feature_dict = step_features.copy()
+
+            fv_df = pd.DataFrame([[step_features[col] for col in self.feature_names]], columns=self.feature_names)
+
+            # Execute real model predictions across quantile heads
+            if 0.50 in self.models:
+                try:
+                    p10_pred = float(self.models[0.10].predict(fv_df)[0])
+                    p50_pred = float(self.models[0.50].predict(fv_df)[0])
+                    p90_pred = float(self.models[0.90].predict(fv_df)[0])
+                except Exception:
+                    p50_pred = r_mean7 * (0.80 if is_wknd else 1.05)
+                    p10_pred = p50_pred * 0.75
+                    p90_pred = p50_pred * 1.40
+            else:
+                p50_pred = r_mean7 * (0.80 if is_wknd else 1.05)
+                p10_pred = p50_pred * 0.75
+                p90_pred = p50_pred * 1.40
+
+            # Quantile monotonic correction: P10 <= P50 <= P90
+            p10_val = round(max(1.0, p10_pred), 1)
+            p50_val = round(max(p10_val, p50_pred), 1)
+            p90_val = round(max(p50_val, p90_pred), 1)
+
             p10_seq.append(p10_val)
             p50_seq.append(p50_val)
             p90_seq.append(p90_val)
 
+            # Feed Day t predicted expected demand (P50) into consumption buffer for step t+1
+            cons_buffer.append(p50_val)
+            rain_buffer.append(2.0)
+
         total_expected = round(sum(p50_seq), 1)
         total_stress = round(sum(p90_seq), 1)
         
-        # Risk assessment
+        # Risk assessment based on lead-time coverage
         lead_time_stress = sum(p90_seq[:3])
         if current_inventory <= 0:
             risk = "CRITICAL"
@@ -197,7 +257,7 @@ class MultiHorizonDemandForecaster:
         else:
             risk = "LOW"
 
-        # Feature importances from actual model
+        # Feature importances from actual trained model
         importances = {}
         if 0.50 in self.models and hasattr(self.models[0.50], "feature_importances_"):
             raw_imp = self.models[0.50].feature_importances_
@@ -217,5 +277,6 @@ class MultiHorizonDemandForecaster:
             total_stress_demand=total_stress,
             stockout_risk_level=risk,
             seir_cascade_risk=seir_cascade_risk,
-            feature_importances=importances
+            feature_importances=importances,
+            latest_feature_vector=latest_feature_dict
         )

@@ -90,6 +90,20 @@ class DetectorAgent(BaseCareDOMAgent):
         )
         state.requires_emergency_redistribution = needs_redist
 
+        # Emit standard diagnostic risk message
+        self.emit_message(
+            state=state,
+            recipient="SupervisorAgent",
+            message_type="DIAGNOSTIC_RISK_EVALUATED",
+            payload={
+                "facility_id": state.target_facility_id,
+                "risk_tier": risk_score.risk_tier,
+                "composite_score": risk_score.composite_cascade_risk_score,
+                "requires_emergency_redistribution": needs_redist
+            },
+            priority="HIGH" if needs_redist else "NORMAL"
+        )
+
         if needs_redist:
             self.emit_message(
                 state=state,

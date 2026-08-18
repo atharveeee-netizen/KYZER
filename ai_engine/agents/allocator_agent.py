@@ -11,7 +11,7 @@ from typing import Dict, Any, List
 
 from ai_engine.config import DATA_DIR
 from ai_engine.agents.base import BaseCareDOMAgent
-from ai_engine.agents.state import MultiAgentBlackboardState
+from ai_engine.agents.state import MultiAgentBlackboardState, AgentLifecycleState
 from ai_engine.allocator.hybrid_quantum import HybridQuantumAllocator
 
 class AllocatorAgent(BaseCareDOMAgent):
@@ -28,6 +28,7 @@ class AllocatorAgent(BaseCareDOMAgent):
         """
         Executes hybrid quantum-classical allocation and generates vehicle dispatch plans.
         """
+        state.transition_to(AgentLifecycleState.ALLOCATING, self.agent_name, "Executing Quantum QUBO lateral redistribution and Stage 2 VRP")
         self.logger.info("Solving multi-facility lateral redistribution via Quantum QUBO & OR-Tools...")
         
         # Load multi-country facilities

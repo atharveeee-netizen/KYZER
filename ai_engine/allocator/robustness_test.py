@@ -47,9 +47,21 @@ def run_monte_carlo_disruption_test(
         perturbed_facs = []
         for f in facilities:
             pf = f.copy()
+            # 1. Stochastic demand surge / surplus uncertainty (+/- turbulence)
             noise_factor = 1.0 + float(np.random.uniform(-turbulence_level, turbulence_level))
             curr_surplus = int(f.get("medicine_surplus_deficit", f.get("surplus", 0)))
             pf["medicine_surplus_deficit"] = int(curr_surplus * noise_factor)
+            
+            # 2. Monsoon road washouts / flood detour spatial jitter (+/- 5% coordinate detour)
+            detour_lat = float(np.random.uniform(-0.02, 0.02)) * turbulence_level
+            detour_lng = float(np.random.uniform(-0.02, 0.02)) * turbulence_level
+            base_lat = float(f.get("lat") or f.get("latitude", 18.52))
+            base_lng = float(f.get("lng") or f.get("longitude", 73.85))
+            pf["latitude"] = base_lat + detour_lat
+            pf["longitude"] = base_lng + detour_lng
+            pf["lat"] = base_lat + detour_lat
+            pf["lng"] = base_lng + detour_lng
+            
             perturbed_facs.append(pf)
 
         benchmark = allocator.optimize_redistribution(perturbed_facs)

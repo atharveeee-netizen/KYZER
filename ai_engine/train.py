@@ -225,40 +225,72 @@ def train_anomaly_detector_suite(df_history: pd.DataFrame) -> Dict[str, Any]:
 
 def calibrate_seir_dynamics(df_history: pd.DataFrame) -> Dict[str, Any]:
     """
-    Numerically calibrates SEIR epidemiological transmission parameters from actual case data.
+    Numerically calibrates SEIR epidemiological transmission parameters from actual case data
+    using non-linear least-squares trajectory optimization on the ODE system.
     """
     print("\n" + "=" * 80)
     print("🧬 [3/3] CALIBRATING SEIR-INVENTORY EPIDEMIOLOGICAL DYNAMICAL PARAMETERS")
     print("=" * 80)
 
-    # Compute empirical transmission and recovery rates from disease incidence
-    cases = df_history["active_epidemic_cases"].dropna().values if "active_epidemic_cases" in df_history.columns else np.array([5, 8, 12])
-    mean_cases = max(float(np.mean(cases)), 1.0)
-    
-    # Calibrated parameters:
-    # R_0 = beta / gamma -> beta = R_0 * gamma
-    gamma_treated = 0.25   # 4 days to recover with full medicine supply
-    gamma_untreated = 0.10 # 10 days to recover under stockout
-    r0_empirical = min(max(1.8 + (mean_cases / 20.0), 1.5), 3.2)
-    beta = round(r0_empirical * gamma_treated, 3)
+    # Extract observed daily active cases trajectory
+    if "active_epidemic_cases" in df_history.columns:
+        daily_series = df_history.groupby("date")["active_epidemic_cases"].mean().values
+    else:
+        daily_series = np.array([2, 3, 5, 8, 14, 22, 28, 35, 30, 24, 18, 12, 8, 5])
+
+    observed_I = daily_series[:min(len(daily_series), 60)].astype(float)
+    N_pop = 45000.0
+    init_I = max(observed_I[0], 2.0)
+    init_E = init_I * 2.0
+    init_S = N_pop - init_E - init_I
+
+    # ODE simulation forward step
+    def seir_loss(params):
+        beta_try, sigma_try, gamma_try = params
+        S, E, I = init_S, init_E, init_I
+        sim_I = []
+        for _ in range(len(observed_I)):
+            sim_I.append(I)
+            new_exposed = (beta_try * S * I) / N_pop
+            new_infected = sigma_try * E
+            new_recovered = gamma_try * I
+            S = max(0.0, S - new_exposed)
+            E = max(0.0, E + new_exposed - new_infected)
+            I = max(0.0, I + new_infected - new_recovered)
+        sim_arr = np.array(sim_I)
+        return float(np.mean((sim_arr - observed_I) ** 2))
+
+    from scipy.optimize import minimize
+    res = minimize(
+        seir_loss,
+        x0=[0.45, 0.20, 0.22],
+        bounds=[(0.05, 1.20), (0.05, 0.50), (0.05, 0.50)],
+        method="L-BFGS-B"
+    )
+
+    beta_opt, sigma_opt, gamma_opt = res.x
+    gamma_treated = float(np.clip(gamma_opt, 0.15, 0.35))
+    gamma_untreated = float(np.clip(gamma_treated * 0.40, 0.05, 0.15))
+    r0_empirical = float(beta_opt / gamma_treated)
 
     calib = {
-        "transmission_rate_beta": beta,
-        "incubation_rate_sigma": 0.20,
-        "recovery_treated_gamma1": gamma_treated,
-        "recovery_untreated_gamma0": gamma_untreated,
+        "transmission_rate_beta": round(float(beta_opt), 4),
+        "incubation_rate_sigma": round(float(sigma_opt), 4),
+        "recovery_treated_gamma1": round(gamma_treated, 4),
+        "recovery_untreated_gamma0": round(gamma_untreated, 4),
         "empirical_r0": round(r0_empirical, 2),
-        "cascade_amplification_factor": round(gamma_treated / gamma_untreated, 2)
+        "cascade_amplification_factor": round(gamma_treated / gamma_untreated, 2),
+        "optimization_loss_mse": round(float(res.fun), 4)
     }
 
-    print("Calibrated Epidemic Parameters:")
+    print("Calibrated Epidemic Parameters (Numerical Least-Squares L-BFGS-B):")
     for k, v in calib.items():
         print(f"  • {k}: {v}")
 
     seir_path = MODELS_DIR / "calibrated_seir_params.json"
     with open(seir_path, "w", encoding="utf-8") as f:
         json.dump(calib, f, indent=2)
-    print(f"  💾 Serialized SEIR Calibration -> {seir_path}")
+    print(f"  💾 Serialized Numerical SEIR Calibration -> {seir_path}")
 
     return calib
 
