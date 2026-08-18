@@ -101,9 +101,10 @@ class AdaptiveRouteAllocator:
         if force_algorithm:
             tier = force_algorithm.upper()
 
-        logger.info(f"Adaptive Route Allocator: Selected tier [{tier}] for N={N} facilities (Quantum Mode: {use_quantum}).")
-
         # 2. Quantum Hardware / Simulator Dispatch
+        from ai_engine.quantum.check_env import get_quantum_mode
+        q_mode = get_quantum_mode()
+        
         if use_quantum or tier == "QUANTUM":
             try:
                 orchestrator = self._get_quantum_orchestrator()

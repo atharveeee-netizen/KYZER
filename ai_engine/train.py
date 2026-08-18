@@ -75,17 +75,18 @@ def train_forecaster_suite(df_history: pd.DataFrame) -> Dict[str, Any]:
         try:
             import lightgbm as lgb
             if alpha == 0.50:
-                # L1 Loss directly minimizes MAE, optimizing WAPE mathematically
+                # Tweedie deviance loss specifically handles zero-inflated continuous medicine demand
                 model = lgb.LGBMRegressor(
-                    objective="regression_l1",
-                    n_estimators=450,
-                    learning_rate=0.025,
+                    objective="tweedie",
+                    tweedie_variance_power=1.3,
+                    n_estimators=600,
+                    learning_rate=0.03,
                     num_leaves=63,
-                    min_child_samples=15,
-                    subsample=0.85,
-                    colsample_bytree=0.85,
-                    reg_alpha=0.1,
-                    reg_lambda=0.1,
+                    min_child_samples=12,
+                    subsample=0.90,
+                    colsample_bytree=0.90,
+                    reg_alpha=0.05,
+                    reg_lambda=0.05,
                     random_state=42,
                     verbosity=-1
                 )
@@ -93,14 +94,14 @@ def train_forecaster_suite(df_history: pd.DataFrame) -> Dict[str, Any]:
                 model = lgb.LGBMRegressor(
                     objective="quantile",
                     alpha=alpha,
-                    n_estimators=400,
-                    learning_rate=0.025,
+                    n_estimators=500,
+                    learning_rate=0.03,
                     num_leaves=63,
-                    min_child_samples=15,
-                    subsample=0.85,
-                    colsample_bytree=0.85,
-                    reg_alpha=0.1,
-                    reg_lambda=0.1,
+                    min_child_samples=12,
+                    subsample=0.90,
+                    colsample_bytree=0.90,
+                    reg_alpha=0.05,
+                    reg_lambda=0.05,
                     random_state=42,
                     verbosity=-1
                 )
@@ -151,15 +152,19 @@ def train_forecaster_suite(df_history: pd.DataFrame) -> Dict[str, Any]:
 
     # Serialize Model Artifact
     bundle_path = MODELS_DIR / "forecaster_models_bundle.pkl"
+    lgb_path = MODELS_DIR / "lightgbm_quantile.pkl"
+    payload = {
+        "models": models,
+        "feature_names": feature_cols,
+        "alphas": alphas,
+        "engine": engine_name,
+        "wape": wape_pct,
+        "coverage": coverage_pct
+    }
     with open(bundle_path, "wb") as f:
-        pickle.dump({
-            "models": models,
-            "feature_names": feature_cols,
-            "alphas": alphas,
-            "engine": engine_name,
-            "wape": wape_pct,
-            "coverage": coverage_pct
-        }, f)
+        pickle.dump(payload, f)
+    with open(lgb_path, "wb") as f:
+        pickle.dump(payload, f)
     print(f"  💾 Serialized Forecaster Model Bundle -> {bundle_path}")
 
     return {
