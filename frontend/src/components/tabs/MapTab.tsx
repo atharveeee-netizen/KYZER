@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import maplibregl from 'maplibre-gl';
-import { Navigation, Send, AlertTriangle, CheckCircle2, Bed, Users, Pill, ShieldAlert, Sparkles, MapPin, Zap, RefreshCw, Layers, Compass, Eye, Truck, Satellite } from 'lucide-react';
+import { Navigation, Send, AlertTriangle, CheckCircle2, Bed, Users, Pill, ShieldAlert, Sparkles, MapPin, Zap, RefreshCw, Layers, Compass, Eye, Truck, Satellite, Mountain } from 'lucide-react';
 import { HealthFacility, RoutingResult } from '../../types';
 
 interface MapTabProps {
@@ -11,8 +11,8 @@ interface MapTabProps {
   onRerouteRequest: (blockedRoadName: string) => void;
 }
 
-// Helper to generate 3D hexagonal footprint for extruded spatial pillars
-function createHexagonPolygon(lng: number, lat: number, radius = 0.022): [number, number][] {
+// Helper to generate 3D hexagonal polygon footprint for spatial towers
+function createHexagonPolygon(lng: number, lat: number, radius = 0.018): [number, number][] {
   const coords: [number, number][] = [];
   for (let i = 0; i <= 6; i++) {
     const angle = (i * 60 * Math.PI) / 180;
@@ -33,51 +33,30 @@ export const MapTab: React.FC<MapTabProps> = ({
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const truckMarkerRef = useRef<maplibregl.Marker | null>(null);
+  const animationFrameRef = useRef<number | null>(null);
+  
   const [showBlockerModal, setShowBlockerModal] = useState(false);
   const [roadNote, setRoadNote] = useState('Ghod River Bridge Submerged (Rainfall >45mm)');
   const [isSelfPlanning, setIsSelfPlanning] = useState(false);
   const [planningStep, setPlanningStep] = useState<string | null>(null);
-  const [basemapStyle, setBasemapStyle] = useState<'DARK' | 'SATELLITE'>('DARK');
+  const [isTerrainActive, setIsTerrainActive] = useState(true);
   const [isOrbiting, setIsOrbiting] = useState(false);
   const orbitIntervalRef = useRef<any>(null);
 
-  // 9 Pune District Clinics + 1 Central Depot Hub
+  // 9 Pune District Clinics + 1 Central Depot Hub (10 Nodes)
   const puneClinics = facilities.filter(f => f.country === 'IND');
 
   useEffect(() => {
     if (!mapContainer.current || mapRef.current) return;
 
-    // Basemap style URL
-    const mapStyle = basemapStyle === 'DARK'
-      ? 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json'
-      : {
-          version: 8,
-          sources: {
-            'esri-satellite': {
-              type: 'raster',
-              tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],
-              tileSize: 256,
-              attribution: 'Esri Satellite'
-            }
-          },
-          layers: [
-            {
-              id: 'satellite-layer',
-              type: 'raster',
-              source: 'esri-satellite',
-              minzoom: 0,
-              maxzoom: 19
-            }
-          ]
-        };
-
+    // High-Resolution 3D Vector Map with Native DEM Elevation Sources
     const map = new maplibregl.Map({
       container: mapContainer.current,
-      style: mapStyle as any,
+      style: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
       center: [74.08, 18.78],
       zoom: 9.7,
       pitch: 65, // 3D Camera Tilt (65 degrees)
-      bearing: -22, // 3D Perspective Rotation
+      bearing: -20, // 3D Perspective Rotation
       antialias: true,
       maxPitch: 85,
     });
@@ -85,12 +64,44 @@ export const MapTab: React.FC<MapTabProps> = ({
     mapRef.current = map;
 
     map.on('load', () => {
-      // 1. ADD MASSIVE 3D EXTRUDED PILLARS (COLUMNS) AT EACH CLINIC
+      // 1. ADD TRUE 3D RASTER-DEM TERRAIN ELEVATION (AWS OpenData Free Terrarium DEM)
+      try {
+        map.addSource('terrarium-dem', {
+          type: 'raster-dem',
+          tiles: [
+            'https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png'
+          ],
+          encoding: 'terrarium',
+          tileSize: 256,
+          maxzoom: 15,
+        });
+
+        map.setTerrain({
+          source: 'terrarium-dem',
+          exaggeration: 1.8, // 1.8x elevation exaggeration for realistic Sahyadri Ghats
+        });
+
+        // 3D Hillshade Shadow Layer
+        map.addLayer({
+          id: 'terrain-hillshade',
+          type: 'hillshade',
+          source: 'terrarium-dem',
+          paint: {
+            'hillshade-exaggeration': 0.65,
+            'hillshade-shadow-color': '#09090b',
+            'hillshade-highlight-color': '#3f3f46',
+            'hillshade-accent-color': '#f54e00',
+          },
+        });
+      } catch (err) {
+        console.warn('DEM Terrain initialization note:', err);
+      }
+
+      // 2. ADD 3D EXTRUDED SPATIAL PILLARS AT EACH CLINIC
       const pillarFeatures = puneClinics.map((fac) => {
         const isP0 = fac.risk_tier === 'P0_CRITICAL';
         const isP1 = fac.risk_tier === 'P1_WARNING';
-        // Height proportional to stock / risk (up to 18,000 meters virtual height in 3D)
-        const heightMeters = isP0 ? 14000 : isP1 ? 9000 : 18000;
+        const heightMeters = isP0 ? 12000 : isP1 ? 8000 : 16000;
         const colorHex = isP0 ? '#ef4444' : isP1 ? '#f59e0b' : '#10b981';
 
         return {
@@ -104,7 +115,7 @@ export const MapTab: React.FC<MapTabProps> = ({
           },
           geometry: {
             type: 'Polygon' as const,
-            coordinates: [createHexagonPolygon(fac.longitude, fac.latitude, 0.02)],
+            coordinates: [createHexagonPolygon(fac.longitude, fac.latitude, 0.018)],
           },
         };
       });
@@ -117,7 +128,6 @@ export const MapTab: React.FC<MapTabProps> = ({
         },
       });
 
-      // Render 3D Extruded Glass Towers
       map.addLayer({
         id: '3d-clinic-pillars-extrusion',
         type: 'fill-extrusion',
@@ -126,11 +136,11 @@ export const MapTab: React.FC<MapTabProps> = ({
           'fill-extrusion-color': ['get', 'color'],
           'fill-extrusion-height': ['get', 'height'],
           'fill-extrusion-base': ['get', 'base'],
-          'fill-extrusion-opacity': 0.88,
+          'fill-extrusion-opacity': 0.85,
         },
       });
 
-      // 2. ADD 3D GLOWING QUANTUM ROUTE LINESTRING
+      // 3. ADD 3D GLOWING QUANTUM ROUTE LINESTRING
       const coordinates = puneClinics.map(f => [f.longitude, f.latitude]);
       if (coordinates.length > 0) coordinates.push(coordinates[0]);
 
@@ -146,7 +156,7 @@ export const MapTab: React.FC<MapTabProps> = ({
         },
       });
 
-      // 3D Neon Cyan Glow Line
+      // Neon Cyan 3D Glow
       map.addLayer({
         id: 'quantum-route-glow',
         type: 'line',
@@ -154,12 +164,12 @@ export const MapTab: React.FC<MapTabProps> = ({
         layout: { 'line-join': 'round', 'line-cap': 'round' },
         paint: {
           'line-color': '#06b6d4',
-          'line-width': 12,
-          'line-opacity': 0.45,
+          'line-width': 10,
+          'line-opacity': 0.4,
         },
       });
 
-      // 3D Cursor Orange Solid Vector Ribbon
+      // Cursor Orange Solid Vector Line
       map.addLayer({
         id: 'quantum-route-line',
         type: 'line',
@@ -167,27 +177,27 @@ export const MapTab: React.FC<MapTabProps> = ({
         layout: { 'line-join': 'round', 'line-cap': 'round' },
         paint: {
           'line-color': '#f54e00',
-          'line-width': 4.5,
+          'line-width': 4,
           'line-opacity': 0.95,
         },
       });
 
-      // 3. Render 3D Floating Top Badges at Each Clinic Pillar
+      // 4. Render 3D Floating HUD Badges
       puneClinics.forEach((fac, idx) => {
         const el = document.createElement('div');
-        el.className = 'custom-3d-hud-pin cursor-pointer transform hover:scale-125 transition-all duration-300';
+        el.className = 'custom-3d-pin cursor-pointer transform hover:scale-125 transition-all duration-300';
 
         const isP0 = fac.risk_tier === 'P0_CRITICAL';
         const isP1 = fac.risk_tier === 'P1_WARNING';
-        const badgeColor = isP0 ? 'bg-red-500 text-white animate-pulse' : isP1 ? 'bg-amber-500 text-white' : 'bg-emerald-500 text-white';
+        const badgeBg = isP0 ? '#ef4444' : isP1 ? '#f59e0b' : '#10b981';
 
         el.innerHTML = `
           <div style="display: flex; flex-direction: column; align-items: center; filter: drop-shadow(0 6px 12px rgba(0,0,0,0.8));">
-            <div style="background: rgba(28,27,23,0.92); color: #ffffff; padding: 4px 9px; border-radius: 6px; font-size: 11px; font-family: monospace; font-weight: 700; border: 1px solid rgba(255,255,255,0.25); display: flex; align-items: center; gap: 5px; backdrop-filter: blur(4px);">
-              <span class="${badgeColor}" style="width: 8px; height: 8px; border-radius: 9999px; display: inline-block;"></span>
+            <div style="background: rgba(28,27,23,0.92); color: #ffffff; padding: 4px 8px; border-radius: 6px; font-size: 11px; font-family: monospace; font-weight: 700; border: 1px solid rgba(255,255,255,0.25); display: flex; align-items: center; gap: 5px; backdrop-filter: blur(4px);">
+              <span style="width: 8px; height: 8px; border-radius: 50%; background: ${badgeBg}; display: inline-block;"></span>
               <span>${idx + 1}. ${fac.name.replace(' Primary Health Centre', '').replace(' Sub-District Hospital', '').replace(' Health Centre', '').replace(' Rural Hospital', '')}</span>
             </div>
-            <div style="width: 2px; height: 18px; background: #f54e00; box-shadow: 0 0 8px #f54e00;"></div>
+            <div style="width: 2px; height: 16px; background: #f54e00; box-shadow: 0 0 6px #f54e00;"></div>
           </div>
         `;
 
@@ -201,11 +211,11 @@ export const MapTab: React.FC<MapTabProps> = ({
           .addTo(map);
       });
 
-      // 4. Add Animated 3D Vehicle Marker
+      // 5. Add Animated 3D Vehicle Marker
       if (puneClinics.length > 0) {
         const truckEl = document.createElement('div');
         truckEl.innerHTML = `
-          <div style="background: #f54e00; color: white; padding: 7px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 16px #f54e00; display: flex; align-items: center; justify-content: center; transform: scale(1.2);">
+          <div style="background: #f54e00; color: white; padding: 6px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 16px #f54e00; display: flex; align-items: center; justify-content: center; transform: scale(1.2);">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9"/><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.62l-3.48-4.35A1 1 0 0 0 17.52 8H14v10Z"/><circle cx="17" cy="18" r="2"/><circle cx="7" cy="18" r="2"/></svg>
           </div>
         `;
@@ -218,14 +228,54 @@ export const MapTab: React.FC<MapTabProps> = ({
 
     return () => {
       if (orbitIntervalRef.current) clearInterval(orbitIntervalRef.current);
+      if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
       map.remove();
       mapRef.current = null;
     };
-  }, [facilities, basemapStyle]);
+  }, [facilities]);
+
+  // Smooth 60fps Vehicle Transit Animation along the route
+  const startSmoothVehicleAnimation = () => {
+    if (!truckMarkerRef.current || puneClinics.length === 0) return;
+    
+    const waypoints = puneClinics.map(f => [f.longitude, f.latitude]);
+    waypoints.push(waypoints[0]); // Return loop
+
+    let currentSegment = 0;
+    let progress = 0;
+    const speed = 0.015; // Animation step speed
+
+    const animate = () => {
+      if (currentSegment >= waypoints.length - 1) {
+        currentSegment = 0;
+        progress = 0;
+      }
+
+      const p1 = waypoints[currentSegment];
+      const p2 = waypoints[currentSegment + 1];
+
+      progress += speed;
+      if (progress >= 1) {
+        progress = 0;
+        currentSegment++;
+      }
+
+      if (p1 && p2) {
+        const currentLng = p1[0] + (p2[0] - p1[0]) * progress;
+        const currentLat = p1[1] + (p2[1] - p1[1]) * progress;
+        truckMarkerRef.current?.setLngLat([currentLng, currentLat]);
+      }
+
+      animationFrameRef.current = requestAnimationFrame(animate);
+    };
+
+    if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
+    animationFrameRef.current = requestAnimationFrame(animate);
+  };
 
   // 3D Camera Controls
   const handleSnap3D = () => {
-    mapRef.current?.flyTo({ pitch: 68, bearing: -22, zoom: 9.8, duration: 1200 });
+    mapRef.current?.flyTo({ pitch: 68, bearing: -20, zoom: 9.8, duration: 1200 });
   };
 
   const handleSnap2D = () => {
@@ -246,21 +296,31 @@ export const MapTab: React.FC<MapTabProps> = ({
     }
   };
 
-  // Autonomous 9-Clinic Self-Planning Simulation with 3D Flight
+  const handleToggleTerrain = () => {
+    if (!mapRef.current) return;
+    if (isTerrainActive) {
+      mapRef.current.setTerrain(null);
+      setIsTerrainActive(false);
+    } else {
+      mapRef.current.setTerrain({ source: 'terrarium-dem', exaggeration: 1.8 });
+      setIsTerrainActive(true);
+    }
+  };
+
+  // Autonomous 9-Clinic Self-Planning Simulation with 3D Flight & 60fps Truck Motion
   const handleTriggerSelfPlan = () => {
     setIsSelfPlanning(true);
-    setPlanningStep('Step 1/4: ForecasterAgent scanning 9-clinic demand surges...');
+    setPlanningStep('Step 1/4: ForecasterAgent evaluating 9-clinic demand surges...');
+    startSmoothVehicleAnimation();
     
     if (mapRef.current && puneClinics.length > 1) {
       mapRef.current.flyTo({ center: [puneClinics[1].longitude, puneClinics[1].latitude], zoom: 11, pitch: 70, duration: 1200 });
-      truckMarkerRef.current?.setLngLat([puneClinics[1].longitude, puneClinics[1].latitude]);
     }
 
     setTimeout(() => {
       setPlanningStep('Step 2/4: AllocatorAgent formulating 81-qubit Hamiltonian on IBM Quantum QAOA...');
       if (mapRef.current && puneClinics.length > 4) {
         mapRef.current.flyTo({ center: [puneClinics[4].longitude, puneClinics[4].latitude], zoom: 11.2, pitch: 72, bearing: 45, duration: 1200 });
-        truckMarkerRef.current?.setLngLat([puneClinics[4].longitude, puneClinics[4].latitude]);
       }
     }, 1300);
 
@@ -268,14 +328,13 @@ export const MapTab: React.FC<MapTabProps> = ({
       setPlanningStep('Step 3/4: SupervisorAgent auditing 1.5x buffer at Khed & Wagholi donor hubs...');
       if (mapRef.current && puneClinics.length > 7) {
         mapRef.current.flyTo({ center: [puneClinics[7].longitude, puneClinics[7].latitude], zoom: 11, pitch: 68, bearing: -90, duration: 1200 });
-        truckMarkerRef.current?.setLngLat([puneClinics[7].longitude, puneClinics[7].latitude]);
       }
     }, 2600);
 
     setTimeout(() => {
       setPlanningStep('Step 4/4: ExplainerAgent locked 159.15 km tour! 1-Click GPS navigation ready.');
       if (mapRef.current) {
-        mapRef.current.flyTo({ center: [74.08, 18.78], zoom: 9.7, pitch: 65, bearing: -22, duration: 1500 });
+        mapRef.current.flyTo({ center: [74.08, 18.78], zoom: 9.7, pitch: 65, bearing: -20, duration: 1500 });
       }
       setIsSelfPlanning(false);
       setTimeout(() => setPlanningStep(null), 4000);
@@ -296,7 +355,7 @@ export const MapTab: React.FC<MapTabProps> = ({
             className="px-3 py-1.5 rounded-md bg-primary text-white font-bold flex items-center gap-1.5 hover:bg-primary-active transition-colors"
           >
             <Compass className="w-3.5 h-3.5" />
-            <span>3D Tilt (68°)</span>
+            <span>3D Aerial (68°)</span>
           </button>
           
           <button
@@ -308,19 +367,20 @@ export const MapTab: React.FC<MapTabProps> = ({
           </button>
 
           <button
-            onClick={handleSnap2D}
-            className="px-2.5 py-1.5 rounded-md text-ink hover:bg-canvas-soft transition-colors flex items-center gap-1"
+            onClick={handleToggleTerrain}
+            className={`px-2.5 py-1.5 rounded-md flex items-center gap-1 transition-colors ${isTerrainActive ? 'text-semantic-success font-semibold' : 'text-muted'}`}
+            title="Toggle DEM Terrain Elevation"
           >
-            <Layers className="w-3.5 h-3.5 text-muted" />
-            <span>2D Flat</span>
+            <Mountain className="w-3.5 h-3.5" />
+            <span>DEM 3D</span>
           </button>
 
           <button
-            onClick={() => setBasemapStyle(prev => prev === 'DARK' ? 'SATELLITE' : 'DARK')}
+            onClick={handleSnap2D}
             className="px-2.5 py-1.5 rounded-md text-ink hover:bg-canvas-soft transition-colors flex items-center gap-1 border-l border-hairline ml-1"
           >
-            <Satellite className="w-3.5 h-3.5 text-primary" />
-            <span>{basemapStyle === 'DARK' ? 'Satellite' : 'Dark Vector'}</span>
+            <Layers className="w-3.5 h-3.5 text-muted" />
+            <span>2D Flat</span>
           </button>
         </div>
 
@@ -330,11 +390,11 @@ export const MapTab: React.FC<MapTabProps> = ({
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-semantic-success animate-ping"></span>
               <span className="text-[11px] font-mono uppercase tracking-wider text-muted font-semibold">
-                3D Spatial Fleet Twin
+                3D Terrain Fleet Digital Twin
               </span>
             </div>
             <span className="text-[10px] font-mono bg-surface-strong px-2 py-0.5 rounded-pill text-ink font-bold">
-              3D Pillars Active (14,000m)
+              1.8x DEM Elevation
             </span>
           </div>
 

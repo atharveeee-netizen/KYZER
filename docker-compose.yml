@@ -1,50 +1,61 @@
 version: '3.8'
 
 services:
-  postgres:
-    image: postgis/postgis:16-3.4-alpine
-    container_name: caredom_postgres
-    environment:
-      POSTGRES_USER: caredom_user
-      POSTGRES_PASSWORD: caredom_pass
-      POSTGRES_DB: caredom_db
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    restart: unless-stopped
-
-  redis:
-    image: redis:7.2-alpine
-    container_name: caredom_redis
-    ports:
-      - "6379:6379"
-    restart: unless-stopped
-
-  backend:
+  # ============================================================================
+  # 🚀 CAREDOM FASTAPI REST API & AI ENGINE SERVICE
+  # ============================================================================
+  api:
     build:
-      context: ./backend
+      context: .
       dockerfile: Dockerfile
-    container_name: caredom_backend
-    env_file:
-      - .env
+    container_name: caredom-api
+    restart: unless-stopped
     ports:
       - "8000:8000"
+    environment:
+      - PORT=8000
+      - DATABASE_URL=postgresql://caredom_user:caredom_pass@db:5432/caredom_db
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - IBM_QUANTUM_TOKEN=${IBM_QUANTUM_TOKEN:-}
+      - ENVIRONMENT=production
     depends_on:
-      - postgres
-      - redis
-    restart: unless-stopped
+      db:
+        condition: service_healthy
+    networks:
+      - caredom_net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
 
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    container_name: caredom_frontend
-    ports:
-      - "3000:80"
-    depends_on:
-      - backend
+  # ============================================================================
+  # 🗄️ POSTGRESQL 16 + POSTGIS 3.4 GEOSPATIAL DATABASE SERVICE
+  # ============================================================================
+  db:
+    image: postgis/postgis:16-3.4-alpine
+    container_name: caredom-postgres
     restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=caredom_user
+      - POSTGRES_PASSWORD=caredom_pass
+      - POSTGRES_DB=caredom_db
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - caredom_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U caredom_user -d caredom_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+networks:
+  caredom_net:
+    driver: bridge
 
 volumes:
-  postgres_data:
+  pgdata:
+    driver: local
