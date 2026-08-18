@@ -1,625 +1,652 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import DeckGL from '@deck.gl/react';
+import { Map } from 'react-map-gl/maplibre';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
-import { Navigation, Send, AlertTriangle, Bed, Users, Pill, ShieldAlert, Sparkles, RefreshCw, Layers, Compass, Satellite, Mountain } from 'lucide-react';
+
+import { PolygonLayer, ArcLayer, ColumnLayer, ScatterplotLayer } from '@deck.gl/layers';
+import { TripsLayer } from '@deck.gl/geo-layers';
+import { AmbientLight, PointLight, LightingEffect } from '@deck.gl/core';
+
+import { Navigation, Send, AlertTriangle, Bed, Users, Pill, ShieldAlert, Sparkles, RefreshCw, Layers, Compass, Satellite } from 'lucide-react';
 import { HealthFacility, RoutingResult } from '../../types';
 
 interface MapTabProps {
- facilities: HealthFacility[];
- routingResult: RoutingResult;
- onFacilitySelect: (facility: HealthFacility) => void;
- selectedFacility: HealthFacility | null;
- onRerouteRequest: (blockedRoadName: string) => void;
+  facilities: HealthFacility[];
+  routingResult: RoutingResult;
+  onFacilitySelect: (facility: HealthFacility) => void;
+  selectedFacility: HealthFacility | null;
+  onRerouteRequest: (blockedRoadName: string) => void;
 }
 
-// Helper to generate 3D building polygon complexes
-function createBuildingFootprint(lng: number, lat: number, dx: number, dy: number, w: number, h: number): [number, number][] {
- return [
- [lng + dx - w, lat + dy - h],
- [lng + dx + w, lat + dy - h],
- [lng + dx + w, lat + dy + h],
- [lng + dx - w, lat + dy + h],
- [lng + dx - w, lat + dy - h],
- ];
+// visgl/deck.gl Lighting Setup
+const ambientLight = new AmbientLight({
+  color: [255, 255, 255],
+  intensity: 1.0,
+});
+
+const pointLight = new PointLight({
+  color: [255, 255, 255],
+  intensity: 2.0,
+  position: [74.08, 18.78, 10000],
+});
+
+const lightingEffect = new LightingEffect({ ambientLight, pointLight });
+
+const DEFAULT_THEME = {
+  buildingColor: [74, 80, 87, 230] as [number, number, number, number],
+  trailColor0: [253, 128, 93] as [number, number, number], // Neon Orange
+  trailColor1: [23, 184, 190] as [number, number, number], // Neon Cyan
+  material: {
+    ambient: 0.15,
+    diffuse: 0.7,
+    shininess: 32,
+    specularColor: [60, 64, 70] as [number, number, number],
+  },
+  effects: [lightingEffect],
+};
+
+const INITIAL_VIEW_STATE = {
+  longitude: 74.08,
+  latitude: 18.78,
+  zoom: 9.8,
+  pitch: 55,
+  bearing: -15,
+  maxPitch: 85,
+  minZoom: 6,
+  maxZoom: 20,
+};
+
+// Helper: Generate 3D Building Campus Complex footprint around each clinic
+function generateBuildingComplex(lng: number, lat: number, scale = 0.007) {
+  const mainBlock = [
+    [lng - scale, lat - scale * 0.7],
+    [lng + scale, lat - scale * 0.7],
+    [lng + scale, lat + scale * 0.7],
+    [lng - scale, lat + scale * 0.7],
+    [lng - scale, lat - scale * 0.7],
+  ];
+  const emergencyWing = [
+    [lng + scale * 1.1, lat - scale * 0.4],
+    [lng + scale * 1.8, lat - scale * 0.4],
+    [lng + scale * 1.8, lat + scale * 0.5],
+    [lng + scale * 1.1, lat + scale * 0.5],
+    [lng + scale * 1.1, lat - scale * 0.4],
+  ];
+  const vaccineVault = [
+    [lng - scale * 1.8, lat - scale * 0.5],
+    [lng - scale * 1.1, lat - scale * 0.5],
+    [lng - scale * 1.1, lat + scale * 0.3],
+    [lng - scale * 1.8, lat + scale * 0.3],
+    [lng - scale * 1.8, lat - scale * 0.5],
+  ];
+
+  return [
+    { polygon: mainBlock, height: 350, type: 'MAIN_HOSPITAL' },
+    { polygon: emergencyWing, height: 500, type: 'ICU_TRAUMA_WING' },
+    { polygon: vaccineVault, height: 220, type: 'WHO_VACCINE_VAULT' },
+  ];
 }
 
 export const MapTab: React.FC<MapTabProps> = ({
- facilities,
- routingResult,
- onFacilitySelect,
- selectedFacility,
- onRerouteRequest,
+  facilities,
+  routingResult,
+  onFacilitySelect,
+  selectedFacility,
+  onRerouteRequest,
 }) => {
- const mapContainer = useRef<HTMLDivElement>(null);
- const mapRef = useRef<maplibregl.Map | null>(null);
- const truckMarkerRef = useRef<maplibregl.Marker | null>(null);
- const animFrameRef = useRef<number | null>(null);
- const orbitRef = useRef<any>(null);
+  const [viewState, setViewState] = useState(INITIAL_VIEW_STATE);
+  const [time, setTime] = useState(0);
+  const [isSelfPlanning, setIsSelfPlanning] = useState(false);
+  const [planningStep, setPlanningStep] = useState<string | null>(null);
+  const [isOrbiting, setIsOrbiting] = useState(false);
+  const [showBlockerModal, setShowBlockerModal] = useState(false);
+  const [roadNote, setRoadNote] = useState('Ghod River Bridge Submerged (Rainfall >45mm)');
 
- const [isSelfPlanning, setIsSelfPlanning] = useState(false);
- const [planningStep, setPlanningStep] = useState<string | null>(null);
- const [isOrbiting, setIsOrbiting] = useState(false);
- const [basemapMode, setBasemapMode] = useState<'DARK' | 'SATELLITE'>('DARK');
- const [showBlockerModal, setShowBlockerModal] = useState(false);
- const [roadNote, setRoadNote] = useState('Ghod River Bridge Submerged (Rainfall >45mm)');
+  const animFrameRef = useRef<number | null>(null);
+  const orbitRef = useRef<any>(null);
 
- // 10 Pune District Clinics (IND)
- const puneClinics = facilities.filter(f => f.country === 'IND');
+  // 10 Pune District Clinics
+  const puneClinics = facilities.filter(f => f.country === 'IND');
 
- // Initialize MapLibre GL 3D Map
- useEffect(() => {
- if (!mapContainer.current || mapRef.current) return;
+  // Continuous 60fps clock for TripsLayer
+  const loopLength = 1800;
+  const animationSpeed = 2.0;
 
- const styleUrl = basemapMode === 'DARK'
- ? 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json'
- : {
- version: 8,
- sources: {
- 'esri-sat': {
- type: 'raster',
- tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],
- tileSize: 256,
- attribution: 'Esri Satellite'
- }
- },
- layers: [
- {
- id: 'esri-sat-layer',
- type: 'raster',
- source: 'esri-sat',
- minzoom: 0,
- maxzoom: 19
- }
- ]
- };
+  useEffect(() => {
+    let currentTime = 0;
+    const animateLoop = () => {
+      currentTime = (currentTime + animationSpeed) % loopLength;
+      setTime(currentTime);
+      animFrameRef.current = requestAnimationFrame(animateLoop);
+    };
+    animFrameRef.current = requestAnimationFrame(animateLoop);
 
- const map = new maplibregl.Map({
- container: mapContainer.current,
- style: styleUrl as any,
- center: [74.08, 18.78],
- zoom: 9.8,
- pitch: 65, // 3D Camera Tilt (65 degrees)
- bearing: -20, // 3D Rotation
- antialias: true,
- maxPitch: 85,
- });
+    return () => {
+      if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
+    };
+  }, [loopLength, animationSpeed]);
 
- mapRef.current = map;
+  // 1. Buildings Data (visgl/deck.gl format)
+  const buildings = useMemo(() => {
+    const list: any[] = [];
+    puneClinics.forEach((fac, idx) => {
+      const isP0 = fac.risk_tier === 'P0_CRITICAL';
+      const isP1 = fac.risk_tier === 'P1_WARNING';
+      const color: [number, number, number, number] = isP0 
+        ? [239, 68, 68, 230] 
+        : isP1 
+        ? [245, 158, 11, 230] 
+        : [16, 185, 129, 230];
 
- map.on('load', () => {
- // 1. ADD 3D EXTRUDED HOSPITAL CAMPUS BUILDINGS
- const buildingFeatures: any[] = [];
- 
- puneClinics.forEach((fac) => {
- const isP0 = fac.risk_tier === 'P0_CRITICAL';
- const isP1 = fac.risk_tier === 'P1_WARNING';
- const roofColor = isP0 ? '#ef4444' : isP1 ? '#f59e0b' : '#10b981';
+      const complexes = generateBuildingComplex(fac.longitude, fac.latitude);
+      complexes.forEach((comp) => {
+        list.push({
+          polygon: comp.polygon,
+          height: comp.height * (isP0 ? 1.6 : 1.2),
+          color,
+          facility: fac,
+          name: `${idx + 1}. ${fac.name} (${comp.type})`,
+        });
+      });
+    });
+    return list;
+  }, [puneClinics]);
 
- // Main Hospital Wing
- buildingFeatures.push({
- type: 'Feature',
- properties: {
- name: `${fac.name} (Main Ward)`,
- height: isP0 ? 1200 : 800,
- base: 0,
- color: roofColor,
- },
- geometry: {
- type: 'Polygon',
- coordinates: [createBuildingFootprint(fac.longitude, fac.latitude, 0, 0, 0.009, 0.007)],
- },
- });
+  // 2. Trips Data (visgl/deck.gl TripsLayer format)
+  const trips = useMemo(() => {
+    if (puneClinics.length === 0) return [];
+    const waypoints = puneClinics.map(f => [f.longitude, f.latitude]);
+    waypoints.push(waypoints[0]); // Return circuit
 
- // Emergency Trauma & ICU Block
- buildingFeatures.push({
- type: 'Feature',
- properties: {
- name: `${fac.name} (Emergency ICU)`,
- height: isP0 ? 1800 : 1200,
- base: 0,
- color: '#f54e00',
- },
- geometry: {
- type: 'Polygon',
- coordinates: [createBuildingFootprint(fac.longitude, fac.latitude, 0.012, 0.005, 0.006, 0.005)],
- },
- });
+    const path0: [number, number][] = [];
+    const timestamps0: number[] = [];
+    let curTime = 0;
 
- // WHO Cold-Chain Vault
- buildingFeatures.push({
- type: 'Feature',
- properties: {
- name: `${fac.name} (Cold-Chain Vault)`,
- height: 600,
- base: 0,
- color: '#06b6d4',
- },
- geometry: {
- type: 'Polygon',
- coordinates: [createBuildingFootprint(fac.longitude, fac.latitude, -0.012, -0.004, 0.005, 0.004)],
- },
- });
- });
+    for (let i = 0; i < waypoints.length; i++) {
+      path0.push([waypoints[i][0], waypoints[i][1]]);
+      timestamps0.push(curTime);
+      curTime += 180;
+    }
 
- map.addSource('3d-campus-buildings', {
- type: 'geojson',
- data: {
- type: 'FeatureCollection',
- features: buildingFeatures,
- },
- });
+    // Secondary counter-clockwise patrol trip
+    const waypointsRev = [...waypoints].reverse();
+    const path1: [number, number][] = [];
+    const timestamps1: number[] = [];
+    curTime = 0;
 
- map.addLayer({
- id: '3d-buildings-extrusion-layer',
- type: 'fill-extrusion',
- source: '3d-campus-buildings',
- paint: {
- 'fill-extrusion-color': ['get', 'color'],
- 'fill-extrusion-height': ['get', 'height'],
- 'fill-extrusion-base': ['get', 'base'],
- 'fill-extrusion-opacity': 0.88,
- },
- });
+    for (let i = 0; i < waypointsRev.length; i++) {
+      path1.push([waypointsRev[i][0], waypointsRev[i][1]]);
+      timestamps1.push(curTime);
+      curTime += 180;
+    }
 
- // 2. ADD 3D GLOWING QUANTUM ROUTE LINE
- const routeCoords = puneClinics.map(f => [f.longitude, f.latitude]);
- if (routeCoords.length > 0) routeCoords.push(routeCoords[0]);
+    return [
+      { vendor: 0, path: path0, timestamps: timestamps0 },
+      { vendor: 1, path: path1, timestamps: timestamps1 },
+    ];
+  }, [puneClinics]);
 
- map.addSource('quantum-route-network', {
- type: 'geojson',
- data: {
- type: 'Feature',
- properties: {},
- geometry: {
- type: 'LineString',
- coordinates: routeCoords,
- },
- },
- });
+  // 3. Parabolic Transfer Arcs
+  const arcs = useMemo(() => {
+    const donor = puneClinics.find(f => f.facility_id === 'PHC-PUN-008') || puneClinics[0];
+    const recipients = puneClinics.filter(f => f.risk_tier === 'P0_CRITICAL');
 
- // Neon Cyan 3D Glow Line
- map.addLayer({
- id: 'route-neon-glow',
- type: 'line',
- source: 'quantum-route-network',
- layout: { 'line-join': 'round', 'line-cap': 'round' },
- paint: {
- 'line-color': '#06b6d4',
- 'line-width': 12,
- 'line-opacity': 0.45,
- },
- });
+    return recipients.map(rec => ({
+      from: [donor?.longitude || 73.9015, donor?.latitude || 18.8471],
+      to: [rec.longitude, rec.latitude],
+      fromName: donor?.name || 'Khed Central Hub',
+      toName: rec.name,
+      units: 500,
+    }));
+  }, [puneClinics]);
 
- // Cursor Orange Solid Path Ribbon
- map.addLayer({
- id: 'route-solid-ribbon',
- type: 'line',
- source: 'quantum-route-network',
- layout: { 'line-join': 'round', 'line-cap': 'round' },
- paint: {
- 'line-color': '#f54e00',
- 'line-width': 4.5,
- 'line-opacity': 0.95,
- },
- });
+  // Deck.gl Layer Pipeline
+  const layers = [
+    // 3D Animated TripsLayer (visgl/deck.gl official implementation)
+    new TripsLayer({
+      id: 'trips',
+      data: trips,
+      getPath: (d: any) => d.path,
+      getTimestamps: (d: any) => d.timestamps,
+      getColor: (d: any) => (d.vendor === 0 ? DEFAULT_THEME.trailColor0 : DEFAULT_THEME.trailColor1),
+      opacity: 0.95,
+      widthMinPixels: 4,
+      rounded: true,
+      trailLength: 200,
+      currentTime: time,
+      shadowEnabled: false,
+    }),
 
- // 3. RENDER 3D FLOATING CLINIC HUD BADGES
- puneClinics.forEach((fac, idx) => {
- const el = document.createElement('div');
- el.className = 'custom-3d-pin cursor-pointer transform hover:scale-125 transition-all duration-300';
+    // 3D Extruded Buildings (visgl/deck.gl official implementation)
+    new PolygonLayer({
+      id: 'buildings',
+      data: buildings,
+      extruded: true,
+      wireframe: true,
+      opacity: 0.85,
+      getPolygon: (f: any) => f.polygon,
+      getElevation: (f: any) => f.height,
+      getFillColor: (f: any) => f.color,
+      getLineColor: [255, 255, 255, 180],
+      getLineWidth: 1.5,
+      lineWidthUnits: 'pixels',
+      material: DEFAULT_THEME.material,
+      pickable: true,
+      onClick: (info: any) => {
+        if (info.object?.facility) {
+          onFacilitySelect(info.object.facility);
+          setViewState(prev => ({
+            ...prev,
+            longitude: info.object.facility.longitude,
+            latitude: info.object.facility.latitude,
+            zoom: 12,
+            pitch: 65,
+          }));
+        }
+      },
+    }),
 
- const isP0 = fac.risk_tier === 'P0_CRITICAL';
- const isP1 = fac.risk_tier === 'P1_WARNING';
- const dotBg = isP0 ? '#ef4444' : isP1 ? '#f59e0b' : '#10b981';
+    // 3D Parabolic Transfer Arcs
+    new ArcLayer({
+      id: 'transfer-arcs',
+      data: arcs,
+      getSourcePosition: (d: any) => d.from,
+      getTargetPosition: (d: any) => d.to,
+      getSourceColor: [23, 184, 190, 240],
+      getTargetColor: [253, 128, 93, 240],
+      getWidth: 4,
+      getHeight: 0.6,
+      pickable: true,
+    }),
 
- el.innerHTML = `
- <div style="display: flex; flex-direction: column; align-items: center; filter: drop-shadow(0 6px 14px rgba(0,0,0,0.85));">
- <div style="background: rgba(24,24,27,0.94); color: #ffffff; padding: 4px 9px; border-radius: 6px; font-size: 11px; font-family: monospace; font-weight: 700; border: 1px solid rgba(255,255,255,0.25); display: flex; align-items: center; gap: 6px; backdrop-filter: blur(6px);">
- <span style="width: 8px; height: 8px; border-radius: 50%; background: ${dotBg}; box-shadow: 0 0 8px ${dotBg}; display: inline-block;"></span>
- <span>${idx + 1}. ${fac.name.replace(' Primary Health Centre', '').replace(' Sub-District Hospital', '').replace(' Health Centre', '').replace(' Rural Hospital', '')}</span>
- </div>
- <div style="width: 2px; height: 16px; background: #f54e00; box-shadow: 0 0 6px #f54e00;"></div>
- </div>
- `;
+    // Ground Radar Rings
+    new ScatterplotLayer({
+      id: 'radar-rings',
+      data: puneClinics.filter(f => f.risk_tier === 'P0_CRITICAL'),
+      getPosition: (d: any) => [d.longitude, d.latitude],
+      getRadius: 2200 + Math.sin(time * 0.05) * 600,
+      getFillColor: [239, 68, 68, 50],
+      getLineColor: [239, 68, 68, 200],
+      stroked: true,
+      filled: true,
+      lineWidthMinPixels: 2,
+      radiusUnits: 'meters',
+    }),
+  ];
 
- el.addEventListener('click', () => {
- onFacilitySelect(fac);
- map.flyTo({ center: [fac.longitude, fac.latitude], zoom: 12, pitch: 70, duration: 1200 });
- });
+  // 3D Camera Controls
+  const handleSnap3D = () => {
+    setViewState(prev => ({ ...prev, pitch: 65, bearing: -15, zoom: 9.8 }));
+  };
 
- new maplibregl.Marker({ element: el })
- .setLngLat([fac.longitude, fac.latitude])
- .addTo(map);
- });
+  const handleSnap2D = () => {
+    setViewState(prev => ({ ...prev, pitch: 0, bearing: 0 }));
+  };
 
- // 4. ANIMATED 3D DELIVERY TRUCK
- if (puneClinics.length > 0) {
- const truckEl = document.createElement('div');
- truckEl.innerHTML = `
- <div style="background: #f54e00; color: white; padding: 7px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 18px #f54e00; display: flex; align-items: center; justify-content: center; transform: scale(1.25);">
- <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9"/><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.62l-3.48-4.35A1 1 0 0 0 17.52 8H14v10Z"/><circle cx="17" cy="18" r="2"/><circle cx="7" cy="18" r="2"/></svg>
- </div>
- `;
- const truckMarker = new maplibregl.Marker({ element: truckEl })
- .setLngLat([puneClinics[0].longitude, puneClinics[0].latitude])
- .addTo(map);
- truckMarkerRef.current = truckMarker;
- }
- });
+  const handleToggleOrbit = () => {
+    if (isOrbiting) {
+      if (orbitRef.current) clearInterval(orbitRef.current);
+      setIsOrbiting(false);
+    } else {
+      setIsOrbiting(true);
+      orbitRef.current = setInterval(() => {
+        setViewState(prev => ({
+          ...prev,
+          bearing: (prev.bearing + 0.8) % 360,
+        }));
+      }, 30);
+    }
+  };
 
- return () => {
- if (orbitRef.current) clearInterval(orbitRef.current);
- if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
- map.remove();
- mapRef.current = null;
- };
- }, [facilities, basemapMode]);
+  // AI 9-Clinic Self-Planning Simulation
+  const handleTriggerSelfPlan = () => {
+    setIsSelfPlanning(true);
+    setPlanningStep('Step 1/4: ForecasterAgent evaluating 9-clinic demand surges...');
+    
+    if (puneClinics.length > 1) {
+      setViewState(prev => ({
+        ...prev,
+        longitude: puneClinics[1].longitude,
+        latitude: puneClinics[1].latitude,
+        zoom: 11.5,
+        pitch: 70,
+      }));
+    }
 
- // Smooth 60fps Vehicle Animation along the 9-clinic route
- const startVehicleAnimation = () => {
- if (!truckMarkerRef.current || puneClinics.length === 0) return;
- const waypoints = puneClinics.map(f => [f.longitude, f.latitude]);
- waypoints.push(waypoints[0]);
+    setTimeout(() => {
+      setPlanningStep('Step 2/4: AllocatorAgent formulating 81-qubit Hamiltonian on IBM Quantum QAOA...');
+      if (puneClinics.length > 4) {
+        setViewState(prev => ({
+          ...prev,
+          longitude: puneClinics[4].longitude,
+          latitude: puneClinics[4].latitude,
+          zoom: 11.8,
+          pitch: 72,
+          bearing: 45,
+        }));
+      }
+    }, 1300);
 
- let segment = 0;
- let progress = 0;
- const speed = 0.015;
+    setTimeout(() => {
+      setPlanningStep('Step 3/4: SupervisorAgent auditing 1.5x buffer at Khed & Wagholi donor hubs...');
+      if (puneClinics.length > 7) {
+        setViewState(prev => ({
+          ...prev,
+          longitude: puneClinics[7].longitude,
+          latitude: puneClinics[7].latitude,
+          zoom: 11.5,
+          pitch: 68,
+          bearing: -90,
+        }));
+      }
+    }, 2600);
 
- const step = () => {
- progress += speed;
- if (progress >= 1) {
- progress = 0;
- segment = (segment + 1) % (waypoints.length - 1);
- }
+    setTimeout(() => {
+      setPlanningStep('Step 4/4: ExplainerAgent locked 159.15 km tour! 1-Click GPS navigation ready.');
+      setViewState(prev => ({
+        ...prev,
+        longitude: 74.08,
+        latitude: 18.78,
+        zoom: 9.8,
+        pitch: 55,
+        bearing: -15,
+      }));
+      setIsSelfPlanning(false);
+      setTimeout(() => setPlanningStep(null), 4000);
+    }, 3900);
+  };
 
- const p1 = waypoints[segment];
- const p2 = waypoints[segment + 1];
- if (p1 && p2) {
- const lng = p1[0] + (p2[0] - p1[0]) * progress;
- const lat = p1[1] + (p2[1] - p1[1]) * progress;
- truckMarkerRef.current?.setLngLat([lng, lat]);
- }
- animFrameRef.current = requestAnimationFrame(step);
- };
+  return (
+    <div className="relative h-[calc(100vh-140px)] w-full flex flex-col md:flex-row overflow-hidden border-b border-hairline bg-canvas">
+      
+      {/* 🗺️ Deck.gl WebGL 3D Canvas with Carto Dark Matter Vector Basemap */}
+      <div className="flex-1 relative h-full bg-[#0c0a09]">
+        <DeckGL
+          viewState={viewState as any}
+          onViewStateChange={(e: any) => setViewState(e.viewState)}
+          controller={true}
+          layers={layers as any}
+          effects={DEFAULT_THEME.effects}
+          getTooltip={({ object }: any) => {
+            if (!object) return null;
+            if (object.facility) {
+              const fac = object.facility as HealthFacility;
+              return {
+                html: `
+                  <div style="background: rgba(28,27,23,0.95); backdrop-filter: blur(8px); padding: 10px 14px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); color: #fff; font-family: monospace; font-size: 11px; box-shadow: 0 8px 24px rgba(0,0,0,0.6);">
+                    <div style="font-weight: 700; font-size: 13px; color: #f54e00; margin-bottom: 4px;">${fac.name}</div>
+                    <div style="color: #a1a1aa; margin-bottom: 6px;">ID: ${fac.facility_id} | ${fac.district}</div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 6px;">
+                      <div>Paracetamol: <b style="color:#fff;">${fac.current_stock_pcm500} tabs</b></div>
+                      <div>Days Left: <b style="color:${fac.days_to_stockout <= 2 ? '#ef4444' : '#10b981'};">${fac.days_to_stockout}d</b></div>
+                      <div>Bed Occupancy: <b style="color:#fff;">${fac.occupied_beds}/${fac.total_beds}</b></div>
+                      <div>Risk Tier: <b style="color:${fac.risk_tier === 'P0_CRITICAL' ? '#ef4444' : '#10b981'};">${fac.risk_tier}</b></div>
+                    </div>
+                  </div>
+                `,
+              };
+            }
+            if (object.fromName) {
+              return {
+                html: `
+                  <div style="background: rgba(28,27,23,0.95); padding: 8px 12px; border-radius: 6px; border: 1px solid #10b981; color: #fff; font-family: monospace; font-size: 11px;">
+                    <span style="color:#10b981; font-weight: bold;">3D Redistribution Arc</span><br/>
+                    <b>${object.fromName}</b> to <b>${object.toName}</b><br/>
+                    Transfer: <b>${object.units} units Paracetamol</b>
+                  </div>
+                `,
+              };
+            }
+            return null;
+          }}
+        >
+          <Map
+            reuseMaps
+            mapLib={maplibregl as any}
+            mapStyle="https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json"
+          />
+        </DeckGL>
 
- if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
- animFrameRef.current = requestAnimationFrame(step);
- };
+        {/* 🎮 3D Camera Controls Toolbar (Top Right) */}
+        <div className="absolute top-4 right-4 z-10 flex items-center bg-surface-card/95 backdrop-blur-md border border-hairline rounded-lg p-1.5 shadow-md text-xs font-mono gap-1">
+          <button
+            onClick={handleSnap3D}
+            className="px-3 py-1.5 rounded-md bg-primary text-white font-bold flex items-center gap-1.5 hover:bg-primary-active transition-colors"
+          >
+            <Compass className="w-3.5 h-3.5" />
+            <span>3D Tilt (65°)</span>
+          </button>
+          
+          <button
+            onClick={handleToggleOrbit}
+            className={`px-3 py-1.5 rounded-md flex items-center gap-1.5 transition-colors ${isOrbiting ? 'bg-amber-500 text-white font-bold animate-pulse' : 'text-ink hover:bg-canvas-soft'}`}
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${isOrbiting ? 'animate-spin' : ''}`} />
+            <span>{isOrbiting ? 'Stop Orbit' : '360° Orbit'}</span>
+          </button>
 
- // 3D Camera Controls
- const handleSnap3D = () => {
- mapRef.current?.flyTo({ pitch: 68, bearing: -20, zoom: 9.8, duration: 1200 });
- };
+          <button
+            onClick={handleSnap2D}
+            className="px-2.5 py-1.5 rounded-md text-ink hover:bg-canvas-soft transition-colors flex items-center gap-1 border-l border-hairline ml-1"
+          >
+            <Layers className="w-3.5 h-3.5 text-muted" />
+            <span>2D Flat</span>
+          </button>
+        </div>
 
- const handleSnap2D = () => {
- mapRef.current?.flyTo({ pitch: 0, bearing: 0, duration: 1000 });
- };
+        {/* 🛰️ 3D Floating HUD: 9 Clinics AI Telemetry (Top Left) */}
+        <div className="absolute top-4 left-4 z-10 bg-surface-card/95 backdrop-blur-md border border-hairline rounded-lg p-4 shadow-md max-w-md">
+          <div className="flex items-center justify-between gap-2 mb-2">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-semantic-success animate-ping"></span>
+              <span className="text-[11px] font-mono uppercase tracking-wider text-muted font-semibold">
+                visgl/deck.gl 3D Trips Engine
+              </span>
+            </div>
+            <span className="text-[10px] font-mono bg-surface-strong px-2 py-0.5 rounded-pill text-ink font-bold">
+              Trips & Buildings Active
+            </span>
+          </div>
 
- const handleToggleOrbit = () => {
- if (isOrbiting) {
- if (orbitRef.current) clearInterval(orbitRef.current);
- setIsOrbiting(false);
- } else {
- setIsOrbiting(true);
- let angle = mapRef.current?.getBearing() || 0;
- orbitRef.current = setInterval(() => {
- angle = (angle + 0.8) % 360;
- mapRef.current?.setBearing(angle);
- }, 40);
- }
- };
+          <div className="flex items-baseline gap-4 mb-3">
+            <div>
+              <span className="text-2xl font-display text-ink font-semibold">159.15 km</span>
+              <span className="text-xs text-muted block">9-Clinic Tour</span>
+            </div>
+            <div className="border-l border-hairline pl-4">
+              <span className="text-2xl font-display text-ink font-semibold">178.4 min</span>
+              <span className="text-xs text-muted block">Transit Time</span>
+            </div>
+            <div className="border-l border-hairline pl-4">
+              <span className="text-xs font-mono font-bold text-semantic-success bg-green-50 border border-green-200 px-2 py-1 rounded-sm block">
+                COLD-CHAIN PASS
+              </span>
+            </div>
+          </div>
 
- // AI 9-Clinic Self-Planning Simulation
- const handleTriggerSelfPlan = () => {
- setIsSelfPlanning(true);
- setPlanningStep('Step 1/4: ForecasterAgent evaluating 9-clinic demand surges...');
- startVehicleAnimation();
- 
- if (mapRef.current && puneClinics.length > 1) {
- mapRef.current.flyTo({
- center: [puneClinics[1].longitude, puneClinics[1].latitude],
- zoom: 11.5,
- pitch: 72,
- duration: 1200,
- });
- }
+          {/* AI Self-Plan Trigger Button (Cursor Orange) */}
+          <button
+            onClick={handleTriggerSelfPlan}
+            disabled={isSelfPlanning}
+            className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary-active text-white text-xs font-medium py-2.5 rounded-md transition-colors shadow-xs"
+          >
+            <Sparkles className={`w-3.5 h-3.5 ${isSelfPlanning ? 'animate-spin' : ''}`} />
+            <span>{isSelfPlanning ? 'AI Agents Self-Planning in 3D...' : 'AI Agent Self-Plan 9-Clinic Route'}</span>
+          </button>
 
- setTimeout(() => {
- setPlanningStep('Step 2/4: AllocatorAgent formulating 81-qubit Hamiltonian on IBM Quantum QAOA...');
- if (mapRef.current && puneClinics.length > 4) {
- mapRef.current.flyTo({
- center: [puneClinics[4].longitude, puneClinics[4].latitude],
- zoom: 11.8,
- pitch: 74,
- bearing: 45,
- duration: 1200,
- });
- }
- }, 1300);
+          {/* Multi-Step Telemetry Banner */}
+          {planningStep && (
+            <div className="mt-2.5 p-2.5 bg-canvas-soft border border-hairline rounded-md text-[11.5px] font-mono text-ink animate-pulse">
+              <code>&gt; {planningStep}</code>
+            </div>
+          )}
+        </div>
 
- setTimeout(() => {
- setPlanningStep('Step 3/4: SupervisorAgent auditing 1.5x buffer at Khed & Wagholi donor hubs...');
- if (mapRef.current && puneClinics.length > 7) {
- mapRef.current.flyTo({
- center: [puneClinics[7].longitude, puneClinics[7].latitude],
- zoom: 11.5,
- pitch: 68,
- bearing: -90,
- duration: 1200,
- });
- }
- }, 2600);
+        {/* 🚗 Floating Bottom Action Bar: Google Maps GPS & WhatsApp */}
+        <div className="absolute bottom-6 left-4 right-4 md:left-auto md:right-6 z-10 flex flex-wrap items-center gap-2 bg-surface-card/95 backdrop-blur-md border border-hairline rounded-lg p-2.5 shadow-md">
+          
+          {/* Direct Google Maps Turn-by-Turn GPS Link */}
+          <a
+            href={routingResult.google_maps_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1.5 bg-ink hover:bg-black text-canvas text-xs font-medium px-4 py-2 rounded-md transition-colors shadow-xs"
+          >
+            <Navigation className="w-3.5 h-3.5 text-primary" />
+            <span>Open Google Maps GPS (9 Stops)</span>
+          </a>
 
- setTimeout(() => {
- setPlanningStep('Step 4/4: ExplainerAgent locked 159.15 km tour! 1-Click GPS navigation ready.');
- if (mapRef.current) {
- mapRef.current.flyTo({
- center: [74.08, 18.78],
- zoom: 9.8,
- pitch: 62,
- bearing: -20,
- duration: 1500,
- });
- }
- setIsSelfPlanning(false);
- setTimeout(() => setPlanningStep(null), 4000);
- }, 3900);
- };
+          {/* WhatsApp 1-Click Driver Dispatch */}
+          <a
+            href={routingResult.whatsapp_nav_share_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1.5 bg-surface-card hover:bg-canvas-soft border border-hairline-strong text-ink text-xs font-medium px-3.5 py-2 rounded-md transition-colors"
+          >
+            <Send className="w-3.5 h-3.5 text-semantic-success" />
+            <span>WhatsApp Route</span>
+          </a>
 
- return (
- <div className="relative h-[calc(100vh-140px)] w-full flex flex-col md:flex-row overflow-hidden border-b border-hairline bg-canvas">
- 
- {/* Main 3D Map Viewport */}
- <div className="flex-1 relative h-full bg-[#0c0a09]">
- <div ref={mapContainer} className="w-full h-full" />
+          {/* Frontline Road Blocker Modal Button */}
+          <button
+            onClick={() => setShowBlockerModal(true)}
+            className="flex items-center gap-1.5 bg-surface-card hover:bg-canvas-soft border border-hairline text-body hover:text-ink text-xs font-medium px-3 py-2 rounded-md transition-colors"
+          >
+            <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
+            <span>Flag Road Blocked</span>
+          </button>
+        </div>
+      </div>
 
- {/* 3D Camera Controls Toolbar (Top Right) */}
- <div className="absolute top-4 right-4 z-10 flex items-center bg-surface-card/95 backdrop-blur-md border border-hairline rounded-lg p-1.5 shadow-md text-xs font-mono gap-1">
- <button
- onClick={handleSnap3D}
- className="px-3 py-1.5 rounded-md bg-primary text-white font-bold flex items-center gap-1.5 hover:bg-primary-active transition-colors"
- >
- <Compass className="w-3.5 h-3.5" />
- <span>3D Tilt (68°)</span>
- </button>
- 
- <button
- onClick={handleToggleOrbit}
- className={`px-3 py-1.5 rounded-md flex items-center gap-1.5 transition-colors ${isOrbiting ? 'bg-amber-500 text-white font-bold animate-pulse' : 'text-ink hover:bg-canvas-soft'}`}
- >
- <RefreshCw className={`w-3.5 h-3.5 ${isOrbiting ? 'animate-spin' : ''}`} />
- <span>{isOrbiting ? 'Stop Orbit' : '360° Orbit'}</span>
- </button>
+      {/* 📋 Right Slide-Over Clinic Inspector */}
+      {selectedFacility && (
+        <aside className="w-full md:w-80 bg-surface-card border-l border-hairline p-5 overflow-y-auto flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[11px] font-mono uppercase bg-surface-strong px-2 py-0.5 rounded-pill text-ink font-semibold">
+                {selectedFacility.facility_id}
+              </span>
+              <span
+                className={`text-[11px] font-mono px-2 py-0.5 rounded-pill font-semibold ${
+                  selectedFacility.risk_tier === 'P0_CRITICAL'
+                    ? 'bg-red-100 text-semantic-error'
+                    : selectedFacility.risk_tier === 'P1_WARNING'
+                    ? 'bg-amber-100 text-amber-800'
+                    : 'bg-green-100 text-semantic-success'
+                }`}
+              >
+                {selectedFacility.risk_tier}
+              </span>
+            </div>
 
- <button
- onClick={handleSnap2D}
- className="px-2.5 py-1.5 rounded-md text-ink hover:bg-canvas-soft transition-colors flex items-center gap-1"
- >
- <Layers className="w-3.5 h-3.5 text-muted" />
- <span>2D Flat</span>
- </button>
+            <h2 className="text-lg font-display text-ink mb-1">{selectedFacility.name}</h2>
+            <p className="text-xs text-muted mb-4">{selectedFacility.district} District, {selectedFacility.country}</p>
 
- <button
- onClick={() => setBasemapMode(prev => prev === 'DARK' ? 'SATELLITE' : 'DARK')}
- className="px-2.5 py-1.5 rounded-md text-ink hover:bg-canvas-soft transition-colors flex items-center gap-1 border-l border-hairline ml-1"
- >
- <Satellite className="w-3.5 h-3.5 text-primary" />
- <span>{basemapMode === 'DARK' ? 'Satellite' : 'Dark Matter'}</span>
- </button>
- </div>
+            <div className="border-t border-hairline pt-3 space-y-3">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-body flex items-center gap-1.5">
+                  <Pill className="w-3.5 h-3.5 text-muted" /> Paracetamol 500mg
+                </span>
+                <span className="font-mono font-medium text-ink">
+                  {selectedFacility.current_stock_pcm500} tabs ({selectedFacility.days_to_stockout}d)
+                </span>
+              </div>
 
- {/* 3D Floating HUD: 9 Clinics AI Telemetry (Top Left) */}
- <div className="absolute top-4 left-4 z-10 bg-surface-card/95 backdrop-blur-md border border-hairline rounded-lg p-4 shadow-md max-w-md">
- <div className="flex items-center justify-between gap-2 mb-2">
- <div className="flex items-center gap-2">
- <span className="w-2 h-2 rounded-full bg-semantic-success animate-ping"></span>
- <span className="text-[11px] font-mono uppercase tracking-wider text-muted font-semibold">
- 3D Spatial Fleet Twin
- </span>
- </div>
- <span className="text-[10px] font-mono bg-surface-strong px-2 py-0.5 rounded-pill text-ink font-bold">
- 3D Buildings & Routes Active
- </span>
- </div>
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-body flex items-center gap-1.5">
+                  <Bed className="w-3.5 h-3.5 text-muted" /> General Ward Beds
+                </span>
+                <span className="font-mono font-medium text-ink">
+                  {selectedFacility.occupied_beds} / {selectedFacility.total_beds} ({Math.round((selectedFacility.occupied_beds / selectedFacility.total_beds) * 100)}%)
+                </span>
+              </div>
 
- <div className="flex items-baseline gap-4 mb-3">
- <div>
- <span className="text-2xl font-display text-ink font-semibold">159.15 km</span>
- <span className="text-xs text-muted block">9-Clinic Tour</span>
- </div>
- <div className="border-l border-hairline pl-4">
- <span className="text-2xl font-display text-ink font-semibold">178.4 min</span>
- <span className="text-xs text-muted block">Transit Time</span>
- </div>
- <div className="border-l border-hairline pl-4">
- <span className="text-xs font-mono font-bold text-semantic-success bg-green-50 border border-green-200 px-2 py-1 rounded-sm block">
- COLD-CHAIN PASS
- </span>
- </div>
- </div>
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-body flex items-center gap-1.5">
+                  <ShieldAlert className="w-3.5 h-3.5 text-muted" /> ICU Beds
+                </span>
+                <span className="font-mono font-medium text-ink">
+                  {selectedFacility.icu_beds_occupied} / {selectedFacility.icu_beds_total}
+                </span>
+              </div>
 
- {/* AI Self-Plan Trigger Button (Cursor Orange) */}
- <button
- onClick={handleTriggerSelfPlan}
- disabled={isSelfPlanning}
- className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary-active text-white text-xs font-medium py-2.5 rounded-md transition-colors shadow-xs"
- >
- <Sparkles className={`w-3.5 h-3.5 ${isSelfPlanning ? 'animate-spin' : ''}`} />
- <span>{isSelfPlanning ? 'AI Agents Self-Planning in 3D...' : ' AI Agent Self-Plan 9-Clinic Route'}</span>
- </button>
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-body flex items-center gap-1.5">
+                  <Users className="w-3.5 h-3.5 text-muted" /> Staff on Duty
+                </span>
+                <span className="font-mono font-medium text-ink">
+                  {selectedFacility.doctors_present} Docs, {selectedFacility.nurses_present} Nurses
+                </span>
+              </div>
+            </div>
 
- {/* Multi-Step Telemetry Banner */}
- {planningStep && (
- <div className="mt-2.5 p-2.5 bg-canvas-soft border border-hairline rounded-md text-[11.5px] font-mono text-ink animate-pulse">
- <code>&gt; {planningStep}</code>
- </div>
- )}
- </div>
+            <div className="mt-5 p-3 bg-canvas-soft border border-hairline rounded-md">
+              <span className="text-[11px] font-mono text-muted uppercase block mb-1">
+                Compounded 3-Pillar Risk Score
+              </span>
+              <div className="flex items-baseline gap-2">
+                <span className="text-2xl font-display text-ink">
+                  {(selectedFacility.cascade_risk_score * 100).toFixed(1)}%
+                </span>
+                <span className="text-xs text-muted font-mono">
+                  1 - (1-m)^1.6 * (1-b)^1.4 * (1-s)^1.2
+                </span>
+              </div>
+            </div>
+          </div>
 
- {/* Floating Bottom Action Bar: Google Maps GPS & WhatsApp */}
- <div className="absolute bottom-6 left-4 right-4 md:left-auto md:right-6 z-10 flex flex-wrap items-center gap-2 bg-surface-card/95 backdrop-blur-md border border-hairline rounded-lg p-2.5 shadow-md">
- 
- {/* Direct Google Maps Turn-by-Turn GPS Link */}
- <a
- href={routingResult.google_maps_url}
- target="_blank"
- rel="noopener noreferrer"
- className="flex items-center gap-1.5 bg-ink hover:bg-black text-canvas text-xs font-medium px-4 py-2 rounded-md transition-colors shadow-xs"
- >
- <Navigation className="w-3.5 h-3.5 text-primary" />
- <span>Open Google Maps GPS (9 Stops)</span>
- </a>
+          <button
+            onClick={() => alert(`Initiating emergency transfer sequence to ${selectedFacility.name}`)}
+            className="w-full mt-6 bg-ink hover:bg-black text-canvas text-xs font-medium py-2.5 rounded-md transition-colors"
+          >
+            Dispatch Emergency Stock
+          </button>
+        </aside>
+      )}
 
- {/* WhatsApp 1-Click Driver Dispatch */}
- <a
- href={routingResult.whatsapp_nav_share_url}
- target="_blank"
- rel="noopener noreferrer"
- className="flex items-center gap-1.5 bg-surface-card hover:bg-canvas-soft border border-hairline-strong text-ink text-xs font-medium px-3.5 py-2 rounded-md transition-colors"
- >
- <Send className="w-3.5 h-3.5 text-semantic-success" />
- <span>WhatsApp Route</span>
- </a>
+      {/* Road Blocker Feedback Modal */}
+      {showBlockerModal && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+          <div className="bg-surface-card border border-hairline rounded-lg max-w-md w-full p-5 shadow-lg">
+            <div className="flex items-center gap-2 mb-2">
+              <AlertTriangle className="w-5 h-5 text-amber-500" />
+              <h3 className="text-base font-display text-ink">Flag Local Road Closure</h3>
+            </div>
+            <p className="text-xs text-body mb-4">
+              Frontline health workers can report localized landslides, flooded bridges, or broken culverts. 
+              The Quantum Router will instantly compute an alternate mountain bypass.
+            </p>
+            <div className="mb-4">
+              <label className="text-[11px] font-mono uppercase text-muted block mb-1">Obstruction Reason / Location</label>
+              <input
+                type="text"
+                value={roadNote}
+                onChange={(e) => setRoadNote(e.target.value)}
+                className="w-full bg-canvas-soft border border-hairline rounded-md px-3 py-2 text-xs font-mono text-ink focus:outline-none focus:border-primary"
+              />
+            </div>
+            <div className="flex items-center justify-end gap-2">
+              <button
+                onClick={() => setShowBlockerModal(false)}
+                className="px-3 py-1.5 text-xs text-body hover:text-ink"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  onRerouteRequest(roadNote);
+                  setShowBlockerModal(false);
+                }}
+                className="bg-primary hover:bg-primary-active text-white text-xs font-medium px-4 py-1.5 rounded-md"
+              >
+                Trigger Quantum Reroute
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
- {/* Frontline Road Blocker Modal Button */}
- <button
- onClick={() => setShowBlockerModal(true)}
- className="flex items-center gap-1.5 bg-surface-card hover:bg-canvas-soft border border-hairline text-body hover:text-ink text-xs font-medium px-3 py-2 rounded-md transition-colors"
- >
- <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
- <span>Flag Road Blocked</span>
- </button>
- </div>
- </div>
-
- {/* Right Slide-Over Clinic Inspector */}
- {selectedFacility && (
- <aside className="w-full md:w-80 bg-surface-card border-l border-hairline p-5 overflow-y-auto flex flex-col justify-between">
- <div>
- <div className="flex items-center justify-between mb-2">
- <span className="text-[11px] font-mono uppercase bg-surface-strong px-2 py-0.5 rounded-pill text-ink font-semibold">
- {selectedFacility.facility_id}
- </span>
- <span
- className={`text-[11px] font-mono px-2 py-0.5 rounded-pill font-semibold ${
- selectedFacility.risk_tier === 'P0_CRITICAL'
- ? 'bg-red-100 text-semantic-error'
- : selectedFacility.risk_tier === 'P1_WARNING'
- ? 'bg-amber-100 text-amber-800'
- : 'bg-green-100 text-semantic-success'
- }`}
- >
- {selectedFacility.risk_tier}
- </span>
- </div>
-
- <h2 className="text-lg font-display text-ink mb-1">{selectedFacility.name}</h2>
- <p className="text-xs text-muted mb-4">{selectedFacility.district} District, {selectedFacility.country}</p>
-
- <div className="border-t border-hairline pt-3 space-y-3">
- <div className="flex items-center justify-between text-xs">
- <span className="text-body flex items-center gap-1.5">
- <Pill className="w-3.5 h-3.5 text-muted" /> Paracetamol 500mg
- </span>
- <span className="font-mono font-medium text-ink">
- {selectedFacility.current_stock_pcm500} tabs ({selectedFacility.days_to_stockout}d)
- </span>
- </div>
-
- <div className="flex items-center justify-between text-xs">
- <span className="text-body flex items-center gap-1.5">
- <Bed className="w-3.5 h-3.5 text-muted" /> General Ward Beds
- </span>
- <span className="font-mono font-medium text-ink">
- {selectedFacility.occupied_beds} / {selectedFacility.total_beds} ({Math.round((selectedFacility.occupied_beds / selectedFacility.total_beds) * 100)}%)
- </span>
- </div>
-
- <div className="flex items-center justify-between text-xs">
- <span className="text-body flex items-center gap-1.5">
- <ShieldAlert className="w-3.5 h-3.5 text-muted" /> ICU Beds
- </span>
- <span className="font-mono font-medium text-ink">
- {selectedFacility.icu_beds_occupied} / {selectedFacility.icu_beds_total}
- </span>
- </div>
-
- <div className="flex items-center justify-between text-xs">
- <span className="text-body flex items-center gap-1.5">
- <Users className="w-3.5 h-3.5 text-muted" /> Staff on Duty
- </span>
- <span className="font-mono font-medium text-ink">
- {selectedFacility.doctors_present} Docs, {selectedFacility.nurses_present} Nurses
- </span>
- </div>
- </div>
-
- <div className="mt-5 p-3 bg-canvas-soft border border-hairline rounded-md">
- <span className="text-[11px] font-mono text-muted uppercase block mb-1">
- Compounded 3-Pillar Risk Score
- </span>
- <div className="flex items-baseline gap-2">
- <span className="text-2xl font-display text-ink">
- {(selectedFacility.cascade_risk_score * 100).toFixed(1)}%
- </span>
- <span className="text-xs text-muted font-mono">
- 1 - (1-m)^1.6 * (1-b)^1.4 * (1-s)^1.2
- </span>
- </div>
- </div>
- </div>
-
- <button
- onClick={() => alert(`Initiating emergency transfer sequence to ${selectedFacility.name}`)}
- className="w-full mt-6 bg-ink hover:bg-black text-canvas text-xs font-medium py-2.5 rounded-md transition-colors"
- >
- Dispatch Emergency Stock
- </button>
- </aside>
- )}
-
- {/* Road Blocker Feedback Modal */}
- {showBlockerModal && (
- <div className="fixed inset-0 bg-black/40 backdrop-blur-xs z-50 flex items-center justify-center p-4">
- <div className="bg-surface-card border border-hairline rounded-lg max-w-md w-full p-5 shadow-lg">
- <div className="flex items-center gap-2 mb-2">
- <AlertTriangle className="w-5 h-5 text-amber-500" />
- <h3 className="text-base font-display text-ink">Flag Local Road Closure</h3>
- </div>
- <p className="text-xs text-body mb-4">
- Frontline health workers can report localized landslides, flooded bridges, or broken culverts. 
- The Quantum Router will instantly compute an alternate mountain bypass.
- </p>
- <div className="mb-4">
- <label className="text-[11px] font-mono uppercase text-muted block mb-1">Obstruction Reason / Location</label>
- <input
- type="text"
- value={roadNote}
- onChange={(e) => setRoadNote(e.target.value)}
- className="w-full bg-canvas-soft border border-hairline rounded-md px-3 py-2 text-xs font-mono text-ink focus:outline-none focus:border-primary"
- />
- </div>
- <div className="flex items-center justify-end gap-2">
- <button
- onClick={() => setShowBlockerModal(false)}
- className="px-3 py-1.5 text-xs text-body hover:text-ink"
- >
- Cancel
- </button>
- <button
- onClick={() => {
- onRerouteRequest(roadNote);
- setShowBlockerModal(false);
- }}
- className="bg-primary hover:bg-primary-active text-white text-xs font-medium px-4 py-1.5 rounded-md"
- >
- Trigger Quantum Reroute
- </button>
- </div>
- </div>
- </div>
- )}
-
- </div>
- );
+    </div>
+  );
 };
