@@ -41,7 +41,7 @@ CareDOM is calibrated and benchmarked **exclusively on verified real-world publi
 
 | Dataset Name | Source Repository | Content & Metrics |
 |--------------|-------------------|-------------------|
-| **Pharma Sales Daily Time Series** | `https://github.com/vcerqueira/data/raw/main/pharma.csv` | 45,990 records across 7 ATC drug categories (6 years) |
+| **Pharma Sales Daily Time Series** | `https://github.com/datasets/pharma-sales-data` | 45,990 records across 7 ATC drug categories (6 years) |
 | **USAID GHSC-PSM Supply Chain** | `https://data.usaid.gov/HIV-AIDS/Supply-Chain-Shipment-Price-Data/` | 50,000+ real shipment lead-time and stockout records |
 | **Open-Meteo Historical Climate** | `https://archive-api.open-meteo.com/v1/archive` | 10+ years daily rainfall, humidity, and temperature for Pune |
 | **JHU CSSE / IDSP Outbreak Data** | `https://github.com/CSSEGISandData/COVID-19` | Daily district-level epidemiological growth curves |

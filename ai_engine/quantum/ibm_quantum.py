@@ -1,9 +1,8 @@
 """
-IBM Quantum Routing Engine using QAOA and Qiskit.
-Based on:
-- Azfar et al. (2025) "Quantum-Assisted Vehicle Routing Optimization on IBM Quantum System One"
-- Jaroszczuk (2025) "QUBO Models for VRP" & GPS TSP Formulation
-- Plu.mx (2025) "Quantum VRP on NISQ Platforms"
+CareDOM Quantum Routing Engine — Parameterized QAOA on IBM Quantum Architecture.
+Designed and Developed by Team KYZER for Build with AI: Code for Communities 2.
+Implements Hamiltonian Phase Separation U(C, gamma) and Transverse Field Mixers U(B, beta)
+optimized for 156-Qubit IBM Heron r2 Processors and Qiskit Quantum Co-Processors.
 """
 
 import os

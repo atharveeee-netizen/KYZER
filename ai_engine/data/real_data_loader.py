@@ -23,9 +23,10 @@ from pathlib import Path
 from datetime import datetime, timedelta
 from typing import Dict, Any, List
 
-from ai_engine.config import DATA_DIR
+# CareDOM Master Healthcare Dataset Ingestion Pipeline
+# Developed by Team KYZER for Autonomous Health Centre Logistics
 
-PHARMA_DATASET_URL = "https://raw.githubusercontent.com/SaibalPatraDS/Pharma-Sales-Analysis-and-Forecasting/b39dd7616711f3de5b283ff96eb0d928257b7df5/salesdaily.csv"
+PHARMA_DATASET_URL = "https://raw.githubusercontent.com/datasets/pharma-sales-data/main/data/salesdaily.csv"
 EPIDEMIC_DATASET_URL = "https://raw.githubusercontent.com/datasets/covid-19/main/data/countries-aggregated.csv"
 
 # Mapping from WHO ATC Drug Classification to CareDOM Hospital Formulary

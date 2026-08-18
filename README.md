@@ -36,8 +36,8 @@
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/atharveeee-netizen/WISER_NESTLE_DOM.git
-cd WISER_NESTLE_DOM
+git clone https://github.com/atharveeee-netizen/KYZER.git
+cd KYZER
 
 # 2. Configure environment keys
 cp .env.example .env
