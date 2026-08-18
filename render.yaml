@@ -1,26 +1,39 @@
 services:
-  # Service A: Database & Inventory API (FastAPI + Neon PostgreSQL)
+  # Service A: Database & Inventory API (FastAPI + Neon PostgreSQL).
+  # Docker build context is scoped to backend/ so the image only installs
+  # backend/requirements.txt (fastapi, uvicorn, pydantic, pydantic-settings,
+  # asyncpg) - not the root requirements.txt's ~1.4GB ML/quantum/CV stack
+  # that only Service B needs. backend/Dockerfile's CMD (uvicorn app.main:app,
+  # run with WORKDIR /app containing ./app) is what makes `from app.config
+  # import ...` resolve - no startCommand override needed or wanted here.
   - type: web
     name: caredom-db-service
-    env: python
+    runtime: docker
     region: singapore
     plan: free
-    buildCommand: pip install -r requirements.txt
-    startCommand: uvicorn backend.app.main:app --host 0.0.0.0 --port $PORT
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    healthCheckPath: /api/v1/health
     envVars:
       - key: DATABASE_URL
         sync: false
       - key: ENVIRONMENT
         value: production
 
-  # Service B: AI & Quantum Engine (FastAPI AI Routes)
+  # Service B: AI & Quantum Engine (backend/app/main_ai.py), deliberately
+  # split from Service A because importing its routes pulls in ai_engine's
+  # full dependency tree (lightgbm, qiskit, opencv, ortools, ...). Built from
+  # Dockerfile.ai at the repo root, whose CMD runs app.main_ai:app - do NOT
+  # point this at backend/Dockerfile (that would just duplicate Service A),
+  # and do NOT add a startCommand override.
   - type: web
     name: caredom-ai-service
-    env: python
+    runtime: docker
     region: singapore
     plan: free
-    buildCommand: pip install -r requirements.txt
-    startCommand: uvicorn backend.app.main:app --host 0.0.0.0 --port $PORT
+    dockerfilePath: ./Dockerfile.ai
+    dockerContext: .
+    healthCheckPath: /api/v1/ai/health
     envVars:
       - key: GEMINI_API_KEY
         sync: false
