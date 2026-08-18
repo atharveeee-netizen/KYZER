@@ -23,6 +23,8 @@ from pathlib import Path
 from datetime import datetime, timedelta
 from typing import Dict, Any, List
 
+from ai_engine.config import DATA_DIR
+
 # CareDOM Master Healthcare Dataset Ingestion Pipeline
 # Developed by Team KYZER for Autonomous Health Centre Logistics
 
