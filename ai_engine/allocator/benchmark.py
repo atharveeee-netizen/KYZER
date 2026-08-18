@@ -56,11 +56,13 @@ def main():
     parser = argparse.ArgumentParser(description="CareDOM Multi-Scale Adaptive Routing Benchmark")
     parser.add_argument("--num-nodes", type=int, default=20, help="Number of health facilities to route (e.g. 5, 20, 50, 100)")
     parser.add_argument("--expected-time-ms", type=int, default=5000, help="Maximum expected time budget in milliseconds")
+    parser.add_argument("--quantum", action="store_true", help="Engage Quantum Hardware / Simulator Orchestrator")
     args = parser.parse_args()
 
     N = args.num_nodes
     print("=" * 85)
     print(f"🚀 CareDOM Adaptive Multi-Scale Routing Engine — Benchmark Suite (N = {N})")
+    print(f"Mode: {'⚛️ QUANTUM-POWERED (IBM QAOA / D-Wave)' if args.quantum else '⚙️ CLASSICAL-ADAPTIVE'}")
     print("Team KYZER | Build with AI: Code for Communities 2")
     print("=" * 85)
 
@@ -68,7 +70,7 @@ def main():
     allocator = AdaptiveRouteAllocator()
 
     t0 = time.perf_counter()
-    result = allocator.optimize_routes(facilities=facs)
+    result = allocator.optimize_routes(facilities=facs, use_quantum=args.quantum)
     total_time_ms = (time.perf_counter() - t0) * 1000
 
     print("\n--- EXECUTION TELEMETRY & DECISION MATRIX ---")

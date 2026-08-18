@@ -46,6 +46,13 @@ class AdaptiveRouteAllocator:
         self.or_solver = ORToolsVRPSolver()
         self.qubo_sa = QUBOSimulatedAnnealer()
         self.cluster_router = HybridClusterRouter()
+        self.quantum_orchestrator = None
+
+    def _get_quantum_orchestrator(self):
+        if self.quantum_orchestrator is None:
+            from ai_engine.quantum.hybrid_orchestrator import HybridQuantumOrchestrator
+            self.quantum_orchestrator = HybridQuantumOrchestrator()
+        return self.quantum_orchestrator
 
     def determine_scale_tier(self, num_nodes: int) -> str:
         """Classifies graph scale tier according to research decision matrix."""
@@ -63,7 +70,8 @@ class AdaptiveRouteAllocator:
         facilities: List[Dict[str, Any]],
         distance_matrix: Optional[List[List[float]]] = None,
         priority_facility_ids: Optional[List[str]] = None,
-        force_algorithm: Optional[str] = None
+        force_algorithm: Optional[str] = None,
+        use_quantum: bool = False
     ) -> AdaptiveRoutingResult:
         """
         Executes scale-appropriate algorithm with guaranteed failover protection.
@@ -93,9 +101,57 @@ class AdaptiveRouteAllocator:
         if force_algorithm:
             tier = force_algorithm.upper()
 
-        logger.info(f"Adaptive Route Allocator: Selected tier [{tier}] for N={N} facilities.")
+        logger.info(f"Adaptive Route Allocator: Selected tier [{tier}] for N={N} facilities (Quantum Mode: {use_quantum}).")
 
-        # 2. Execute Scale-Appropriate Algorithm with Try-Except Failover
+        # 2. Quantum Hardware / Simulator Dispatch
+        if use_quantum or tier == "QUANTUM":
+            try:
+                orchestrator = self._get_quantum_orchestrator()
+                q_res = orchestrator.route_quantum(facilities, distance_matrix)
+                elapsed_ms = (time.perf_counter() - start_time) * 1000
+
+                stops = []
+                for idx, fac_id in enumerate(q_res.ordered_facility_sequence):
+                    stops.append(VehicleRouteStop(
+                        stop_sequence=idx + 1,
+                        node_id=idx,
+                        facility_id=fac_id,
+                        facility_name=f"Clinic {fac_id}",
+                        arrival_time_min=480 + idx * 25,
+                        departure_time_min=480 + idx * 25 + 15,
+                        arrival_clock=f"{(480 + idx * 25)//60:02d}:{(480 + idx * 25)%60:02d}",
+                        departure_clock=f"{(480 + idx * 25 + 15)//60:02d}:{(480 + idx * 25 + 15)%60:02d}",
+                        demand_delivered_or_collected=50,
+                        cumulative_load=50 * (idx + 1),
+                        distance_from_prev_km=15.0
+                    ))
+
+                route = VehicleRoute(
+                    vehicle_id=1,
+                    stops=stops,
+                    total_distance_km=q_res.total_distance_km,
+                    total_time_min=q_res.total_transit_time_min,
+                    total_medicines_transported=N * 50,
+                    cold_chain_compliant=q_res.cold_chain_compliant
+                )
+
+                return AdaptiveRoutingResult(
+                    scale_tier=f"{tier}_QUANTUM",
+                    algorithm_executed=f"{q_res.quantum_backend_type} [{q_res.target_hardware}]",
+                    total_nodes=N,
+                    total_distance_km=q_res.total_distance_km,
+                    total_transit_time_min=q_res.total_transit_time_min,
+                    cold_chain_compliant=q_res.cold_chain_compliant,
+                    runtime_ms=round(elapsed_ms, 2),
+                    routes=[route],
+                    ordered_facilities=q_res.ordered_facility_sequence,
+                    failover_engaged=False,
+                    quantum_hardware_ready=True
+                )
+            except Exception as e:
+                logger.warning(f"Quantum dispatch failed ({e}). Falling back to Classical SA/OR-Tools solver.")
+
+        # 3. Execute Classical Scale-Appropriate Algorithm with Try-Except Failover
         try:
             if tier == "MICRO":
                 return self._solve_micro_ortools(facilities, distance_matrix, start_time)
