@@ -8,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.config import get_settings
 from app.database import close_db, connect_db
 from app.routes import dashboard_routes, inventory_routes, redistribution_routes
+from app.routes.ai import ai_router
 
 
 @asynccontextmanager
@@ -31,8 +32,10 @@ app.add_middleware(
 app.include_router(dashboard_routes.router)
 app.include_router(inventory_routes.router)
 app.include_router(redistribution_routes.router)
+app.include_router(ai_router, prefix="/api/v1")
 
 
+@app.get("/health")
 @app.get("/api/v1/health")
 async def health():
     return {"status": "ok", "service": "caredom-backend"}
