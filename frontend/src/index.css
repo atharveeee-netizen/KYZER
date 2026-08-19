@@ -1,61 +1,133 @@
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&family=Space+Grotesk:wght@500;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
- --color-canvas: #f7f7f4;
- --color-canvas-soft: #fafaf7;
- --color-surface-card: #ffffff;
- --color-surface-strong: #e6e5e0;
- --color-hairline: #e6e5e0;
- --color-hairline-soft: #efeee8;
- --color-hairline-strong: #cfcdc4;
- --color-ink: #26251e;
- --color-body: #5a5852;
- --color-body-strong: #26251e;
- --color-muted: #807d72;
- --color-muted-soft: #a09c92;
+  --color-canvas: #f0efe9;
+  --color-canvas-soft: #e8e7e1;
+  --color-surface-card: #fcfbf7;
+  --color-surface-strong: #dedcd4;
+  --color-hairline: #d1cfc5;
+  --color-hairline-soft: #e2e0d8;
+  --color-hairline-strong: #1a1a1a;
+  --color-ink: #111111;
+  --color-body: #444444;
+  --color-body-strong: #111111;
+  --color-muted: #77756e;
+  --color-muted-soft: #99968d;
 }
 
 .dark {
- --color-canvas: #12110e;
- --color-canvas-soft: #1a1916;
- --color-surface-card: #1c1b17;
- --color-surface-strong: #2a2924;
- --color-hairline: #2e2d27;
- --color-hairline-soft: #25241f;
- --color-hairline-strong: #3d3b34;
- --color-ink: #f7f7f4;
- --color-body: #b8b5aa;
- --color-body-strong: #f7f7f4;
- --color-muted: #858276;
- --color-muted-soft: #636157;
+  --color-canvas: #121314;
+  --color-canvas-soft: #18191b;
+  --color-surface-card: #1e2022;
+  --color-surface-strong: #272a2d;
+  --color-hairline: #32363b;
+  --color-hairline-soft: #232629;
+  --color-hairline-strong: #4d535a;
+  --color-ink: #f5f5f3;
+  --color-body: #a5aab0;
+  --color-body-strong: #ffffff;
+  --color-muted: #737982;
+  --color-muted-soft: #52575f;
 }
 
 body {
- background-color: var(--color-canvas);
- color: var(--color-ink);
- font-family: 'Inter', system-ui, -apple-system, sans-serif;
- margin: 0;
- padding: 0;
- -webkit-font-smoothing: antialiased;
- -moz-osx-font-smoothing: grayscale;
- transition: background-color 0.2s ease, color 0.2s ease;
+  background-color: var(--color-canvas);
+  color: var(--color-ink);
+  font-family: 'JetBrains Mono', monospace, -apple-system, sans-serif;
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-image: radial-gradient(rgba(0,0,0,0.06) 1px, transparent 0);
+  background-size: 16px 16px;
+}
+
+.dark body {
+  background-image: radial-gradient(rgba(255,255,255,0.06) 1px, transparent 0);
+}
+
+/* Teenage Engineering Tactile Design System */
+.te-card {
+  border: 1.5px solid var(--color-hairline-strong);
+  box-shadow: 2.5px 2.5px 0px rgba(0,0,0,0.85);
+  transition: transform 0.08s ease, box-shadow 0.08s ease;
+}
+
+.dark .te-card {
+  box-shadow: 2.5px 2.5px 0px rgba(0,0,0,1);
+}
+
+.te-btn {
+  border: 1.5px solid #111111;
+  box-shadow: 2px 2px 0px #111111;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: -0.02em;
+}
+
+.te-btn:active {
+  transform: translate(1.5px, 1.5px);
+  box-shadow: 0.5px 0.5px 0px #111111;
+}
+
+.te-tape {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  text-transform: uppercase;
+  border: 1px solid #111111;
+  box-shadow: 1px 1px 0px rgba(0,0,0,0.8);
+  display: inline-block;
+  transform: rotate(-0.5deg);
+}
+
+.te-screw {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 1px solid var(--color-hairline-strong);
+  background: var(--color-surface-strong);
+  font-size: 8px;
+  line-height: 1;
+  color: var(--color-muted);
+  user-select: none;
+}
+
+.te-screw::before {
+  content: "+";
+}
+
+.te-lcd {
+  background: #0a110d;
+  color: #00ff66;
+  font-family: 'JetBrains Mono', monospace;
+  border: 1.5px solid #1a2e20;
+  box-shadow: inset 0 2px 6px rgba(0,0,0,0.9);
+  text-shadow: 0 0 6px rgba(0,255,102,0.6);
 }
 
 /* Custom scrollbars matching theme */
 ::-webkit-scrollbar {
- width: 6px;
- height: 6px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
- background: var(--color-canvas);
+  background: var(--color-canvas);
 }
 
 ::-webkit-scrollbar-thumb {
- background: var(--color-hairline-strong);
- border-radius: 3px;
+  background: var(--color-hairline-strong);
+  border-radius: 0px;
+  border: 1px solid #000;
 }
 
 /* Hide all MapLibre / Mapbox attribution pills */
@@ -64,8 +136,4 @@ body {
 .maplibregl-ctrl-attrib-button,
 .mapboxgl-ctrl-attrib {
   display: none !important;
-}
-
-::-webkit-scrollbar-thumb:hover {
- background: var(--color-muted);
 }

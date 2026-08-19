@@ -379,7 +379,7 @@ export const MapTab: React.FC<MapTabProps> = () => {
     <div className="relative h-[calc(100vh-80px)] w-full flex flex-col md:flex-row overflow-hidden border-b border-hairline bg-canvas">
       
       {/* Deck.gl WebGL 3D Canvas */}
-      <div className="flex-1 relative h-full bg-[#061714]">
+      <div className={`flex-1 relative h-full bg-[#061714] ${routingMode === 'MANUAL_SELECT' ? 'cursor-crosshair' : ''}`}>
         <DeckGL
           style={{ backgroundColor: '#061714' }}
           viewState={viewState as any}
@@ -395,18 +395,18 @@ export const MapTab: React.FC<MapTabProps> = () => {
               const isDest = manualDestination?.id === c.id;
               return {
                 html: `
-                  <div style="background: rgba(24,24,27,0.96); backdrop-filter: blur(10px); padding: 10px 14px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); color: #fff; font-family: monospace; font-size: 11px; box-shadow: 0 8px 24px rgba(0,0,0,0.7);">
-                    <div style="font-weight: 700; font-size: 13px; color: ${isOrigin ? '#10b981' : isDest ? '#ef4444' : c.role === 'STOCKOUT' ? '#ef4444' : c.role === 'DONOR' ? '#10b981' : '#38bdf8'}; margin-bottom: 3px;">
-                      ${c.name} ${isOrigin ? '(ORIGIN)' : isDest ? '(DESTINATION)' : ''}
+                  <div style="background: rgba(18,19,20,0.98); border: 2px solid #111; padding: 10px 14px; color: #fff; font-family: monospace; font-size: 11px; box-shadow: 3px 3px 0px #000;">
+                    <div style="font-weight: 800; font-size: 13px; color: ${isOrigin ? '#00ff66' : isDest ? '#ef4444' : c.role === 'STOCKOUT' ? '#ef4444' : c.role === 'DONOR' ? '#00ff66' : '#38bdf8'}; margin-bottom: 3px; text-transform: uppercase;">
+                      ${c.name} ${isOrigin ? '[ORIGIN]' : isDest ? '[DESTINATION]' : ''}
                     </div>
-                    <div style="color: #a1a1aa; margin-bottom: 6px;">Role: <b>${c.role}</b> | ID: ${c.id}</div>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; border-top: 1px solid rgba(255,255,255,0.12); padding-top: 6px;">
-                      <div>Stock: <b style="color:#fff;">${c.stock} tabs</b></div>
-                      <div>Days Left: <b style="color:${c.daysLeft <= 1.0 ? '#ef4444' : '#10b981'};">${c.daysLeft}d</b></div>
-                      <div>Beds: <b style="color:#fff;">${c.beds.occupied}/${c.beds.total}</b></div>
-                      <div>Tier: <b style="color:${c.riskTier === 'P0_CRITICAL' ? '#ef4444' : '#10b981'};">${c.riskTier}</b></div>
+                    <div style="color: #a1a1aa; margin-bottom: 6px;">ROLE: <b>${c.role}</b> | NODE: ${c.id}</div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; border-top: 1px solid rgba(255,255,255,0.2); padding-top: 6px;">
+                      <div>STOCK: <b style="color:#fff;">${c.stock}</b></div>
+                      <div>DAYS: <b style="color:${c.daysLeft <= 1.0 ? '#ef4444' : '#00ff66'};">${c.daysLeft}d</b></div>
+                      <div>BEDS: <b style="color:#fff;">${c.beds.occupied}/${c.beds.total}</b></div>
+                      <div>TIER: <b style="color:${c.riskTier === 'P0_CRITICAL' ? '#ef4444' : '#00ff66'};">${c.riskTier}</b></div>
                     </div>
-                    <div style="margin-top: 6px; color: #38bdf8; font-size: 10px;">Click pin to select as Origin / Destination</div>
+                    <div style="margin-top: 6px; color: #FF5500; font-size: 10px; font-weight: bold;">[CLICK PIN TO SELECT]</div>
                   </div>
                 `,
               };
@@ -422,19 +422,21 @@ export const MapTab: React.FC<MapTabProps> = () => {
           />
         </DeckGL>
 
-        {/* Floating AI & Manual Route Controller HUD (Top Left) */}
-        <div className="absolute top-4 left-4 z-10 bg-[#18181b]/95 backdrop-blur-md border border-white/20 rounded-xl p-5 shadow-2xl max-w-sm text-white font-sans">
+        {/* Floating AI & Manual Route Controller HUD (Teenage Engineering Mission Deck) */}
+        <div className="absolute bottom-3 left-3 right-3 md:bottom-auto md:top-4 md:left-4 md:right-auto z-10 bg-[#121314]/95 border-2 border-[#111111] dark:border-[#4d535a] p-4 sm:p-5 shadow-[3px_3px_0px_#000] md:max-w-sm text-white font-mono max-h-[85vh] overflow-y-auto">
           
-          <div className="flex items-center justify-between gap-2 mb-3">
+          <div className="flex items-center justify-between gap-2 mb-3 border-b-2 border-zinc-800 pb-2">
             <div className="flex items-center gap-2">
-              <span className={`w-2.5 h-2.5 rounded-full ${activeTransfer ? 'bg-emerald-400 animate-ping' : 'bg-sky-400'}`}></span>
-              <span className="text-xs font-mono font-bold tracking-wider uppercase text-zinc-200">
-                OSRM Road Network
+              <span className={`w-2 h-2 rounded-full ${activeTransfer ? 'bg-[#00ff66] animate-ping' : 'bg-sky-400'}`}></span>
+              <span className="te-tape bg-yellow-400 text-black text-[9px] px-1.5 py-0.5">
+                MOD.02 // VRP
+              </span>
+              <span className="text-xs font-bold tracking-wider uppercase text-zinc-200">
+                OSRM NAV.SYS
               </span>
             </div>
-            <span className="text-[10px] font-mono bg-white/10 px-2 py-0.5 rounded text-sky-300 font-semibold flex items-center gap-1">
-              <Cpu className="w-3 h-3 text-sky-400" />
-              <span>OSRM Engine</span>
+            <span className="te-lcd text-[9px] px-2 py-0.5 font-bold">
+              HERON.QPU
             </span>
           </div>
 
