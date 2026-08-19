@@ -1,123 +1,120 @@
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&family=Space+Grotesk:wght@500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  --color-canvas: #f0efe9;
-  --color-canvas-soft: #e8e7e1;
-  --color-surface-card: #fcfbf7;
-  --color-surface-strong: #dedcd4;
-  --color-hairline: #d1cfc5;
-  --color-hairline-soft: #e2e0d8;
-  --color-hairline-strong: #1a1a1a;
-  --color-ink: #111111;
-  --color-body: #444444;
-  --color-body-strong: #111111;
-  --color-muted: #77756e;
-  --color-muted-soft: #99968d;
+  /* Sovereign B2G Light Slate Palette */
+  --color-canvas: #f8fafc;
+  --color-canvas-soft: #f1f5f9;
+  --color-surface-card: #ffffff;
+  --color-surface-strong: #e2e8f0;
+  --color-hairline: #e2e8f0;
+  --color-hairline-soft: #f1f5f9;
+  --color-hairline-strong: #cbd5e1;
+  --color-ink: #0f172a;
+  --color-body: #334155;
+  --color-body-strong: #0f172a;
+  --color-muted: #64748b;
+  --color-muted-soft: #94a3b8;
+  
+  --color-cobalt: #1d4ed8;
+  --color-emerald: #059669;
+  --color-gold: #d97706;
 }
 
 .dark {
-  --color-canvas: #121314;
-  --color-canvas-soft: #18191b;
-  --color-surface-card: #1e2022;
-  --color-surface-strong: #272a2d;
-  --color-hairline: #32363b;
-  --color-hairline-soft: #232629;
-  --color-hairline-strong: #4d535a;
-  --color-ink: #f5f5f3;
-  --color-body: #a5aab0;
-  --color-body-strong: #ffffff;
-  --color-muted: #737982;
-  --color-muted-soft: #52575f;
+  /* Sovereign B2G Deep Obsidian Slate Palette */
+  --color-canvas: #0b0f17;
+  --color-canvas-soft: #12151e;
+  --color-surface-card: #181d28;
+  --color-surface-strong: #222938;
+  --color-hairline: #222938;
+  --color-hairline-soft: #181d28;
+  --color-hairline-strong: #333d4e;
+  --color-ink: #f8fafc;
+  --color-body: #94a3b8;
+  --color-body-strong: #f8fafc;
+  --color-muted: #64748b;
+  --color-muted-soft: #475569;
+  
+  --color-cobalt: #3b82f6;
+  --color-emerald: #10b981;
+  --color-gold: #f59e0b;
 }
 
 body {
   background-color: var(--color-canvas);
   color: var(--color-ink);
-  font-family: 'JetBrains Mono', monospace, -apple-system, sans-serif;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
   margin: 0;
   padding: 0;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-image: radial-gradient(rgba(0,0,0,0.06) 1px, transparent 0);
-  background-size: 16px 16px;
+  line-height: 1.5;
 }
 
-.dark body {
-  background-image: radial-gradient(rgba(255,255,255,0.06) 1px, transparent 0);
+/* Apple & Godly Bento Glassmorphic System */
+.bento-card {
+  background-color: var(--color-surface-card);
+  border: 1px solid var(--color-hairline);
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), inset 0 1px 0 0 rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* Teenage Engineering Tactile Design System */
-.te-card {
-  border: 1.5px solid var(--color-hairline-strong);
-  box-shadow: 2.5px 2.5px 0px rgba(0,0,0,0.85);
-  transition: transform 0.08s ease, box-shadow 0.08s ease;
+.dark .bento-card {
+  background-color: rgba(24, 29, 40, 0.85);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.4), inset 0 1px 0 0 rgba(255, 255, 255, 0.06);
 }
 
-.dark .te-card {
-  box-shadow: 2.5px 2.5px 0px rgba(0,0,0,1);
+.bento-card:hover {
+  border-color: rgba(29, 78, 216, 0.35);
+  box-shadow: 0 8px 30px -4px rgba(0, 0, 0, 0.12), inset 0 1px 0 0 rgba(255, 255, 255, 0.1);
 }
 
-.te-btn {
-  border: 1.5px solid #111111;
-  box-shadow: 2px 2px 0px #111111;
+.dark .bento-card:hover {
+  border-color: rgba(59, 130, 246, 0.4);
+  box-shadow: 0 8px 32px -4px rgba(0, 0, 0, 0.6), inset 0 1px 0 0 rgba(255, 255, 255, 0.12);
+}
+
+/* Sovereign Badges */
+.sovereign-badge {
   font-family: 'JetBrains Mono', monospace;
-  font-weight: 700;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
-  letter-spacing: -0.02em;
-}
-
-.te-btn:active {
-  transform: translate(1.5px, 1.5px);
-  box-shadow: 0.5px 0.5px 0px #111111;
-}
-
-.te-tape {
-  font-family: 'JetBrains Mono', monospace;
-  font-weight: 800;
-  letter-spacing: -0.04em;
-  text-transform: uppercase;
-  border: 1px solid #111111;
-  box-shadow: 1px 1px 0px rgba(0,0,0,0.8);
-  display: inline-block;
-  transform: rotate(-0.5deg);
-}
-
-.te-screw {
+  padding: 3px 8px;
+  border-radius: 6px;
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  border: 1px solid var(--color-hairline-strong);
-  background: var(--color-surface-strong);
-  font-size: 8px;
-  line-height: 1;
-  color: var(--color-muted);
-  user-select: none;
+  gap: 5px;
 }
 
-.te-screw::before {
-  content: "+";
+/* Boneyard Skeleton Shimmer Animation */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
 }
 
-.te-lcd {
-  background: #0a110d;
-  color: #00ff66;
-  font-family: 'JetBrains Mono', monospace;
-  border: 1.5px solid #1a2e20;
-  box-shadow: inset 0 2px 6px rgba(0,0,0,0.9);
-  text-shadow: 0 0 6px rgba(0,255,102,0.6);
+.skeleton-shimmer {
+  background: linear-gradient(90deg, rgba(255,255,255,0.03) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.03) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.8s infinite;
 }
 
-/* Custom scrollbars matching theme */
+/* Custom Minimalist Scrollbars */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 
 ::-webkit-scrollbar-track {
@@ -126,8 +123,7 @@ body {
 
 ::-webkit-scrollbar-thumb {
   background: var(--color-hairline-strong);
-  border-radius: 0px;
-  border: 1px solid #000;
+  border-radius: 9999px;
 }
 
 /* Hide all MapLibre / Mapbox attribution pills */
