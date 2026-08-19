@@ -1,11 +1,11 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  /* Sovereign B2G Light Slate Palette */
+  /* Institutional Government Enterprise Palette (Light) */
   --color-canvas: #f8fafc;
   --color-canvas-soft: #f1f5f9;
   --color-surface-card: #ffffff;
@@ -14,40 +14,38 @@
   --color-hairline-soft: #f1f5f9;
   --color-hairline-strong: #cbd5e1;
   --color-ink: #0f172a;
-  --color-body: #334155;
+  --color-body: #475569;
   --color-body-strong: #0f172a;
   --color-muted: #64748b;
   --color-muted-soft: #94a3b8;
   
-  --color-cobalt: #1d4ed8;
-  --color-emerald: #059669;
-  --color-gold: #d97706;
+  --color-primary: #1e40af; /* Government Navy */
+  --color-primary-hover: #1d4ed8;
 }
 
 .dark {
-  /* Sovereign B2G Deep Obsidian Slate Palette */
+  /* Institutional Government Enterprise Palette (Dark - Slate/Obsidian) */
   --color-canvas: #0b0f17;
-  --color-canvas-soft: #12151e;
-  --color-surface-card: #181d28;
-  --color-surface-strong: #222938;
-  --color-hairline: #222938;
-  --color-hairline-soft: #181d28;
-  --color-hairline-strong: #333d4e;
+  --color-canvas-soft: #111827;
+  --color-surface-card: #1e293b;
+  --color-surface-strong: #334155;
+  --color-hairline: #1e293b;
+  --color-hairline-soft: #111827;
+  --color-hairline-strong: #475569;
   --color-ink: #f8fafc;
   --color-body: #94a3b8;
   --color-body-strong: #f8fafc;
   --color-muted: #64748b;
   --color-muted-soft: #475569;
   
-  --color-cobalt: #3b82f6;
-  --color-emerald: #10b981;
-  --color-gold: #f59e0b;
+  --color-primary: #3b82f6;
+  --color-primary-hover: #60a5fa;
 }
 
 body {
   background-color: var(--color-canvas);
   color: var(--color-ink);
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   margin: 0;
   padding: 0;
   -webkit-font-smoothing: antialiased;
@@ -55,63 +53,42 @@ body {
   line-height: 1.5;
 }
 
-/* Apple & Godly Bento Glassmorphic System */
-.bento-card {
+/* Institutional Enterprise Card Architecture */
+.gov-card {
   background-color: var(--color-surface-card);
   border: 1px solid var(--color-hairline);
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), inset 0 1px 0 0 rgba(255, 255, 255, 0.08);
-  border-radius: 12px;
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  border-radius: 8px;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-.dark .bento-card {
-  background-color: rgba(24, 29, 40, 0.85);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.4), inset 0 1px 0 0 rgba(255, 255, 255, 0.06);
+.dark .gov-card {
+  background-color: #131b2e;
+  border-color: #1e293b;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.3);
 }
 
-.bento-card:hover {
-  border-color: rgba(29, 78, 216, 0.35);
-  box-shadow: 0 8px 30px -4px rgba(0, 0, 0, 0.12), inset 0 1px 0 0 rgba(255, 255, 255, 0.1);
+.gov-card:hover {
+  border-color: var(--color-hairline-strong);
 }
 
-.dark .bento-card:hover {
-  border-color: rgba(59, 130, 246, 0.4);
-  box-shadow: 0 8px 32px -4px rgba(0, 0, 0, 0.6), inset 0 1px 0 0 rgba(255, 255, 255, 0.12);
+.dark .gov-card:hover {
+  border-color: #334155;
 }
 
-/* Sovereign Badges */
-.sovereign-badge {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 10px;
+/* Institutional Status Badges */
+.gov-badge {
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
   font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  padding: 3px 8px;
-  border-radius: 6px;
+  padding: 2px 8px;
+  border-radius: 4px;
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: 4px;
 }
 
-/* Boneyard Skeleton Shimmer Animation */
-@keyframes shimmer {
-  0% {
-    background-position: -200% 0;
-  }
-  100% {
-    background-position: 200% 0;
-  }
-}
-
-.skeleton-shimmer {
-  background: linear-gradient(90deg, rgba(255,255,255,0.03) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.03) 75%);
-  background-size: 200% 100%;
-  animation: shimmer 1.8s infinite;
-}
-
-/* Custom Minimalist Scrollbars */
+/* Custom Minimal Scrollbar */
 ::-webkit-scrollbar {
   width: 5px;
   height: 5px;
@@ -123,10 +100,10 @@ body {
 
 ::-webkit-scrollbar-thumb {
   background: var(--color-hairline-strong);
-  border-radius: 9999px;
+  border-radius: 4px;
 }
 
-/* Hide all MapLibre / Mapbox attribution pills */
+/* Hide MapLibre attribution */
 .maplibregl-ctrl-attrib,
 .maplibregl-ctrl-bottom-right,
 .maplibregl-ctrl-attrib-button,
