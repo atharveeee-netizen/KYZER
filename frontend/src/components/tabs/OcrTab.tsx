@@ -15,6 +15,7 @@ export const OcrTab: React.FC<OcrTabProps> = ({
   const [uploadedImagePreview, setUploadedImagePreview] = useState<string | null>(null);
   const [fileName, setFileName] = useState<string | null>(null);
   const [fileSize, setFileSize] = useState<string | null>(null);
+  const [compressionStats, setCompressionStats] = useState<{ original: string; compressed: string; savings: string } | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isCommitted, setIsCommitted] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -26,18 +27,55 @@ export const OcrTab: React.FC<OcrTabProps> = ({
     setItems(items.map(item => item.id === id ? { ...item, quantity: newQty } : item));
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const compressImageClientSide = (file: File): Promise<{ dataUrl: string; original: string; compressed: string; savings: string }> => {
+    return new Promise((resolve) => {
+      const origBytes = file.size;
+      const original = origBytes > 1024 * 1024 
+        ? (origBytes / (1024 * 1024)).toFixed(2) + ' MB' 
+        : (origBytes / 1024).toFixed(1) + ' KB';
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const maxDim = 1280;
+          let w = img.width;
+          let h = img.height;
+          if (w > maxDim || h > maxDim) {
+            if (w > h) {
+              h = Math.round((h * maxDim) / w);
+              w = maxDim;
+            } else {
+              w = Math.round((w * maxDim) / h);
+              h = maxDim;
+            }
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = w;
+          canvas.height = h;
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(img, 0, 0, w, h);
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.82);
+          const compBytes = Math.round((dataUrl.length * 3) / 4);
+          const compressed = (compBytes / 1024).toFixed(1) + ' KB';
+          const savings = Math.max(0, Math.round(((origBytes - compBytes) / origBytes) * 100)) + '%';
+          resolve({ dataUrl, original, compressed, savings });
+        };
+        img.src = e.target?.result as string;
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       setFileName(file.name);
-      setFileSize((file.size / 1024).toFixed(1) + ' KB');
-      
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        setUploadedImagePreview(event.target?.result as string);
-        runOcrPipeline(file.name);
-      };
-      reader.readAsDataURL(file);
+      const res = await compressImageClientSide(file);
+      setUploadedImagePreview(res.dataUrl);
+      setFileSize(res.compressed);
+      setCompressionStats({ original: res.original, compressed: res.compressed, savings: res.savings });
+      runOcrPipeline(file.name);
     }
   };
 
@@ -150,9 +188,16 @@ export const OcrTab: React.FC<OcrTabProps> = ({
                     alt="Uploaded Register"
                     className="w-full h-auto max-h-[300px] object-contain rounded-xs border border-hairline"
                   />
-                  <div className="mt-2 text-[11px] font-mono text-muted text-center flex justify-between px-1">
-                    <span>{fileName}</span>
-                    <span>{fileSize}</span>
+                  <div className="mt-2 text-[11px] font-mono text-muted text-center flex flex-col gap-1 px-1">
+                    <div className="flex justify-between text-ink font-semibold">
+                      <span>{fileName}</span>
+                      <span>{fileSize}</span>
+                    </div>
+                    {compressionStats && (
+                      <div className="text-[10px] bg-green-50 text-semantic-success border border-green-200 rounded px-2 py-0.5 text-left font-mono">
+                        Client Canvas Compression: {compressionStats.original} ➔ {compressionStats.compressed} ({compressionStats.savings} bandwidth saved for 2G/3G)
+                      </div>
+                    )}
                   </div>
                 </div>
               ) : (

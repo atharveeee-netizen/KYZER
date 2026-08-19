@@ -558,12 +558,18 @@ export const MapTab: React.FC<MapTabProps> = () => {
                 </div>
               </div>
 
-              <div className="p-2.5 bg-emerald-950/60 border border-emerald-500/40 rounded-lg text-[11px] font-mono text-emerald-200 flex items-center justify-between">
-                <span className="flex items-center gap-1.5">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>Cold-Chain Status</span>
-                </span>
-                <b className="text-emerald-400">PASSED (3.1°C)</b>
+              <div className="p-2.5 bg-emerald-950/60 border border-emerald-500/40 rounded-lg text-[11px] font-mono text-emerald-200 space-y-1">
+                <div className="flex items-center justify-between">
+                  <span className="flex items-center gap-1.5">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>Cold-Chain Status</span>
+                  </span>
+                  <b className="text-emerald-400">{activeRouteResult.thermals?.status || 'PASSED'} ({activeRouteResult.thermals?.estimatedCoreTempC || 3.1}°C)</b>
+                </div>
+                <div className="text-[10px] text-emerald-300/80 flex justify-between border-t border-emerald-500/20 pt-1">
+                  <span>Ambient: {activeRouteResult.thermals?.ambientTempC || 36}°C</span>
+                  <span>Max Limit: {activeRouteResult.thermals?.maxAllowedTransitMin || 192} min</span>
+                </div>
               </div>
 
               {activeTransfer && (

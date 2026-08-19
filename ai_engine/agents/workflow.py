@@ -92,7 +92,7 @@ class MultiAgentWorkflowEngine:
 
         elapsed_ms = (time.perf_counter() - start_time) * 1000
         state.execution_steps.append(f"[Engine] Multi-Agent Workflow {wf_id} completed successfully in {elapsed_ms:.2f} ms")
-
+        self._persist_state_to_ledger(state)
         return state
 
     async def run_workflow_async(
@@ -164,4 +164,24 @@ class MultiAgentWorkflowEngine:
 
         elapsed_ms = (time.perf_counter() - start_time) * 1000
         state.execution_steps.append(f"[Async Engine] Async Workflow {wf_id} completed successfully in {elapsed_ms:.2f} ms")
+        self._persist_state_to_ledger(state)
         return state
+
+    def _persist_state_to_ledger(self, state: MultiAgentBlackboardState) -> None:
+        """Persists consensus state to persistent JSONL audit ledger to survive process restarts."""
+        try:
+            from ai_engine.config import DATA_DIR
+            ledger_file = DATA_DIR / "agent_audit_ledger.jsonl"
+            record = {
+                "workflow_id": state.workflow_id,
+                "timestamp_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+                "facility_id": state.target_facility_id,
+                "item_code": state.target_item_code,
+                "country_code": state.country_code,
+                "requires_redistribution": state.requires_emergency_redistribution,
+                "steps_executed": len(state.execution_steps)
+            }
+            with open(ledger_file, "a", encoding="utf-8") as f:
+                f.write(json.dumps(record) + "\n")
+        except Exception as e:
+            logger.warning(f"Failed to write agent audit ledger: {e}")

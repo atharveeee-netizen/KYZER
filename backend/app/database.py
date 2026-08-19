@@ -23,6 +23,9 @@ async def connect_db() -> None:
         dsn=settings.asyncpg_dsn,
         min_size=1,
         max_size=10,
+        max_inactive_connection_lifetime=300.0,
+        command_timeout=15.0,
+        timeout=10.0,
     )
 
 

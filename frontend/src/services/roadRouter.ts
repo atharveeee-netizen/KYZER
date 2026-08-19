@@ -6,6 +6,13 @@
 
 import { PRECOMPUTED_REAL_ROAD_ROUTES, RealRoadRoute } from '../data/realRoadRoutes';
 
+export interface ColdChainThermalStatus {
+  ambientTempC: number;
+  maxAllowedTransitMin: number;
+  estimatedCoreTempC: number;
+  status: 'PASSED' | 'WARNING' | 'BREACH';
+}
+
 export interface RouteResult {
   denseCoordinates: [number, number][];
   pathWithTimestamps: [number, number, number][];
@@ -13,6 +20,35 @@ export interface RouteResult {
   estimatedTimeMin: number;
   streetSequence: string[];
   engine: string;
+  thermals: ColdChainThermalStatus;
+}
+
+/**
+ * Calculates dynamic cold-chain safety threshold based on ambient climate temperature
+ */
+export function computeColdChainThermals(
+  driveTimeMin: number,
+  ambientTempC: number = 36.0
+): ColdChainThermalStatus {
+  const tempDelta = Math.max(0, ambientTempC - 25.0);
+  const thermalDeratingFactor = Math.max(0.65, 1.0 - (0.018 * tempDelta));
+  const maxAllowedTransitMin = Math.round(240 * thermalDeratingFactor);
+
+  const estimatedCoreTempC = Number((2.0 + (driveTimeMin / Math.max(1, maxAllowedTransitMin)) * (ambientTempC > 35 ? 4.0 : 3.0)).toFixed(1));
+
+  let status: 'PASSED' | 'WARNING' | 'BREACH' = 'PASSED';
+  if (driveTimeMin > maxAllowedTransitMin || estimatedCoreTempC > 8.0) {
+    status = 'BREACH';
+  } else if (driveTimeMin > maxAllowedTransitMin * 0.8 || estimatedCoreTempC > 6.0) {
+    status = 'WARNING';
+  }
+
+  return {
+    ambientTempC,
+    maxAllowedTransitMin,
+    estimatedCoreTempC,
+    status
+  };
 }
 
 /**
@@ -20,7 +56,8 @@ export interface RouteResult {
  */
 export function computeCachedOSRMRoute(
   startCoord: [number, number],
-  endCoord: [number, number]
+  endCoord: [number, number],
+  ambientTempC: number = 36.0
 ): RouteResult {
   let routeData: RealRoadRoute = PRECOMPUTED_REAL_ROAD_ROUTES['DONOR_TO_STOCKOUT'];
 
@@ -46,6 +83,8 @@ export function computeCachedOSRMRoute(
     idx * 2.2,
   ]);
 
+  const thermals = computeColdChainThermals(routeData.durationMin, ambientTempC);
+
   return {
     denseCoordinates: rawCoords,
     pathWithTimestamps,
@@ -53,6 +92,7 @@ export function computeCachedOSRMRoute(
     estimatedTimeMin: routeData.durationMin,
     streetSequence: ['King St', '4th St', 'Townsend St', '7th St', 'Brannan St', '9th St', 'Division St', 'Mission St'],
     engine: 'OSRM Driving Engine (Open Source Routing Machine)',
+    thermals,
   };
 }
 
@@ -61,7 +101,8 @@ export function computeCachedOSRMRoute(
  */
 export async function fetchOSRMShortestRoute(
   startCoord: [number, number],
-  endCoord: [number, number]
+  endCoord: [number, number],
+  ambientTempC: number = 36.0
 ): Promise<RouteResult> {
   const url = `https://router.project-osrm.org/route/v1/driving/${startCoord[0]},${startCoord[1]};${endCoord[0]},${endCoord[1]}?overview=full&geometries=geojson`;
 
@@ -82,6 +123,8 @@ export async function fetchOSRMShortestRoute(
         idx * 2.2,
       ]);
 
+      const thermals = computeColdChainThermals(estimatedTimeMin, ambientTempC);
+
       return {
         denseCoordinates: rawCoords,
         pathWithTimestamps,
@@ -89,6 +132,7 @@ export async function fetchOSRMShortestRoute(
         estimatedTimeMin,
         streetSequence: ['King St', '4th St', 'Townsend St', '7th St', 'Brannan St', '9th St', 'Division St', 'Mission St'],
         engine: 'OSRM Live Driving API (Open Source Routing Machine)',
+        thermals,
       };
     }
   } catch (err) {
@@ -96,5 +140,5 @@ export async function fetchOSRMShortestRoute(
   }
 
   // Fallback to precomputed OSRM route
-  return computeCachedOSRMRoute(startCoord, endCoord);
+  return computeCachedOSRMRoute(startCoord, endCoord, ambientTempC);
 }
