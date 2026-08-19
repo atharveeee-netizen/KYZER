@@ -7,17 +7,20 @@ import {
   Cpu, 
   Terminal, 
   Lock, 
-  RefreshCw,
-  Search,
-  CheckCircle2,
-  ChevronRight,
-  TrendingUp,
-  MapPin,
-  Building2,
-  Layers,
-  Zap,
-  ArrowRight,
-  Eye
+  RefreshCw, 
+  Search, 
+  CheckCircle2, 
+  ChevronRight, 
+  TrendingUp, 
+  MapPin, 
+  Building2, 
+  Layers, 
+  Zap, 
+  ArrowRight, 
+  Eye,
+  FileCode,
+  X,
+  Key
 } from 'lucide-react';
 import { HealthFacility, SystemAlert } from '../../types';
 
@@ -25,6 +28,7 @@ interface HealthCentre {
   id: string;
   name: string;
   district: string;
+  kmsHash: string;
   stockLevel: number; // percentage
   status: 'STABLE' | 'WARNING' | 'CRITICAL';
   icuBedsFree: number;
@@ -49,16 +53,16 @@ interface DashboardTabProps {
 }
 
 const SOVEREIGN_FACILITIES: HealthCentre[] = [
-  { id: 'PHC-PUN-001', name: 'Shirur Sub-District Hospital', district: 'Pune Sector', stockLevel: 14, status: 'CRITICAL', icuBedsFree: 1, icuBedsTotal: 6, lat: 18.8288, lng: 74.3789 },
-  { id: 'PHC-PUN-002', name: 'Khed Primary Health Centre', district: 'Pune Sector', stockLevel: 88, status: 'STABLE', icuBedsFree: 4, icuBedsTotal: 5, lat: 18.8500, lng: 73.9167 },
-  { id: 'PHC-PUN-003', name: 'Junnar Rural Hospital', district: 'Pune Sector', stockLevel: 42, status: 'WARNING', icuBedsFree: 2, icuBedsTotal: 8, lat: 19.2083, lng: 73.8750 },
-  { id: 'DH-DEPOT-001', name: 'Aundh Central Vaccine Depot', district: 'Pune Sector', stockLevel: 95, status: 'STABLE', icuBedsFree: 8, icuBedsTotal: 12, lat: 18.5583, lng: 73.8083 },
+  { id: 'PHC-PUN-001', name: 'Shirur Sub-District Hospital', district: 'Pune Sector', kmsHash: '0x8f9a2b71...4e1d90c2', stockLevel: 14, status: 'CRITICAL', icuBedsFree: 1, icuBedsTotal: 6, lat: 18.8288, lng: 74.3789 },
+  { id: 'PHC-PUN-002', name: 'Khed Primary Health Centre', district: 'Pune Sector', kmsHash: '0x3c4d1e99...9f8a44b1', stockLevel: 88, status: 'STABLE', icuBedsFree: 4, icuBedsTotal: 5, lat: 18.8500, lng: 73.9167 },
+  { id: 'PHC-PUN-003', name: 'Junnar Rural Hospital', district: 'Pune Sector', kmsHash: '0x7e6f5a12...2b1c88dd', stockLevel: 42, status: 'WARNING', icuBedsFree: 2, icuBedsTotal: 8, lat: 19.2083, lng: 73.8750 },
+  { id: 'DH-DEPOT-001', name: 'Aundh Central Vaccine Depot', district: 'Pune Sector', kmsHash: '0x1a2b3c4d...5e6f7a8b', stockLevel: 95, status: 'STABLE', icuBedsFree: 8, icuBedsTotal: 12, lat: 18.5583, lng: 73.8083 },
 ];
 
 const INITIAL_AGENT_TRACES: AgentTrace[] = [
   { id: 'tr-101', timestamp: '21:49:02', agent: 'Planner', action: 'Monsoon surge vector detected in Shirur sector (52mm rainfall). Projecting demand spike +142%.', status: 'EXECUTED' },
   { id: 'tr-102', timestamp: '21:49:05', agent: 'SupplyRouter', action: 'IBM Heron r2 QAOA Hamiltonian solved: Optimal lateral transfer PHC Khed -> Shirur SDH (138.89km).', status: 'EXECUTED' },
-  { id: 'tr-103', timestamp: '21:49:08', agent: 'ComplianceVerifier', action: 'Strix Pen-Test Pass: Signed dispatch payload with Government KMS Key. Clinical Buffer: 2.1x >= 1.9x.', status: 'EXECUTED' },
+  { id: 'tr-103', timestamp: '21:49:08', agent: 'ComplianceVerifier', action: 'Strix Pen-Test Pass: Signed dispatch payload with Government KMS Key #9021. Clinical Buffer: 2.1x >= 1.9x.', status: 'EXECUTED' },
 ];
 
 export const DashboardTab: React.FC<DashboardTabProps> = ({
@@ -70,7 +74,7 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
   const [facilities, setFacilities] = useState<HealthCentre[]>(SOVEREIGN_FACILITIES);
   const [agentTraces, setAgentTraces] = useState<AgentTrace[]>(INITIAL_AGENT_TRACES);
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [selectedFacility, setSelectedFacility] = useState<HealthCentre>(SOVEREIGN_FACILITIES[0]);
+  const [inspectingNode, setInspectingNode] = useState<HealthCentre | null>(null);
   const [searchFilter, setSearchFilter] = useState<string>('');
   const [selectedAgentTrace, setSelectedAgentTrace] = useState<string | null>('supervisor');
 
@@ -157,8 +161,15 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
   ];
 
   return (
-    <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-4 font-sans text-[#F5F8FA] antialiased">
+    <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-4 font-sans text-[#F5F8FA] antialiased relative">
       
+      {/* ANTI-AI TACTILE GRAIN OVERLAY */}
+      <div className="anti-ai-grain" />
+
+      {/* TECHNICAL BLUEPRINT CROSSHAIRS */}
+      <span className="absolute top-2 left-2 text-[10px] font-mono text-[#5C7080] select-none">+</span>
+      <span className="absolute top-2 right-2 text-[10px] font-mono text-[#5C7080] select-none">+</span>
+
       {/* 1. Palantir Foundry Executive Header Banner */}
       <div className="foundry-card p-5 bg-[#202B33] border-[#293742]">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5">
@@ -353,8 +364,8 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
         <div className="lg:col-span-7 foundry-card p-5 space-y-3">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2.5 border-b border-[#293742]">
             <div>
-              <h2 className="text-sm font-semibold text-[#F5F8FA]">Primary Health Nodes — Live Inventory</h2>
-              <p className="text-xs text-[#A7B6C2]">Real-time pharmaceutical stock and ICU bed telemetry from district nodes</p>
+              <h2 className="text-xs font-bold text-[#F5F8FA] uppercase tracking-wider">Primary Health Nodes — Live Inventory</h2>
+              <p className="text-[10px] text-[#A7B6C2] font-mono">Click any row to inspect cryptographic KMS payload</p>
             </div>
             <div className="relative">
               <Search className="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-[#5C7080]" />
@@ -380,24 +391,20 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
               {filteredFacilities.map((fac) => (
                 <div
                   key={fac.id}
-                  onClick={() => setSelectedFacility(fac)}
-                  className={`p-3 rounded-[3px] border transition-all cursor-pointer flex items-center justify-between ${
-                    selectedFacility.id === fac.id
-                      ? 'bg-[#106BA3]/10 border-[#106BA3]/60 shadow-xs'
-                      : 'bg-[#111418] border-[#293742] hover:border-[#394b59]'
-                  }`}
+                  onClick={() => setInspectingNode(fac)}
+                  className="p-3 rounded-[3px] bg-[#111418] border border-[#293742] hover:border-[#106BA3] cursor-pointer flex items-center justify-between transition group"
                 >
                   <div className="space-y-0.5">
                     <div className="flex items-center space-x-2">
-                      <span className="text-xs font-semibold text-[#F5F8FA]">{fac.name}</span>
+                      <span className="text-xs font-semibold text-[#F5F8FA] group-hover:text-[#106BA3] transition-colors">{fac.name}</span>
                       <span className="text-[10px] font-mono px-1.5 py-0.2 rounded-[2px] bg-[#202B33] text-[#A7B6C2] font-semibold">
                         {fac.id}
                       </span>
                     </div>
-                    <div className="text-[11px] text-[#A7B6C2] flex items-center space-x-3 font-mono">
-                      <span>District: {fac.district}</span>
+                    <div className="text-[11px] text-[#5C7080] flex items-center space-x-3 font-mono">
+                      <span>ICU: {fac.icuBedsFree}/{fac.icuBedsTotal} Free</span>
                       <span>•</span>
-                      <span>ICU Beds: {fac.icuBedsFree}/{fac.icuBedsTotal} Free</span>
+                      <span>KMS: {fac.kmsHash}</span>
                     </div>
                   </div>
 
@@ -441,7 +448,7 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
             <div className="flex items-center justify-between pb-2.5 border-b border-[#293742]">
               <div className="flex items-center space-x-2">
                 <Terminal className="w-4 h-4 text-[#106BA3]" />
-                <h2 className="text-sm font-semibold text-[#F5F8FA]">Agentic Loop Audit Feed</h2>
+                <h2 className="text-xs font-bold text-[#F5F8FA] uppercase tracking-wider">DeepSeek Agentic Telemetry</h2>
               </div>
               <span className="foundry-badge bg-[#106BA3]/20 text-[#106BA3] border border-[#106BA3]/40 text-[9px]">
                 CORDIS ENGINE LIVE
@@ -449,10 +456,10 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
             </div>
 
             {/* Monospace Execution Trace List */}
-            <div className="mt-2.5 space-y-1.5 font-mono text-xs max-h-80 overflow-y-auto pr-1">
+            <div className="mt-2.5 space-y-1.5 font-mono text-[11px] max-h-72 overflow-y-auto pr-1">
               {agentTraces.map((trace) => (
                 <div key={trace.id} className="p-2.5 rounded-[3px] bg-[#111418] border border-[#293742] space-y-1">
-                  <div className="flex items-center justify-between text-[10px] text-[#A7B6C2]">
+                  <div className="flex items-center justify-between text-[10px] text-[#5C7080]">
                     <span className="text-[#106BA3] font-bold">@{trace.agent}</span>
                     <span>{trace.timestamp}</span>
                   </div>
@@ -467,15 +474,61 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
           </div>
 
           {/* Bottom Sovereign Verification Footer */}
-          <div className="p-2.5 rounded-[3px] bg-[#106BA3]/10 border border-[#106BA3]/30 flex items-center justify-between text-xs text-[#106BA3] font-mono">
-            <span className="flex items-center gap-1.5">
-              <ShieldCheck className="w-4 h-4" /> Government KMS Signed Payload
+          <div className="p-2.5 rounded-[3px] bg-[#182026] border border-[#293742] flex items-center justify-between text-[11px] font-mono text-[#A7B6C2]">
+            <span className="flex items-center space-x-1.5">
+              <CheckCircle2 className="h-3.5 w-3.5 text-[#0D8050]" />
+              <span>Screenpipe Audit Trail Active</span>
             </span>
-            <ChevronRight className="w-4 h-4" />
+            <span className="text-[10px] text-[#5C7080]">KMS-256</span>
           </div>
         </div>
 
       </div>
+
+      {/* CRYPTOGRAPHIC INSPECTION MODAL (Palantir Blueprint Inspector) */}
+      {inspectingNode && (
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-[#182026] border border-[#293742] rounded-[3px] max-w-lg w-full p-5 space-y-4 shadow-2xl">
+            <div className="flex items-center justify-between pb-2 border-b border-[#293742]">
+              <div className="flex items-center space-x-2">
+                <FileCode className="h-4 w-4 text-[#106BA3]" />
+                <h3 className="text-xs font-bold text-[#F5F8FA] uppercase tracking-wider">
+                  Sovereign Entity Payload — {inspectingNode.id}
+                </h3>
+              </div>
+              <button 
+                onClick={() => setInspectingNode(null)}
+                className="text-[#5C7080] hover:text-white transition"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="bg-[#111418] p-3.5 rounded-[2px] border border-[#293742] font-mono text-[11px] text-[#A7B6C2] overflow-x-auto space-y-1">
+              <div>&#123;</div>
+              <div className="pl-4"><span className="text-[#106BA3]">"entity_id"</span>: <span className="text-[#0D8050]">"{inspectingNode.id}"</span>,</div>
+              <div className="pl-4"><span className="text-[#106BA3]">"facility_name"</span>: <span className="text-[#0D8050]">"{inspectingNode.name}"</span>,</div>
+              <div className="pl-4"><span className="text-[#106BA3]">"district"</span>: <span className="text-[#0D8050]">"{inspectingNode.district}"</span>,</div>
+              <div className="pl-4"><span className="text-[#106BA3]">"buffer_level_pct"</span>: <span className="text-[#D9822B]">{inspectingNode.stockLevel}</span>,</div>
+              <div className="pl-4"><span className="text-[#106BA3]">"icu_beds_free"</span>: <span className="text-[#D9822B]">{inspectingNode.icuBedsFree}</span>,</div>
+              <div className="pl-4"><span className="text-[#106BA3]">"icu_beds_total"</span>: <span className="text-[#D9822B]">{inspectingNode.icuBedsTotal}</span>,</div>
+              <div className="pl-4"><span className="text-[#106BA3]">"kms_signature"</span>: <span className="text-[#0D8050]">"{inspectingNode.kmsHash}"</span>,</div>
+              <div className="pl-4"><span className="text-[#106BA3]">"strix_security_score"</span>: <span className="text-[#0D8050]">"99.8% [SOC2-TYPE-II]"</span>,</div>
+              <div className="pl-4"><span className="text-[#106BA3]">"fedramp_classification"</span>: <span className="text-[#0D8050]">"CONFIDENTIAL // HIGH"</span></div>
+              <div>&#125;</div>
+            </div>
+
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setInspectingNode(null)}
+                className="foundry-btn bg-[#202B33] hover:bg-[#293742] text-xs text-[#F5F8FA] border border-[#293742]"
+              >
+                Close Inspector
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );
