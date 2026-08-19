@@ -16,7 +16,8 @@ import {
   Building2,
   Layers,
   Zap,
-  ArrowRight
+  ArrowRight,
+  Eye
 } from 'lucide-react';
 import { HealthFacility, SystemAlert } from '../../types';
 
@@ -48,10 +49,10 @@ interface DashboardTabProps {
 }
 
 const SOVEREIGN_FACILITIES: HealthCentre[] = [
-  { id: 'PHC-PUN-001', name: 'Shirur Sub-District Hospital', district: 'Pune District', stockLevel: 14, status: 'CRITICAL', icuBedsFree: 1, icuBedsTotal: 6, lat: 18.8288, lng: 74.3789 },
-  { id: 'PHC-PUN-002', name: 'Khed Primary Health Centre', district: 'Pune District', stockLevel: 88, status: 'STABLE', icuBedsFree: 4, icuBedsTotal: 5, lat: 18.8500, lng: 73.9167 },
-  { id: 'PHC-PUN-003', name: 'Junnar Rural Hospital', district: 'Pune District', stockLevel: 42, status: 'WARNING', icuBedsFree: 2, icuBedsTotal: 8, lat: 19.2083, lng: 73.8750 },
-  { id: 'DH-DEPOT-001', name: 'Aundh Central Vaccine Depot', district: 'Pune District', stockLevel: 95, status: 'STABLE', icuBedsFree: 8, icuBedsTotal: 12, lat: 18.5583, lng: 73.8083 },
+  { id: 'PHC-PUN-001', name: 'Shirur Sub-District Hospital', district: 'Pune Sector', stockLevel: 14, status: 'CRITICAL', icuBedsFree: 1, icuBedsTotal: 6, lat: 18.8288, lng: 74.3789 },
+  { id: 'PHC-PUN-002', name: 'Khed Primary Health Centre', district: 'Pune Sector', stockLevel: 88, status: 'STABLE', icuBedsFree: 4, icuBedsTotal: 5, lat: 18.8500, lng: 73.9167 },
+  { id: 'PHC-PUN-003', name: 'Junnar Rural Hospital', district: 'Pune Sector', stockLevel: 42, status: 'WARNING', icuBedsFree: 2, icuBedsTotal: 8, lat: 19.2083, lng: 73.8750 },
+  { id: 'DH-DEPOT-001', name: 'Aundh Central Vaccine Depot', district: 'Pune Sector', stockLevel: 95, status: 'STABLE', icuBedsFree: 8, icuBedsTotal: 12, lat: 18.5583, lng: 73.8083 },
 ];
 
 const INITIAL_AGENT_TRACES: AgentTrace[] = [
@@ -71,6 +72,7 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [selectedFacility, setSelectedFacility] = useState<HealthCentre>(SOVEREIGN_FACILITIES[0]);
   const [searchFilter, setSearchFilter] = useState<string>('');
+  const [selectedAgentTrace, setSelectedAgentTrace] = useState<string | null>('supervisor');
 
   const criticalCount = facilities.filter(f => f.status === 'CRITICAL').length;
   const totalIcuBeds = facilities.reduce((sum, f) => sum + f.icuBedsTotal, 0);
@@ -106,170 +108,293 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
     ? facilities.filter(f => f.name.toLowerCase().includes(searchFilter.toLowerCase()) || f.id.toLowerCase().includes(searchFilter.toLowerCase()))
     : facilities;
 
+  const agentNodes = [
+    {
+      id: 'forecaster',
+      name: 'Planner / Forecaster Agent',
+      role: 'LightGBM Tweedie Quantile (P10/P50/P90)',
+      latency: '34.2ms',
+      status: 'CONVERGED',
+      tag: '01.AI',
+      output: 'Forecasted 7-day demand trajectory: +142% surge at PHC Shirur (17.48% WAPE).'
+    },
+    {
+      id: 'detector',
+      name: 'Anomaly Detector Agent',
+      role: 'Isolation Forest & 3-Pillar Cascade Risk',
+      latency: '18.1ms',
+      status: 'TRIGGERED',
+      tag: '02.ANOMALY',
+      output: 'P0 Critical anomaly detected. Stock buffer projected <= 1.2 days.'
+    },
+    {
+      id: 'allocator',
+      name: 'Executor / Allocator Agent',
+      role: 'QUBO/SA + OSRM Real Road VRP',
+      latency: '12.7ms',
+      status: 'OPTIMIZED',
+      tag: '03.VRP',
+      output: 'Synthesized lateral redistribution: 450 units from Donor (13.5km shorter).'
+    },
+    {
+      id: 'explainer',
+      name: 'TreeSHAP Explainer Agent',
+      role: 'Clinical Feature Attribution Engine',
+      latency: '22.4ms',
+      status: 'EXPLAINED',
+      tag: '04.XAI',
+      output: 'Top drivers: rainfall_lag_3d (+34.2%), ward_bed_occupancy (+28.1%).'
+    },
+    {
+      id: 'supervisor',
+      name: 'Critic / Supervisor Agent',
+      role: 'Deterministic Clinical Consensus Gate',
+      latency: '8.3ms',
+      status: 'APPROVED',
+      tag: '05.CONSENSUS',
+      output: 'CONSENSUS VERIFIED: Donor remaining buffer = 2.1x (>= 1.9x threshold).'
+    },
+  ];
+
   return (
-    <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-6 font-sans text-zinc-900 dark:text-zinc-100 antialiased">
+    <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-4 font-sans text-[#F5F8FA] antialiased">
       
-      {/* 1. Executive B2G Command Bar */}
-      <div className="bento-card p-6 bg-gradient-to-r from-surface-card via-surface-card to-blue-950/10">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+      {/* 1. Palantir Foundry Executive Header Banner */}
+      <div className="foundry-card p-5 bg-[#202B33] border-[#293742]">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5">
           
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="sovereign-badge bg-blue-600/10 text-blue-600 dark:text-blue-400 border border-blue-600/20">
+              <span className="foundry-badge bg-[#106BA3]/20 text-[#106BA3] border border-[#106BA3]/40">
                 <Building2 className="w-3 h-3" /> MINISTRY OF HEALTH & FAMILY WELFARE
               </span>
-              <span className="sovereign-badge bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+              <span className="foundry-badge bg-[#0D8050]/20 text-[#0D8050] border border-[#0D8050]/40">
                 <ShieldCheck className="w-3 h-3" /> STRIX SECURED • SOC2 TYPE II
               </span>
-              <span className="text-[11px] text-muted font-mono">
-                NODE: PUNE DISTRICT COMMAND [18 PHC]
+              <span className="text-[10px] text-[#A7B6C2] font-mono">
+                ONTOLOGY CLUSTER: PUNE SECTOR [18 PHC NODES]
               </span>
             </div>
 
-            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-ink">
-              Public Health Supply Chain & Epidemic Intelligence Tower
+            <h1 className="text-xl sm:text-2xl font-semibold tracking-tight text-[#F5F8FA]">
+              CareDOM Autonomous Health Centre Supply Chain Control Tower
             </h1>
-            <p className="text-xs text-body max-w-3xl leading-relaxed">
-              Multi-agent autonomous co-pilot governing pharmaceutical inventory, cold-chain compliance,
-              and emergency lateral redistribution across primary health centres in Maharashtra.
+            <p className="text-xs text-[#A7B6C2] max-w-3xl leading-relaxed">
+              Sovereign B2G multi-agent platform governing pharmaceutical inventory, cold-chain compliance,
+              and automated lateral redistribution. Real-time LightGBM Tweedie quantile forecasting coupled with IBM Quantum QAOA optimization.
             </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-3 shrink-0">
             {/* Live IBM QPU Telemetry Badge */}
-            <div className="px-4 py-2.5 rounded-xl bg-canvas-soft border border-hairline text-left">
-              <div className="flex items-center gap-1.5 text-[10px] font-mono text-muted uppercase">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+            <div className="px-3.5 py-2 rounded-[3px] bg-[#111418] border border-[#293742] text-left font-mono">
+              <div className="flex items-center gap-1.5 text-[9px] text-[#5C7080] uppercase">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#0D8050] animate-pulse"></span>
                 <span>IBM Quantum QPU</span>
               </div>
-              <div className="text-sm font-bold font-mono text-ink mt-0.5">
-                ibm_fez (156-Qubit Heron)
+              <div className="text-xs font-bold text-[#F5F8FA] mt-0.5">
+                ibm_fez (156-Qubit Heron r2)
               </div>
             </div>
 
             <button
               onClick={onSimulateOutbreak}
-              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white text-xs font-semibold px-4 py-2.5 rounded-xl transition-all shadow-xs"
+              className="foundry-btn bg-[#106BA3] hover:bg-[#0E5A8A] text-white text-xs px-3.5 py-2"
             >
-              <Zap className="w-4 h-4" />
-              <span>Simulate Epidemic Shock</span>
+              <Zap className="w-3.5 h-3.5" />
+              <span>Simulate Outbreak Shock</span>
             </button>
           </div>
 
         </div>
       </div>
 
-      {/* 2. Executive Metrics Overview Bar (4 Bento Cards) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* 2. Executive Metrics Overview Bar (4 Blueprint Cards) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         
         {/* Metric 1: Health Facilities Monitored */}
-        <div className="bento-card p-5 space-y-1.5">
-          <div className="flex items-center justify-between text-xs text-muted font-mono uppercase">
-            <span>ACTIVE PHC CLINICS</span>
-            <Activity className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+        <div className="foundry-card p-4 space-y-1">
+          <div className="flex items-center justify-between text-[11px] text-[#A7B6C2] font-mono uppercase">
+            <span>ACTIVE HEALTH NODES</span>
+            <Activity className="w-3.5 h-3.5 text-[#106BA3]" />
           </div>
-          <div className="text-2xl font-bold text-ink font-mono tracking-tight">18 Facilities</div>
-          <div className="text-[11px] text-emerald-600 dark:text-emerald-400 font-mono">
+          <div className="text-2xl font-bold text-[#F5F8FA] font-mono tracking-tight">18 Facilities</div>
+          <div className="text-[10px] text-[#0D8050] font-mono">
             100% Connectivity • Pune Sector
           </div>
         </div>
 
         {/* Metric 2: Stockout Risk */}
-        <div className="bento-card p-5 space-y-1.5">
-          <div className="flex items-center justify-between text-xs text-muted font-mono uppercase">
+        <div className="foundry-card p-4 space-y-1">
+          <div className="flex items-center justify-between text-[11px] text-[#A7B6C2] font-mono uppercase">
             <span>STOCKOUT RISK INDEX</span>
-            <AlertTriangle className="w-4 h-4 text-amber-500" />
+            <AlertTriangle className="w-3.5 h-3.5 text-[#D9822B]" />
           </div>
-          <div className="text-2xl font-bold text-amber-500 font-mono tracking-tight">
+          <div className="text-2xl font-bold text-[#D9822B] font-mono tracking-tight">
             {criticalCount > 0 ? 'P0 CRITICAL' : 'NOMINAL'}
           </div>
-          <div className="text-[11px] text-muted font-mono">
-            {criticalCount > 0 ? `${criticalCount} Facility Outbreak Vector` : 'All buffers >= 1.9x threshold'}
+          <div className="text-[10px] text-[#A7B6C2] font-mono">
+            {criticalCount > 0 ? `${criticalCount} Node <= 48h emergency buffer` : 'All buffers >= 1.9x threshold'}
           </div>
         </div>
 
-        {/* Metric 3: Multi-Agent Engine Status */}
-        <div className="bento-card p-5 space-y-1.5">
-          <div className="flex items-center justify-between text-xs text-muted font-mono uppercase">
+        {/* Metric 3: Multi-Agent Status */}
+        <div className="foundry-card p-4 space-y-1">
+          <div className="flex items-center justify-between text-[11px] text-[#A7B6C2] font-mono uppercase">
             <span>MULTI-AGENT STATUS</span>
-            <Cpu className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+            <Cpu className="w-3.5 h-3.5 text-[#106BA3]" />
           </div>
-          <div className="text-2xl font-bold text-ink font-mono tracking-tight">5 Subagents Active</div>
-          <div className="text-[11px] text-indigo-600 dark:text-indigo-400 font-mono">
+          <div className="text-2xl font-bold text-[#F5F8FA] font-mono tracking-tight">5 Subagents Active</div>
+          <div className="text-[10px] text-[#A7B6C2] font-mono">
             DeepSeek Harness Engine
           </div>
         </div>
 
         {/* Metric 4: Automated Redistribution */}
-        <div className="bento-card p-5 space-y-1.5">
-          <div className="flex items-center justify-between text-xs text-muted font-mono uppercase">
+        <div className="foundry-card p-4 space-y-1">
+          <div className="flex items-center justify-between text-[11px] text-[#A7B6C2] font-mono uppercase">
             <span>AUTONOMOUS REDISTRIBUTION</span>
-            <Truck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+            <Truck className="w-3.5 h-3.5 text-[#0D8050]" />
           </div>
-          <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400 font-mono tracking-tight">
+          <div className="text-2xl font-bold text-[#0D8050] font-mono tracking-tight">
             Route Ready (13.5km Saved)
           </div>
           <button
             onClick={triggerAgentRebalance}
             disabled={isLoading}
-            className="w-full mt-1 py-1.5 px-3 rounded-lg bg-blue-600 hover:bg-blue-700 active:scale-95 text-white text-xs font-semibold flex items-center justify-center space-x-1.5 transition-all disabled:opacity-50 shadow-xs"
+            className="foundry-btn w-full mt-1 bg-[#106BA3] hover:bg-[#0E5A8A] text-white text-[11px] py-1 disabled:opacity-50"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-3 h-3 ${isLoading ? 'animate-spin' : ''}`} />
             <span>{isLoading ? 'Executing Multi-Agent Loop...' : 'Deploy Autonomous Dispatch'}</span>
           </button>
         </div>
 
       </div>
 
-      {/* 3. Bento Grid: Left High-Density Table & Right Multi-Agent Audit Stream */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      {/* 3. DeepSeek Harness Multi-Agent Worker-Critic Topology Panel */}
+      <div className="foundry-card p-5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 pb-3 border-b border-[#293742]">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="foundry-badge bg-[#106BA3]/20 text-[#106BA3] border border-[#106BA3]/40">
+                DEEPSEEK HARNESS ENGINE
+              </span>
+              <h2 className="text-sm font-semibold text-[#F5F8FA]">
+                Autonomous Multi-Agent Consensus Graph (5-Agent Topology)
+              </h2>
+            </div>
+            <p className="text-xs text-[#A7B6C2] mt-0.5">
+              Deterministic Worker-Critic pipeline with 2-way clinical safety verification (Agentic Design Patterns standard).
+            </p>
+          </div>
+
+          <span className="foundry-badge bg-[#111418] text-[#0D8050] border border-[#293742]">
+            CORDIS RUNTIME // ACTIVE
+          </span>
+        </div>
+
+        {/* 5-Agent Interactive Step Sequencer */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5">
+          {agentNodes.map((agent) => {
+            const isSelected = selectedAgentTrace === agent.id;
+            return (
+              <div
+                key={agent.id}
+                onClick={() => setSelectedAgentTrace(isSelected ? null : agent.id)}
+                className={`p-3 rounded-[3px] border transition-all cursor-pointer ${
+                  isSelected
+                    ? 'border-[#106BA3] bg-[#106BA3]/10 shadow-xs'
+                    : 'border-[#293742] bg-[#111418] hover:border-[#394b59]'
+                }`}
+              >
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-[10px] font-mono font-bold text-[#106BA3]">
+                    {agent.tag}
+                  </span>
+                  <span className="foundry-badge bg-[#0D8050]/20 text-[#0D8050] border border-[#0D8050]/40 text-[9px]">
+                    {agent.status}
+                  </span>
+                </div>
+                <div className="font-semibold text-xs text-[#F5F8FA] truncate">{agent.name}</div>
+                <div className="text-[10px] text-[#A7B6C2] truncate mt-0.5">{agent.role}</div>
+                
+                <div className="mt-2.5 pt-2 border-t border-[#293742] flex items-center justify-between text-[10px] font-mono">
+                  <span className="text-[#0D8050] font-semibold">{agent.latency}</span>
+                  <span className="text-[#106BA3] font-medium flex items-center gap-0.5">
+                    <Eye className="w-3 h-3" /> Inspect
+                  </span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Selected Agent Live Payload Inspector */}
+        {selectedAgentTrace && (
+          <div className="mt-3 p-3.5 rounded-[3px] bg-[#111418] border border-[#293742] text-xs font-mono leading-relaxed space-y-1">
+            <div className="flex items-center justify-between border-b border-[#293742] pb-1.5 font-bold text-[#F5F8FA]">
+              <span className="flex items-center gap-1.5">
+                <Terminal className="w-3.5 h-3.5 text-[#106BA3]" />
+                <span>AGENT EXECUTION TRACE: {agentNodes.find(a => a.id === selectedAgentTrace)?.name}</span>
+              </span>
+              <span className="text-[#0D8050]">STATE: SYNCHRONIZED</span>
+            </div>
+            <p className="text-[#A7B6C2] pt-1 font-sans text-xs">
+              {agentNodes.find(a => a.id === selectedAgentTrace)?.output}
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* 4. Two-Column Blueprint Bento Grid (7 Cols / 5 Cols) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
 
         {/* Left Table: High Density Data Grid (Japanese Grid aesthetics) */}
-        <div className="lg:col-span-7 bento-card p-5 space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-hairline">
+        <div className="lg:col-span-7 foundry-card p-5 space-y-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2.5 border-b border-[#293742]">
             <div>
-              <h2 className="text-sm font-bold text-ink tracking-tight">Primary Health Centres — Live Telemetry</h2>
-              <p className="text-xs text-muted">Real-time inventory and ICU bed telemetry from district nodes</p>
+              <h2 className="text-sm font-semibold text-[#F5F8FA]">Primary Health Nodes — Live Inventory</h2>
+              <p className="text-xs text-[#A7B6C2]">Real-time pharmaceutical stock and ICU bed telemetry from district nodes</p>
             </div>
             <div className="relative">
-              <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-muted" />
+              <Search className="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-[#5C7080]" />
               <input
                 type="text"
                 value={searchFilter}
                 onChange={(e) => setSearchFilter(e.target.value)}
                 placeholder="Filter PHC node..."
-                className="pl-8 pr-3 py-1.5 bg-canvas-soft border border-hairline rounded-lg text-xs text-ink focus:outline-none focus:border-blue-500 font-medium"
+                className="pl-7 pr-3 py-1 bg-[#111418] border border-[#293742] rounded-[3px] text-xs text-[#F5F8FA] focus:outline-none focus:border-[#106BA3] font-medium"
               />
             </div>
           </div>
 
           {/* boneyard Shimmer Skeleton State */}
           {isLoading ? (
-            <div className="space-y-3 py-2">
+            <div className="space-y-2 py-1">
               {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="h-16 w-full bg-canvas-soft rounded-xl skeleton-shimmer" />
+                <div key={i} className="h-14 w-full bg-[#111418] rounded-[3px] skeleton-shimmer" />
               ))}
             </div>
           ) : (
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               {filteredFacilities.map((fac) => (
                 <div
                   key={fac.id}
                   onClick={() => setSelectedFacility(fac)}
-                  className={`p-3.5 rounded-xl border transition-all cursor-pointer flex items-center justify-between ${
+                  className={`p-3 rounded-[3px] border transition-all cursor-pointer flex items-center justify-between ${
                     selectedFacility.id === fac.id
-                      ? 'bg-blue-600/5 border-blue-500/50 shadow-xs ring-1 ring-blue-500/20'
-                      : 'bg-canvas-soft/60 border-hairline hover:border-hairline-strong'
+                      ? 'bg-[#106BA3]/10 border-[#106BA3]/60 shadow-xs'
+                      : 'bg-[#111418] border-[#293742] hover:border-[#394b59]'
                   }`}
                 >
-                  <div className="space-y-1">
+                  <div className="space-y-0.5">
                     <div className="flex items-center space-x-2">
-                      <span className="text-xs font-bold text-ink">{fac.name}</span>
-                      <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-surface-strong text-body font-semibold">
+                      <span className="text-xs font-semibold text-[#F5F8FA]">{fac.name}</span>
+                      <span className="text-[10px] font-mono px-1.5 py-0.2 rounded-[2px] bg-[#202B33] text-[#A7B6C2] font-semibold">
                         {fac.id}
                       </span>
                     </div>
-                    <div className="text-[11px] text-muted flex items-center space-x-3 font-mono">
+                    <div className="text-[11px] text-[#A7B6C2] flex items-center space-x-3 font-mono">
                       <span>District: {fac.district}</span>
                       <span>•</span>
                       <span>ICU Beds: {fac.icuBedsFree}/{fac.icuBedsTotal} Free</span>
@@ -278,27 +403,27 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
 
                   <div className="text-right space-y-1">
                     <div className="flex items-center justify-end space-x-2">
-                      <div className="w-24 bg-surface-strong h-2 rounded-full overflow-hidden">
+                      <div className="w-20 bg-[#202B33] h-1.5 rounded-[1px] overflow-hidden">
                         <div
                           className={`h-full transition-all duration-500 ${
                             fac.stockLevel < 20
-                              ? 'bg-red-500'
+                              ? 'bg-[#C23030]'
                               : fac.stockLevel < 50
-                              ? 'bg-amber-500'
-                              : 'bg-emerald-500'
+                              ? 'bg-[#D9822B]'
+                              : 'bg-[#0D8050]'
                           }`}
                           style={{ width: `${fac.stockLevel}%` }}
                         />
                       </div>
-                      <span className="text-xs font-mono font-bold text-ink">{fac.stockLevel}%</span>
+                      <span className="text-xs font-mono font-bold text-[#F5F8FA]">{fac.stockLevel}%</span>
                     </div>
                     <span
-                      className={`text-[10px] font-mono font-bold uppercase px-2 py-0.5 rounded border ${
+                      className={`text-[9px] font-mono font-bold uppercase px-1.5 py-0.5 rounded-[2px] border ${
                         fac.status === 'CRITICAL'
-                          ? 'bg-red-50 dark:bg-red-950/60 text-red-600 dark:text-red-400 border-red-200 dark:border-red-800/60'
+                          ? 'bg-[#C23030]/20 text-[#C23030] border-[#C23030]/40'
                           : fac.status === 'WARNING'
-                          ? 'bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800/60'
-                          : 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800/60'
+                          ? 'bg-[#D9822B]/20 text-[#D9822B] border-[#D9822B]/40'
+                          : 'bg-[#0D8050]/20 text-[#0D8050] border-[#0D8050]/40'
                       }`}
                     >
                       {fac.status}
@@ -311,28 +436,28 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
         </div>
 
         {/* Right Panel: DeepSeek Harness Multi-Agent Telemetry Stream */}
-        <div className="lg:col-span-5 bento-card p-5 flex flex-col justify-between space-y-4">
+        <div className="lg:col-span-5 foundry-card p-5 flex flex-col justify-between space-y-3">
           <div>
-            <div className="flex items-center justify-between pb-3 border-b border-hairline">
+            <div className="flex items-center justify-between pb-2.5 border-b border-[#293742]">
               <div className="flex items-center space-x-2">
-                <Terminal className="w-4 h-4 text-blue-600" />
-                <h2 className="text-sm font-bold text-ink tracking-tight">Agentic Loop Audit Feed</h2>
+                <Terminal className="w-4 h-4 text-[#106BA3]" />
+                <h2 className="text-sm font-semibold text-[#F5F8FA]">Agentic Loop Audit Feed</h2>
               </div>
-              <span className="sovereign-badge bg-blue-600/10 text-blue-600 dark:text-blue-400 border border-blue-600/20 text-[9px]">
+              <span className="foundry-badge bg-[#106BA3]/20 text-[#106BA3] border border-[#106BA3]/40 text-[9px]">
                 CORDIS ENGINE LIVE
               </span>
             </div>
 
             {/* Monospace Execution Trace List */}
-            <div className="mt-3 space-y-2 font-mono text-xs max-h-80 overflow-y-auto pr-1">
+            <div className="mt-2.5 space-y-1.5 font-mono text-xs max-h-80 overflow-y-auto pr-1">
               {agentTraces.map((trace) => (
-                <div key={trace.id} className="p-3 rounded-xl bg-canvas-soft border border-hairline space-y-1.5">
-                  <div className="flex items-center justify-between text-[11px] text-muted">
-                    <span className="text-blue-600 dark:text-blue-400 font-bold">@{trace.agent}</span>
+                <div key={trace.id} className="p-2.5 rounded-[3px] bg-[#111418] border border-[#293742] space-y-1">
+                  <div className="flex items-center justify-between text-[10px] text-[#A7B6C2]">
+                    <span className="text-[#106BA3] font-bold">@{trace.agent}</span>
                     <span>{trace.timestamp}</span>
                   </div>
-                  <p className="text-body font-sans text-xs leading-relaxed">{trace.action}</p>
-                  <div className="flex items-center justify-end space-x-1 text-[10px] text-emerald-600 font-semibold">
+                  <p className="text-[#A7B6C2] font-sans text-xs leading-relaxed">{trace.action}</p>
+                  <div className="flex items-center justify-end space-x-1 text-[10px] text-[#0D8050] font-semibold">
                     <CheckCircle2 className="w-3 h-3" />
                     <span>{trace.status}</span>
                   </div>
@@ -342,7 +467,7 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
           </div>
 
           {/* Bottom Sovereign Verification Footer */}
-          <div className="p-3 rounded-xl bg-blue-600/5 border border-blue-600/20 flex items-center justify-between text-xs text-blue-600 dark:text-blue-400 font-mono">
+          <div className="p-2.5 rounded-[3px] bg-[#106BA3]/10 border border-[#106BA3]/30 flex items-center justify-between text-xs text-[#106BA3] font-mono">
             <span className="flex items-center gap-1.5">
               <ShieldCheck className="w-4 h-4" /> Government KMS Signed Payload
             </span>

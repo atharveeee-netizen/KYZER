@@ -1,106 +1,129 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  /* Institutional Government Enterprise Palette (Light) */
-  --color-canvas: #f8fafc;
-  --color-canvas-soft: #f1f5f9;
-  --color-surface-card: #ffffff;
-  --color-surface-strong: #e2e8f0;
-  --color-hairline: #e2e8f0;
-  --color-hairline-soft: #f1f5f9;
-  --color-hairline-strong: #cbd5e1;
-  --color-ink: #0f172a;
-  --color-body: #475569;
-  --color-body-strong: #0f172a;
-  --color-muted: #64748b;
-  --color-muted-soft: #94a3b8;
+  /* Palantir Foundry & Blueprint.js Light Tokens */
+  --color-foundry-canvas: #f5f8fa;
+  --color-foundry-surface-nav: #ebf1f5;
+  --color-foundry-surface-card: #ffffff;
+  --color-foundry-border: #d8e1e8;
   
-  --color-primary: #1e40af; /* Government Navy */
-  --color-primary-hover: #1d4ed8;
+  --color-foundry-text-primary: #182026;
+  --color-foundry-text-secondary: #5c7080;
+  --color-foundry-text-muted: #8a9ba8;
+  
+  --color-foundry-intent-primary: #106ba3;
+  --color-foundry-intent-success: #0d8050;
+  --color-foundry-intent-warning: #d9822b;
+  --color-foundry-intent-danger: #c23030;
 }
 
 .dark {
-  /* Institutional Government Enterprise Palette (Dark - Slate/Obsidian) */
-  --color-canvas: #0b0f17;
-  --color-canvas-soft: #111827;
-  --color-surface-card: #1e293b;
-  --color-surface-strong: #334155;
-  --color-hairline: #1e293b;
-  --color-hairline-soft: #111827;
-  --color-hairline-strong: #475569;
-  --color-ink: #f8fafc;
-  --color-body: #94a3b8;
-  --color-body-strong: #f8fafc;
-  --color-muted: #64748b;
-  --color-muted-soft: #475569;
+  /* Palantir Foundry & Blueprint.js Dark Andromeda Tokens (Exact Hex Codes) */
+  --color-foundry-canvas: #111418;
+  --color-foundry-surface-nav: #182026;
+  --color-foundry-surface-card: #202b33;
+  --color-foundry-border: #293742;
   
-  --color-primary: #3b82f6;
-  --color-primary-hover: #60a5fa;
+  --color-foundry-text-primary: #f5f8fa;
+  --color-foundry-text-secondary: #a7b6c2;
+  --color-foundry-text-muted: #5c7080;
+  
+  --color-foundry-intent-primary: #106ba3;
+  --color-foundry-intent-success: #0d8050;
+  --color-foundry-intent-warning: #d9822b;
+  --color-foundry-intent-danger: #c23030;
 }
 
 body {
-  background-color: var(--color-canvas);
-  color: var(--color-ink);
-  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background-color: var(--color-foundry-canvas);
+  color: var(--color-foundry-text-primary);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Inter, sans-serif;
   margin: 0;
   padding: 0;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  line-height: 1.5;
+  line-height: 1.45;
 }
 
-/* Institutional Enterprise Card Architecture */
-.gov-card {
-  background-color: var(--color-surface-card);
-  border: 1px solid var(--color-hairline);
-  border-radius: 8px;
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+/* Palantir Foundry Blueprint Card Architecture (Strict 3px Radius) */
+.foundry-card {
+  background-color: var(--color-foundry-surface-card);
+  border: 1px solid var(--color-foundry-border);
+  border-radius: 3px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-.dark .gov-card {
-  background-color: #131b2e;
-  border-color: #1e293b;
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.3);
+.foundry-card:hover {
+  border-color: #394b59;
 }
 
-.gov-card:hover {
-  border-color: var(--color-hairline-strong);
-}
-
-.dark .gov-card:hover {
-  border-color: #334155;
-}
-
-/* Institutional Status Badges */
-.gov-badge {
-  font-family: 'Inter', sans-serif;
-  font-size: 11px;
-  font-weight: 600;
-  padding: 2px 8px;
-  border-radius: 4px;
+/* Palantir Foundry Strict Classification Badges */
+.foundry-badge {
+  font-family: 'JetBrains Mono', Consolas, monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: 2px;
   display: inline-flex;
   align-items: center;
   gap: 4px;
+  line-height: 14px;
 }
 
-/* Custom Minimal Scrollbar */
+/* Palantir Blueprint Buttons */
+.foundry-btn {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 3px;
+  padding: 6px 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: background-color 0.15s ease, transform 0.05s ease;
+}
+
+.foundry-btn:active {
+  transform: translateY(1px);
+}
+
+/* boneyard Shimmer Skeleton Animation */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(90deg, rgba(255,255,255,0.02) 25%, rgba(255,255,255,0.06) 50%, rgba(255,255,255,0.02) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.6s infinite;
+}
+
+/* Minimalist Scrollbar */
 ::-webkit-scrollbar {
   width: 5px;
   height: 5px;
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--color-canvas);
+  background: var(--color-foundry-canvas);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--color-hairline-strong);
-  border-radius: 4px;
+  background: var(--color-foundry-border);
+  border-radius: 2px;
 }
 
 /* Hide MapLibre attribution */
