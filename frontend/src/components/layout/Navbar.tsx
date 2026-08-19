@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ShieldCheck, Search, Moon, Sun, Lock, Building2, Terminal, Activity, Layers, Zap } from 'lucide-react';
+import { ShieldCheck, Search, Moon, Sun, Lock, Building2, Zap } from 'lucide-react';
 import { CommandPalette } from '../ui/CommandPalette';
 
 interface NavbarProps {
@@ -30,95 +30,51 @@ export const Navbar: React.FC<NavbarProps> = ({
 
   return (
     <>
-      <header className="bg-[#182026] border-b border-[#293742] sticky top-0 z-40 px-4 sm:px-6 py-2 transition-colors font-sans text-[#F5F8FA]">
-        <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
+      {/* CLEAN 2-ROW PALANTIR BLUEPRINT HEADER */}
+      <header className="bg-[#182026] border-b border-[#293742] w-full text-[#F5F8FA] sticky top-0 z-40">
+        
+        {/* ROW 1: Branding, Classification, Security Seals & Primary Action */}
+        <div className="px-4 sm:px-6 py-2.5 flex items-center justify-between border-b border-[#293742]/60">
           
-          {/* Left: Palantir Foundry Agency & Classification */}
-          <div className="flex items-center gap-3">
-            <div className="p-1.5 rounded-[3px] bg-[#106BA3]/20 border border-[#106BA3]/40 text-[#106BA3]">
-              <Building2 className="w-4 h-4 text-[#106BA3]" />
+          {/* Left Agency Identity */}
+          <div className="flex items-center space-x-3">
+            <div className="h-6 w-6 rounded-[2px] bg-[#106BA3] flex items-center justify-center font-bold text-xs text-white">
+              C
             </div>
-            
-            <div className="flex flex-col">
-              <div className="flex items-center gap-2">
-                <span className="font-bold tracking-tight text-sm text-[#F5F8FA]">
-                  CareDOM <span className="text-[10px] font-mono text-[#A7B6C2] font-normal">SOVEREIGN OS</span>
-                </span>
-                <span className="foundry-badge bg-[#111418] text-[#A7B6C2] border border-[#293742]">
-                  CONFIDENTIAL // FEDRAMP HIGH
-                </span>
-              </div>
-              <p className="text-[10px] text-[#5C7080] font-mono tracking-tight hidden sm:block">
-                MINISTRY OF HEALTH & FAMILY WELFARE • PUNE SECTOR NODE
-              </p>
+            <div className="flex items-center gap-2">
+              <span className="font-bold text-xs tracking-wider text-[#F5F8FA]">CAREDOM SOVEREIGN OS</span>
+              <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded-[2px] bg-[#202B33] text-[#A7B6C2] border border-[#293742] hidden sm:inline-block">
+                CONFIDENTIAL // FEDRAMP HIGH
+              </span>
             </div>
           </div>
 
-          {/* Center: Palantir Blueprint.js Navigation Tabs */}
-          <nav className="hidden lg:flex items-center bg-[#111418] border border-[#293742] rounded-[3px] p-0.5">
-            {tabs.map((tab) => {
-              const isActive = activeTab === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`px-3 py-1 text-xs font-medium transition-all duration-150 rounded-[2px] flex items-center gap-1.5 ${
-                    isActive
-                      ? 'bg-[#106BA3] text-[#F5F8FA] font-semibold shadow-xs'
-                      : 'text-[#A7B6C2] hover:text-[#F5F8FA] hover:bg-[#202B33]'
-                  }`}
-                >
-                  <span className={`text-[10px] font-mono ${isActive ? 'text-white/80' : 'text-[#5C7080]'}`}>
-                    {tab.code}
-                  </span>
-                  <span>{tab.label}</span>
-                </button>
-              );
-            })}
-          </nav>
-
-          {/* Right: Strix Security Status, Officer Clearance & Actions */}
-          <div className="flex items-center gap-2.5">
+          {/* Right Security Badges & Primary Actions */}
+          <div className="flex items-center space-x-2.5">
             
-            {/* Universal Command Palette Trigger */}
-            <button
-              onClick={() => setIsCommandOpen(true)}
-              className="hidden sm:flex items-center gap-2 px-2.5 py-1 rounded-[3px] bg-[#111418] hover:bg-[#202B33] border border-[#293742] text-[#A7B6C2] hover:text-[#F5F8FA] text-xs transition-colors font-mono"
-            >
-              <Search className="w-3.5 h-3.5" />
-              <span>Search ontology...</span>
-              <kbd className="px-1 py-0.2 bg-[#202B33] border border-[#293742] rounded-[2px] text-[9px] font-mono text-[#5C7080]">
-                ⌘K
-              </kbd>
-            </button>
-
-            {/* Strix Security Seal Badge */}
-            <div className="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-[3px] bg-[#0D8050]/15 border border-[#0D8050]/40 text-[#0D8050] text-[10px] font-mono font-bold">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#0D8050] animate-pulse"></span>
+            {/* Strix Security Badge */}
+            <div className="flex items-center space-x-1.5 px-2 py-0.5 rounded-[2px] bg-[#0D8050]/15 border border-[#0D8050]/40 text-[#0D8050] text-[10px] font-mono font-bold">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#0D8050] animate-pulse" />
               <span>STRIX SECURED</span>
             </div>
 
-            {/* Dark / Light Toggle */}
+            {/* Universal Search Command Bar */}
             <button
-              onClick={onToggleTheme}
-              aria-label="Toggle theme"
-              title={`Switch to ${theme === 'light' ? 'Dark' : 'Light'} Mode`}
-              className="p-1.5 rounded-[3px] bg-[#111418] hover:bg-[#202B33] border border-[#293742] text-[#A7B6C2] hover:text-[#F5F8FA] transition-colors"
+              onClick={() => setIsCommandOpen(true)}
+              className="hidden md:flex items-center gap-2 px-2.5 py-1 bg-[#111418] border border-[#293742] hover:border-[#106BA3] text-[#A7B6C2] hover:text-white rounded-[2px] text-xs font-mono transition"
             >
-              {theme === 'light' ? (
-                <Moon className="w-3.5 h-3.5" />
-              ) : (
-                <Sun className="w-3.5 h-3.5 text-amber-400" />
-              )}
+              <Search className="w-3 h-3 text-[#5C7080]" />
+              <span>Search ontology...</span>
+              <kbd className="text-[9px] text-[#5C7080] bg-[#202B33] px-1 rounded-[2px]">⌘K</kbd>
             </button>
 
-            {/* Cryptographic Simulation Trigger */}
+            {/* Outbreak Simulation Trigger */}
             <button
               onClick={onSimulateOutbreak}
-              className="foundry-btn bg-[#106BA3] hover:bg-[#0E5A8A] text-white text-xs px-3 py-1.5 rounded-[3px] shrink-0"
+              className="foundry-btn bg-[#106BA3] hover:bg-[#0E5A8A] text-white text-xs px-3 py-1 rounded-[2px] transition shrink-0"
             >
               <Zap className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Simulate Outbreak Shock</span>
+              <span className="hidden sm:inline">Simulate Outbreak</span>
               <span className="sm:hidden">Simulate</span>
             </button>
 
@@ -126,26 +82,40 @@ export const Navbar: React.FC<NavbarProps> = ({
 
         </div>
 
-        {/* Mobile Tab Row */}
-        <div className="flex lg:hidden items-center overflow-x-auto gap-1 pt-2 border-t border-[#293742] mt-2 scrollbar-none">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`whitespace-nowrap px-2.5 py-1 rounded-[2px] text-xs font-medium transition-all ${
-                activeTab === tab.id
-                  ? 'bg-[#106BA3] text-white font-semibold'
-                  : 'bg-[#111418] text-[#A7B6C2] border border-[#293742]'
-              }`}
-            >
-              <span className="text-[10px] font-mono mr-1 opacity-70">{tab.code}</span>
-              {tab.label}
-            </button>
-          ))}
+        {/* ROW 2: Navigation Tabs & Sector Node Indicator */}
+        <div className="px-4 sm:px-6 py-1.5 flex items-center justify-between bg-[#111418]/60 overflow-x-auto">
+          
+          <nav className="flex items-center space-x-1 font-mono text-xs">
+            {tabs.map((tab) => {
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`px-3 py-1 rounded-[2px] transition text-xs whitespace-nowrap ${
+                    isActive
+                      ? 'bg-[#106BA3] text-white font-bold shadow-xs'
+                      : 'text-[#A7B6C2] hover:bg-[#202B33] hover:text-white'
+                  }`}
+                >
+                  <span className="opacity-60 mr-1">{tab.code}</span>
+                  <span>{tab.label}</span>
+                </button>
+              );
+            })}
+          </nav>
+
+          <div className="hidden lg:flex items-center gap-2 text-[10px] font-mono text-[#5C7080]">
+            <span>NODE: PUNE SECTOR [18 PHC]</span>
+            <span>•</span>
+            <span className="text-[#0D8050]">100% TELEMETRY ACTIVE</span>
+          </div>
+
         </div>
+
       </header>
 
-      {/* Global Universal Command Palette Modal */}
+      {/* Universal Command Palette Modal */}
       <CommandPalette
         isOpen={isCommandOpen}
         onClose={() => setIsCommandOpen(false)}

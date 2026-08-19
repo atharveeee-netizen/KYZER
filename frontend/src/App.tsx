@@ -24,16 +24,11 @@ export const App: React.FC = () => {
   const [selectedFacility, setSelectedFacility] = useState<HealthFacility | null>(BRICS_FACILITIES[0]);
   const [alerts, setAlerts] = useState<SystemAlert[]>(MOCK_ALERTS);
   const [ocrItems, setOcrItems] = useState<OcrExtractedItem[]>(MOCK_OCR_ITEMS);
-  const [theme, setTheme] = useState<'light' | 'dark'>('light');
+  const [theme, setTheme] = useState<'light' | 'dark'>('dark');
 
-  // Load theme preference and apply to document element
+  // Ensure dark mode is always set by default for Palantir Foundry
   useEffect(() => {
-    const saved = localStorage.getItem('caredom_theme') as 'light' | 'dark' | null;
-    if (saved) {
-      setTheme(saved);
-      if (saved === 'dark') document.documentElement.classList.add('dark');
-      else document.documentElement.classList.remove('dark');
-    }
+    document.documentElement.classList.add('dark');
   }, []);
 
   // Fetch live facilities and alerts from Service A on mount
@@ -120,9 +115,9 @@ export const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-canvas text-ink flex flex-col font-sans transition-colors duration-200">
+    <div className="min-h-screen bg-[#111418] text-[#F5F8FA] flex flex-col font-sans antialiased">
       
-      {/* Top Navigation with Dark Theme Toggle */}
+      {/* Clean 2-Row Top Navigation Bar */}
       <Navbar
         activeTab={activeTab}
         setActiveTab={setActiveTab}
@@ -131,8 +126,8 @@ export const App: React.FC = () => {
         onToggleTheme={handleToggleTheme}
       />
 
-      {/* Main Tab Content Area */}
-      <main className="flex-1">
+      {/* Main Content Area with Seamless Dark Canvas */}
+      <main className="flex-1 bg-[#111418] text-[#F5F8FA]">
         {activeTab === 'dashboard' && (
           <DashboardTab
             facilities={facilities}
