@@ -1,5 +1,5 @@
-import React from 'react';
-import { ShieldAlert, Bed, TrendingUp, ArrowRight, Zap, MapPin, Radio, Cpu, HardDrive } from 'lucide-react';
+import React, { useState } from 'react';
+import { ShieldAlert, Bed, TrendingUp, ArrowRight, Zap, MapPin, Radio, Cpu, CheckCircle2, ChevronRight, Eye, RefreshCw } from 'lucide-react';
 import { HealthFacility, SystemAlert } from '../../types';
 
 interface DashboardTabProps {
@@ -15,11 +15,61 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
   onNavigateTab,
   onSimulateOutbreak,
 }) => {
+  const [selectedAgentTrace, setSelectedAgentTrace] = useState<string | null>(null);
+
   const criticalCount = facilities.filter(f => f.risk_tier === 'P0_CRITICAL').length;
   const warningCount = facilities.filter(f => f.risk_tier === 'P1_WARNING').length;
   const totalBeds = facilities.reduce((sum, f) => sum + f.total_beds, 0);
   const occupiedBeds = facilities.reduce((sum, f) => sum + f.occupied_beds, 0);
   const bedOccupancyPct = totalBeds > 0 ? Math.round((occupiedBeds / totalBeds) * 100) : 0;
+
+  const agentNodes = [
+    {
+      id: 'forecaster',
+      name: 'ForecasterAgent',
+      role: 'Tweedie P10/P50/P90 Quantiles',
+      latency: '34.2ms',
+      status: 'CONVERGED',
+      kanji: '予測',
+      output: 'Forecasted 7-day demand spike: +142% at PHC Shirur (WAPE: 17.48%).'
+    },
+    {
+      id: 'detector',
+      name: 'DetectorAgent',
+      role: 'Isolation Forest & Cascade Risk',
+      latency: '18.1ms',
+      status: 'TRIGGERED',
+      kanji: '検知',
+      output: 'P0 Critical anomaly detected. Stock buffer projected <= 1.2 days.'
+    },
+    {
+      id: 'allocator',
+      name: 'AllocatorAgent',
+      role: 'QUBO/SA + OSRM Road Router',
+      latency: '12.7ms',
+      status: 'SOLVED',
+      kanji: '最適化',
+      output: 'Synthesized lateral redistribution: 450 units from Donor (13.5km shorter).'
+    },
+    {
+      id: 'explainer',
+      name: 'ExplainerAgent',
+      role: 'TreeSHAP Feature Attributions',
+      latency: '22.4ms',
+      status: 'EXPLAINED',
+      kanji: '説明',
+      output: 'Top drivers: rainfall_lag_3d (+34.2%), bed_occupancy (+28.1%).'
+    },
+    {
+      id: 'supervisor',
+      name: 'SupervisorAgent',
+      role: 'Clinical Safety Consensus Gate',
+      latency: '8.3ms',
+      status: 'APPROVED',
+      kanji: '監査',
+      output: 'CONSENSUS REACHED: Donor remaining buffer = 2.1x (>= 1.9x threshold).'
+    },
+  ];
 
   return (
     <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-6 font-mono">
@@ -34,17 +84,17 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 px-2">
           <div>
             <div className="flex items-center gap-2">
-              <span className="te-tape bg-black text-white px-2 py-0.5 text-[11px]">
+              <span className="te-tape bg-black text-white px-2 py-0.5 text-[10px] sm:text-[11px]">
                 SYS.01 // EXECUTIVE
               </span>
               <span className="text-[10px] text-muted tracking-widest uppercase">
-                DISTRICT HEALTH TELEMETRY DECK
+                自律統括 // DISTRICT HEALTH TELEMETRY DECK
               </span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-ink mt-1.5 uppercase">
               CAREDOM MISSION CONTROL
             </h1>
-            <p className="text-xs text-body max-w-2xl mt-1 leading-relaxed">
+            <p className="text-xs text-body max-w-2xl mt-1 leading-relaxed font-sans">
               Autonomous multi-agent supply chain co-pilot monitoring 18 Primary Health Centres. 
               Real-time LightGBM Tweedie inference coupled with IBM Quantum QAOA redistribution.
             </p>
@@ -106,7 +156,7 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
           </div>
           <div className="mt-2 text-[10px] text-body flex items-center justify-between">
             <span className="text-muted">BUFFER &le; 48H</span>
-            <span className="font-bold text-red-600">{criticalCount} FACILITY IN BREACH</span>
+            <span className="font-bold text-red-600">{criticalCount} IN BREACH</span>
           </div>
         </div>
 
@@ -152,7 +202,80 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
 
       </div>
 
-      {/* Two Column Grid: Hardware Alert Feed + Physical Routing Switches */}
+      {/* NEW: Multi-Agent Worker-Critic Collaborative Blackboard Inspector (DeepSeek Harness + Agentic Design Patterns) */}
+      <div className="te-card bg-surface-card p-5 relative">
+        <div className="flex items-center justify-between mb-4 border-b-2 border-hairline pb-3">
+          <div className="flex items-center gap-2">
+            <Cpu className="w-4 h-4 text-[#FF5500]" />
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="te-tape bg-yellow-400 text-black text-[9px] px-1.5 py-0.5">
+                  MULTI-AGENT ORCHESTRATOR
+                </span>
+                <h2 className="text-xs sm:text-sm font-bold uppercase text-ink">
+                  COLLABORATIVE BLACKBOARD CONSENSUS TRACE
+                </h2>
+              </div>
+              <p className="text-[10px] text-muted">
+                5-Agent Worker-Critic Graph with Clinical Safety Gate (Agentic Design Patterns standard)
+              </p>
+            </div>
+          </div>
+          <span className="te-lcd text-[9px] px-2 py-0.5 font-bold hidden sm:inline">
+            BLACKBOARD // ACTIVE
+          </span>
+        </div>
+
+        {/* 5-Agent Interactive Step Sequencer */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5">
+          {agentNodes.map((agent, idx) => {
+            const isSelected = selectedAgentTrace === agent.id;
+            return (
+              <div
+                key={agent.id}
+                onClick={() => setSelectedAgentTrace(isSelected ? null : agent.id)}
+                className={`p-3 border-2 cursor-pointer transition-all ${
+                  isSelected
+                    ? 'border-[#FF5500] bg-orange-50/30 dark:bg-orange-950/20 shadow-[2px_2px_0px_#FF5500]'
+                    : 'border-[#111111] dark:border-[#4d535a] bg-canvas-soft hover:bg-surface-strong shadow-[1.5px_1.5px_0px_#000]'
+                }`}
+              >
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-[9px] font-mono font-bold text-muted uppercase">
+                    0{idx + 1} // {agent.kanji}
+                  </span>
+                  <span className="te-tape text-[8px] bg-black text-white px-1">
+                    {agent.status}
+                  </span>
+                </div>
+                <div className="font-bold text-xs text-ink truncate">{agent.name}</div>
+                <div className="text-[10px] text-muted truncate mt-0.5">{agent.role}</div>
+                <div className="mt-2 pt-1.5 border-t border-hairline flex items-center justify-between text-[9px] font-mono">
+                  <span className="text-[#00ff66] bg-[#0a110d] px-1 py-0.5">{agent.latency}</span>
+                  <span className="text-zinc-500 hover:text-ink flex items-center gap-0.5">
+                    <Eye className="w-3 h-3" /> TRACE
+                  </span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Selected Agent Live Payload Inspector */}
+        {selectedAgentTrace && (
+          <div className="mt-3 p-3.5 bg-[#0a110d] border-2 border-[#1a2e20] text-[#00ff66] rounded-xs text-xs font-mono leading-relaxed space-y-1 animate-fadeIn">
+            <div className="flex justify-between border-b border-[#1a2e20] pb-1 font-bold text-[#00ff66]">
+              <span>&gt; AGENT PAYLOAD TRACE: {agentNodes.find(a => a.id === selectedAgentTrace)?.name}</span>
+              <span>STATE: SYNCHRONIZED</span>
+            </div>
+            <p className="text-[11px] text-[#00ff66]/90 pt-1">
+              {agentNodes.find(a => a.id === selectedAgentTrace)?.output}
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* Two Column Grid: Live Alert Stream + Quick Navigation Cards */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         
         {/* Left Column: Live Hardware Alert Telemetry Feed (7 Cols) */}
@@ -175,7 +298,7 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
           </div>
 
           <div className="space-y-3">
-            {alerts.slice(0, 3).map((alert, idx) => (
+            {alerts.slice(0, 3).map((alert) => (
               <div
                 key={alert.id}
                 className="p-3 bg-canvas-soft border-1.5 border-[#111111] dark:border-[#4d535a] text-xs space-y-1.5 shadow-[1.5px_1.5px_0px_#000]"
