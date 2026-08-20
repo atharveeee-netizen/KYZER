@@ -176,3 +176,22 @@ BEGIN
     RETURN;
 END;
 $$ LANGUAGE plpgsql;
+
+-- 7. Per-Item Consumption Baseline (days-to-stockout denominator)
+-- days_to_stockout = current_stock / avg_daily_consumption needs a stored
+-- average, not a live AVG() over inventory_ledger: Service A has no
+-- consumption ledger yet (only RESERVE rows), and computing this from raw
+-- history every request would be wasted work for a number that only needs
+-- to move when new consumption history lands. One row per (facility, item)
+-- holding a precomputed rolling average, refreshed whenever a new window is
+-- computed — currently by the seeder (see seed_data.py), eventually by
+-- real OCR-derived consumption once that pipeline exists.
+CREATE TABLE IF NOT EXISTS facility_item_consumption (
+    facility_id VARCHAR(50) REFERENCES facilities(facility_id),
+    item_code VARCHAR(50) REFERENCES item_masters(item_code),
+    avg_daily_consumption NUMERIC NOT NULL,
+    sample_window_days INT NOT NULL,       -- how many trailing days avg_daily_consumption was averaged over
+    window_end_date DATE NOT NULL,         -- last date included in that window (NOT necessarily "today" — see seed_data.py)
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    PRIMARY KEY (facility_id, item_code)
+);

@@ -15,10 +15,21 @@ real in each:
     `ai_engine/data/seed_generator.py`, not guessed).
 
 - `ai_engine/data/brics_consumption_history_seed.csv`
-    365 days x 18 facilities x 7 items of real consumption/stock history.
-    We take the most recent `stock_remaining` per (facility, item) as the
-    starting `quantity_available` for that pair — a real number from the
-    seed data, not fabricated.
+    365 days x 18 facilities x 7 items of real consumption/stock history,
+    covering 2018-10-09 through 2019-10-08 (a decade-old historical sample,
+    not recent data). Two things are derived from it in one pass:
+      1. The most recent `stock_remaining` per (facility, item) as the
+         starting `quantity_available` for that pair — a real number from
+         the seed data, not fabricated.
+      2. `facility_item_consumption.avg_daily_consumption`: the mean of the
+         `consumption` column over the FINAL `CONSUMPTION_WINDOW_DAYS` DATES
+         PRESENT IN THIS FILE, per (facility, item). That is the last 30
+         days of the file's historical window — ending 2019-10-08 — NOT the
+         last 30 days from today or from SEED_DATE. It is a derived
+         statistic over old sample data, never a live/current measurement.
+         `window_end_date` is stored alongside it in the table for exactly
+         this reason: so that distinction is legible from psql without
+         reading this file.
 
 - `ai_engine/data/cached_registers/PHC-PUN-002.json`
     A real OCR-digitized register snapshot: exact batch numbers, expiry
@@ -75,6 +86,11 @@ CONSUMPTION_CSV = DATA_DIR / "brics_consumption_history_seed.csv"
 CACHED_REGISTERS_DIR = DATA_DIR / "cached_registers"
 
 SEED_DATE = date(2026, 8, 18)  # matches the cached register's date_of_record
+
+# Trailing window (in distinct dates present in the CSV, not calendar days
+# from today) used for facility_item_consumption.avg_daily_consumption. A
+# module constant so routes/docs can cite it instead of repeating a bare 30.
+CONSUMPTION_WINDOW_DAYS = 30
 
 # Synthetic expiry offsets from SEED_DATE, keyed by how many sub-batches a
 # facility/item pair is split into (see _split_batches). Index 0 is the
@@ -150,19 +166,47 @@ def _load_facilities() -> list[dict]:
         return json.load(f)
 
 
-def _latest_stock_by_facility_item(facility_ids: set[str]) -> dict[tuple[str, str], int]:
-    """Most recent stock_remaining per (facility_id, item_code), from the real CSV."""
-    latest: dict[tuple[str, str], tuple[str, int]] = {}
+def _load_consumption_history(facility_ids: set[str]) -> dict[tuple[str, str], list[tuple[str, float, int]]]:
+    """Single pass over the consumption CSV, grouping (date, consumption,
+    stock_remaining) rows by (facility_id, item_code). Both
+    _latest_stock_by_facility_item and _consumption_baseline derive from
+    this one read rather than each re-parsing the 45,990-row file."""
+    history: dict[tuple[str, str], list[tuple[str, float, int]]] = {}
     with open(CONSUMPTION_CSV, encoding="utf-8") as f:
         for row in csv.DictReader(f):
             fac, item = row["facility_id"], row["item_code"]
             if fac not in facility_ids:
                 continue
             key = (fac, item)
-            row_date = row["date"]
-            if key not in latest or row_date > latest[key][0]:
-                latest[key] = (row_date, int(float(row["stock_remaining"])))
-    return {key: qty for key, (_, qty) in latest.items()}
+            history.setdefault(key, []).append(
+                (row["date"], float(row["consumption"]), int(float(row["stock_remaining"])))
+            )
+    return history
+
+
+def _latest_stock_by_facility_item(
+    history: dict[tuple[str, str], list[tuple[str, float, int]]]
+) -> dict[tuple[str, str], int]:
+    """Most recent stock_remaining per (facility_id, item_code), from the real CSV."""
+    return {key: max(rows, key=lambda r: r[0])[2] for key, rows in history.items()}
+
+
+def _consumption_baseline(
+    history: dict[tuple[str, str], list[tuple[str, float, int]]]
+) -> list[tuple[str, str, float, int, date]]:
+    """Mean daily consumption over the trailing CONSUMPTION_WINDOW_DAYS dates
+    actually present in the CSV, per (facility_id, item_code). The window is
+    sliced off the sorted dates in the data, not a hardcoded date range —
+    see the module docstring for why this is "last 30 days of the file",
+    not "last 30 days from today". Returns
+    (facility_id, item_code, avg_daily_consumption, sample_window_days, window_end_date)."""
+    rows = []
+    for (fac, item), records in history.items():
+        window = sorted(records, key=lambda r: r[0])[-CONSUMPTION_WINDOW_DAYS:]
+        avg = sum(consumption for _, consumption, _ in window) / len(window)
+        window_end_date = date.fromisoformat(window[-1][0])  # CSV dates are strings; column is DATE
+        rows.append((fac, item, avg, len(window), window_end_date))
+    return rows
 
 
 def _load_cached_registers(valid_facility_ids: set[str]) -> dict[str, dict]:
@@ -214,11 +258,11 @@ async def seed_facilities(conn: asyncpg.Connection, facilities: list[dict]) -> N
 
 
 async def seed_inventory_batches(
-    conn: asyncpg.Connection, facilities: list[dict], registers: dict[str, dict]
+    conn: asyncpg.Connection,
+    facilities: list[dict],
+    registers: dict[str, dict],
+    latest_stock: dict[tuple[str, str], int],
 ) -> None:
-    facility_ids = {f["facility_id"] for f in facilities}
-    latest_stock = _latest_stock_by_facility_item(facility_ids)
-
     rows = []
     legacy_batch_numbers = []  # one-time cleanup of the pre-split naming, see module docstring
     covered: set[tuple[str, str]] = set()
@@ -325,19 +369,48 @@ async def seed_beds_and_staff(
     print(f"  facility_beds: {len(bed_rows)} rows, staff_attendance: {len(staff_rows)} rows")
 
 
+async def seed_consumption_baseline(
+    conn: asyncpg.Connection, rows: list[tuple[str, str, float, int, str]]
+) -> None:
+    await conn.executemany(
+        """
+        INSERT INTO facility_item_consumption
+            (facility_id, item_code, avg_daily_consumption, sample_window_days, window_end_date, updated_at)
+        VALUES ($1, $2, $3, $4, $5, NOW())
+        ON CONFLICT (facility_id, item_code) DO UPDATE SET
+            avg_daily_consumption = EXCLUDED.avg_daily_consumption,
+            sample_window_days = EXCLUDED.sample_window_days,
+            window_end_date = EXCLUDED.window_end_date,
+            updated_at = NOW()
+        """,
+        rows,
+    )
+    # DO UPDATE here, unlike the DO NOTHING batch inserts above: those guard
+    # inventory_batches, which real OCR ingest also writes to, so reseeding
+    # must never clobber a live row. facility_item_consumption has no other
+    # writer yet (see schema.sql) — it's a derived statistic recomputed
+    # wholesale from the same CSV each run, so overwriting on conflict is
+    # correct, not destructive.
+    print(f"  facility_item_consumption: {len(rows)} (facility, item) pairs")
+
+
 async def run_seed(conn: asyncpg.Connection) -> None:
     facilities = _load_facilities()
     facility_ids = {f["facility_id"] for f in facilities}
     registers = _load_cached_registers(facility_ids)
+    history = _load_consumption_history(facility_ids)
+    latest_stock = _latest_stock_by_facility_item(history)
 
     print("Seeding item_masters...")
     await seed_item_masters(conn)
     print("Seeding facilities...")
     await seed_facilities(conn, facilities)
     print("Seeding inventory_batches...")
-    await seed_inventory_batches(conn, facilities, registers)
+    await seed_inventory_batches(conn, facilities, registers, latest_stock)
     print("Seeding facility_beds + staff_attendance...")
     await seed_beds_and_staff(conn, facilities, registers)
+    print("Seeding facility_item_consumption...")
+    await seed_consumption_baseline(conn, _consumption_baseline(history))
     print("Done.")
 
 
