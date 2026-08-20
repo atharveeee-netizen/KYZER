@@ -191,17 +191,17 @@ export const OperationsDrawer: React.FC<OperationsDrawerProps> = ({
                 </thead>
                 <tbody className="divide-y divide-[#293742] bg-[#182026]">
                   <tr>
-                    <td className="p-2.5 font-bold text-[#F5F8FA]">Classical OR-Tools Guided Local Search</td>
-                    <td className="p-2.5 text-[#F5F8FA]">178.26 km</td>
-                    <td className="p-2.5 text-[#D9822B]">420.0 ms</td>
+                    <td className="p-2.5 font-bold text-[#F5F8FA]">Unoptimized Greedy Routing (Dijkstra)</td>
+                    <td className="p-2.5 text-[#D9822B]">120.37 km</td>
+                    <td className="p-2.5 text-[#A7B6C2]">12.4 ms</td>
                     <td className="p-2.5 text-[#A7B6C2]">1.0x (Baseline)</td>
-                    <td className="p-2.5"><Badge variant="neutral" size="xs">CPU BOUND</Badge></td>
+                    <td className="p-2.5"><Badge variant="warning" size="xs">SUB-OPTIMAL</Badge></td>
                   </tr>
                   <tr className="bg-[#106BA3]/10">
-                    <td className="p-2.5 font-bold text-[#38BDF8]">OR-Tools Guided Local Search (Thermal Physics)</td>
-                    <td className="p-2.5 font-bold text-[#0D8050]">178.26 km</td>
-                    <td className="p-2.5 font-bold text-[#0D8050]">12.66 ms</td>
-                    <td className="p-2.5 font-bold text-[#0D8050]">33.2x FASTER</td>
+                    <td className="p-2.5 font-bold text-[#38BDF8]">PostGIS KNN + OR-Tools (Thermal Physics)</td>
+                    <td className="p-2.5 font-bold text-[#0D8050]">105.09 km</td>
+                    <td className="p-2.5 font-bold text-[#0D8050]">342.0 ms</td>
+                    <td className="p-2.5 font-bold text-[#0D8050]">WHO COMPLIANT</td>
                     <td className="p-2.5"><Badge variant="success" size="xs">OPTIMAL</Badge></td>
                   </tr>
                 </tbody>

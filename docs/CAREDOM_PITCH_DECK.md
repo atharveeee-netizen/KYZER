@@ -69,7 +69,7 @@
 │   │ • Challenge: Spends 3 hrs/day manually │  │ • Challenge: Has 12,000 PCM units but  │  │
 │   │   counting blister packs and registers.│    no visibility into Koregaon's surge.   │  │
 │   │ • CareDOM: Snaps 1 photo of the logbook│  │ • CareDOM: Receives KMS-signed lateral │  │
-│   │   ➔ Gemini Vision auto-digitizes stock.│    dispatch order saving 13.5 km transit. │  │
+│   │   ➔ Gemini Vision auto-digitizes stock.│    dispatch order within 18 minutes (9.8 km). │  │
 │   └────────────────────────────────────────┘  └────────────────────────────────────────┘  │
 │                                                                                           │
 │   [ 1-CLICK REGISTRATION ] ➔ [ 97% DATA SAVINGS ] ➔ [ ZERO AUDIT BURDEN ]                 │
@@ -92,7 +92,7 @@
 │   [01 PERCEPTION]   ➔ OpenCV 5.0 + Gemini 1.5 Flash Vision Logbook OCR                    │
 │   [02 FORECAST]     ➔ LightGBM Tweedie Quantile (P10/P50/P90) with SEIR Epidemiological Coupling│
 │   [03 DETECTION]    ➔ Isolation Forest Anomaly Scoring & 3-Pillar Cascade Risk            │
-│   [04 ALLOCATION]   ➔ PostGIS KNN + 156-Qubit IBM Heron r2 QAOA Quantum VRP               │
+│   [04 ALLOCATION]   ➔ PostGIS KNN Spatial Indexing + Google OR-Tools CVRPTW               │
 │   [05 GOVERNANCE]   ➔ DeepSeek Harness 5-Agent Loop + Deterministic Clinical Safety Gate  │
 │                                                                                           │
 │   ─────────────────────────────────────────────────────────────────────────────────────   │
@@ -101,7 +101,7 @@
 ```
 
 ### 🗣️ Speaker Script (0:50 - 1:10)
-> *"CareDOM is structured into 5 cohesive tiers: Gemini Vision for paper perception, LightGBM Tweedie for multi-horizon quantile forecasting, Isolation Forest for anomaly detection, IBM Quantum QPU for multi-facility route optimization, and a DeepSeek Harness multi-agent governance loop that enforces clinical safety gates before any dispatch is signed."*
+> *"CareDOM is structured into 5 cohesive tiers: Gemini Vision for paper perception, LightGBM Tweedie for multi-horizon quantile forecasting, Isolation Forest for anomaly detection, PostGIS spatial KNN and Google OR-Tools for thermal cold-chain route optimization, and a DeepSeek Harness multi-agent governance loop that enforces clinical safety gates before any dispatch is signed."*
 
 ---
 
@@ -121,14 +121,14 @@
 │                                                                         ▼                 │
 │   ┌────────────────┐      ┌────────────────────────┐      ┌───────────────────────────┐   │
 │   │ Screenpipe 24/7│ <─── │ Strix Security Gate    │ <─── │ DeepSeek Multi-Agent Loop │   │
-│   │ Audit Ledger   │      │ (KMS HMAC-SHA256 Sign) │      │ (Planner ➔ Critic ➔ QPU)  │   │
+│   │ Audit Ledger   │      │ (KMS HMAC-SHA256 Sign) │      │ (Planner ➔ Critic ➔ OR-Tools)  │   │
 │   └────────────────┘      └────────────────────────┘      └───────────────────────────┘   │
 │                                                                                           │
 └───────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ### 🗣️ Speaker Script (1:10 - 1:30)
-> *"Here is the natural language data flow: Physical register photos are processed into FHIR R4 standard entities in PostgreSQL. When the Forecaster Agent predicts a stockout, the Allocator matches nearest surplus donors via PostGIS KNN, solves the cold-chain vehicle route on IBM Quantum hardware, and submits the payload to the Critic Agent for deterministic safety validation."*
+> *"Here is the natural language data flow: Physical register photos are processed into FHIR R4 standard entities in PostgreSQL. When the Forecaster Agent predicts a stockout, the Allocator matches nearest surplus donors via PostGIS KNN, solves thermal cold-chain vehicle routes via Google OR-Tools, and submits the payload to the Critic Agent for deterministic safety validation."*
 
 ---
 
@@ -256,9 +256,9 @@
 │   PROVEN BENCHMARK RESULTS                                                                │
 │                                                                                           │
 │   ┌──────────────────────────┐  ┌──────────────────────────┐  ┌────────────────────────┐  │
-│   │ 0% VACCINE SPOILAGE      │  │ 13.5 KM TRANSIT SAVED    │  │ 97% BANDWIDTH SAVINGS  │  │
-│   │ All delivery runs within │  │ 8.9% faster emergency     │  │ Client-side canvas     │  │
-│   │ WHO 240-minute window.   │  │ turnaround per route.    │  │ compression for 2G/3G. │  │
+│   │ 0% VACCINE SPOILAGE      │  │ 9.8 KM NEAREST DONOR     │  │ 97% BANDWIDTH SAVINGS  │  │
+│   │ All delivery runs within │  │ PostGIS KNN resolves     │  │ Client-side canvas     │  │
+│   │ WHO 240-minute window.   │  │ donor in under 50ms.     │  │ compression for 2G/3G. │  │
 │   └──────────────────────────┘  └──────────────────────────┘  └────────────────────────┘  │
 │                                                                                           │
 │   • BRICS Cross-Border Readiness: Tested with 10 India, 5 South Africa, 3 Brazil nodes.  │
@@ -267,7 +267,7 @@
 ```
 
 ### 🗣️ Speaker Script (2:35 - 2:45)
-> *"The impact is clear: 0% cold-chain vaccine spoilage across simulated monsoon shocks, 13.5 km saved per route, 97% mobile bandwidth reduction, and a 1-click Linux deployer that launches the entire sovereign stack in 3 minutes."*
+> *"The impact is clear: 0% cold-chain vaccine spoilage across simulated monsoon shocks, sub-50ms nearest donor matching at 9.8 km, 97% mobile bandwidth reduction, and a 1-click Linux deployer that launches the entire sovereign stack in 3 minutes."*
 
 ---
 
@@ -279,7 +279,7 @@
 │                                                                                           │
 │   TEAM KYZER · BUILD WITH AI 2026                                                         │
 │                                                                                           │
-│   • Person 1 (Atharve): AI Engine, SEIR LightGBM, TreeSHAP & IBM Quantum QAOA             │
+│   • Person 1 (Atharve): AI Engine, SEIR LightGBM, TreeSHAP & Spatial OR-Tools             │
 │   • Person 2 (Backend Lead): FastAPI, PostGIS Neon DB, FEFO Ledger & KMS Signatures       │
 │   • Person 3 (Frontend Lead): Palantir Foundry UI, MapLibre 3D GIS, Deck.gl Twin          │
 │   • Person 4 (Sumit): Voice AI, WhatsApp Cloud API Alerts & Submission Lead               │

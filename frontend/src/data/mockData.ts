@@ -294,7 +294,7 @@ export const MOCK_ROUTING_RESULT: RoutingResult = {
  total_distance_km: 79.69,
  total_time_min: 138.4,
  cold_chain_compliant: true,
- runtime_ms: 12.66,
+ runtime_ms: 342.0,
  quantum_mode: 'POSTGIS_KNN_ORTOOLS',
  google_maps_url: 'https://www.google.com/maps/dir/?api=1&origin=18.5612,73.8073&destination=18.5612,73.8073&waypoints=18.8475,73.9167|18.8263,74.3789|19.0142,73.7845&travelmode=driving',
  whatsapp_nav_share_url: 'https://api.whatsapp.com/send?text=%F0%9F%9A%9A%20%2ACareDOM%20Emergency%20Medicine%20Dispatch%2A%0A%F0%9F%93%8D%20Route%3A%20Depot%20%E2%9E%94%20Khed%20%E2%9E%94%20Shirur%20%E2%9E%94%20Ambegaon%0A%E2%9A%A1%20Total%20Distance%3A%2079.69%20km%0A%F0%9F%94%97%20Start%20GPS%20Navigation%3A%20https%3A//www.google.com/maps/dir/%3Fapi%3D1%26origin%3D18.5612%2C73.8073%26destination%3D18.5612%2C73.8073%26waypoints%3D18.8475%2C73.9167%7C18.8263%2C74.3789%7C19.0142%2C73.7845%26travelmode%3Ddriving',
@@ -359,16 +359,16 @@ export const MOCK_AGENT_TIMELINE: AgentTimelineStep[] = [
  elapsed_ms: 42.1,
  status: 'COMPLETED'
  },
- {
- id: 'step-3',
- agent_name: 'AllocatorAgent',
- pill_type: 'read',
- pill_label: 'Reading',
- action_summary: 'Formulates QUBO Hamiltonian and dispatches to IBM Quantum QAOA circuit simulator.',
- telemetry_code: 'QAOA.solve(nodes=4, qubits=16, depth=2) -> Energy: -47.30, Tour: [0, 2, 1, 0], Dist: 79.69km',
- elapsed_ms: 12.66,
- status: 'COMPLETED'
- },
+  {
+    id: 'step-3',
+    agent_name: 'AllocatorAgent',
+    pill_type: 'read',
+    pill_label: 'Reading',
+    action_summary: 'Executes PostGIS Spatial KNN query and solves multi-stop CVRPTW with OR-Tools.',
+    telemetry_code: 'PostGIS.knn(origin="PHC-PUN-002", k=3) -> Donor: PHC-PUN-004 (9.8km), ORTools.solve() -> Tour: 105.1km',
+    elapsed_ms: 42.0,
+    status: 'COMPLETED'
+  },
  {
  id: 'step-4',
  agent_name: 'SupervisorAgent',
