@@ -14,12 +14,15 @@ import json
 import logging
 import asyncio
 from typing import Dict, Any, List, Optional
+import pandas as pd
+import numpy as np
 from fastapi import APIRouter, HTTPException, UploadFile, File, Query
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
 from ai_engine.engine import CareDOMEngine
 from ai_engine.config import settings
+from ai_engine.explainer.shap_explainer import HealthSHAPExplainer
 
 logger = logging.getLogger("backend.routes.ai")
 
@@ -131,16 +134,58 @@ async def plan_autonomous_9_clinic_route(payload: RoutePlanRequest):
 async def get_forecast(facility_id: str, item_code: str = "MED-PCM-500"):
     """Returns 7-day quantile prediction (P10/P50/P90) + TreeSHAP feature drivers."""
     engine = get_engine()
-    forecast_df = engine.forecaster.predict_multi_horizon(
+    forecast_res = engine.forecaster.predict_multi_horizon(
         facility_id=facility_id,
         item_code=item_code,
         horizon_days=7
     )
+    
+    # Format daily_forecast for Frontend Recharts
+    daily_forecast = []
+    if hasattr(forecast_res, "p50_median_expected"):
+        for idx in range(len(forecast_res.p50_median_expected)):
+            d_label = forecast_res.forecast_dates[idx] if idx < len(forecast_res.forecast_dates) else f"Day {idx+1}"
+            daily_forecast.append({
+                "day": d_label,
+                "p10": forecast_res.p10_lower_bound[idx] if idx < len(forecast_res.p10_lower_bound) else 0.0,
+                "p50": forecast_res.p50_median_expected[idx],
+                "p90": forecast_res.p90_upper_stress[idx] if idx < len(forecast_res.p90_upper_stress) else 0.0,
+            })
+
+    # Compute TreeSHAP drivers
+    shap_drivers = []
+    try:
+        if hasattr(forecast_res, "latest_feature_vector") and forecast_res.latest_feature_vector:
+            fv_df = pd.DataFrame([forecast_res.latest_feature_vector])
+            base_model = engine.forecaster.models.get(0.50)
+            if base_model is not None:
+                shap_report = HealthSHAPExplainer.explain_with_model(
+                    model=base_model,
+                    feature_names=engine.forecaster.feature_names,
+                    feature_vector=fv_df,
+                    facility_id=facility_id,
+                    item_code=item_code,
+                    base_value=float(np.mean(forecast_res.p50_median_expected)),
+                    predicted_value=float(forecast_res.p50_median_expected[0]) if forecast_res.p50_median_expected else 45.0
+                )
+                for factor in shap_report.top_contributing_factors[:5]:
+                    shap_drivers.append({
+                        "feature_name": factor.feature_name,
+                        "shap_value": factor.shap_value,
+                        "readable_desc": f"{factor.feature_name.replace('_', ' ').title()} ({factor.relative_importance_pct}% impact)",
+                        "direction": "UP" if factor.shap_value > 0 else "DOWN"
+                    })
+    except Exception as e:
+        logger.warning(f"SHAP driver computation notice: {e}")
+
     return {
         "facility_id": facility_id,
         "item_code": item_code,
         "wape_accuracy": "17.48%",
-        "daily_forecast": forecast_df.to_dict(orient="records") if hasattr(forecast_df, "to_dict") else []
+        "daily_forecast": daily_forecast,
+        "shap_drivers": shap_drivers,
+        "stockout_risk_level": getattr(forecast_res, "stockout_risk_level", "LOW"),
+        "total_expected_demand": getattr(forecast_res, "total_expected_demand", 0.0)
     }
 
 @ai_router.post("/ocr/upload", tags=["Perception & OCR"])
@@ -167,9 +212,61 @@ async def upload_register_photo(file: UploadFile = File(...)):
         if hasattr(extraction_result, "dict")
         else extraction_result
     )
+    extraction_mode = res_data.get("extraction_mode", "simulated") if isinstance(res_data, dict) else "simulated"
     return {
         "status": "SUCCESS",
-        "extraction": res_data
+        "extraction": res_data,
+        "extraction_mode": extraction_mode
+    }
+
+class OcrExtractRequest(BaseModel):
+    image_base64: str
+    facility_id: Optional[str] = "PHC-PUN-002"
+    country_code: Optional[str] = "IND"
+
+@ai_router.post("/ocr/extract", tags=["Perception & OCR"])
+async def extract_register_base64(req: OcrExtractRequest):
+    """Ingests base64 image data -> OpenCV Deskew -> Gemini Vision OCR."""
+    import base64
+    raw_b64 = req.image_base64
+    if "," in raw_b64:
+        raw_b64 = raw_b64.split(",", 1)[1]
+    image_bytes = base64.b64decode(raw_b64)
+    from ai_engine.ocr.gemini_extractor import GeminiRegisterExtractor
+    extractor = GeminiRegisterExtractor()
+    extraction_result = extractor.extract_from_image(
+        image_bytes, 
+        facility_hint=req.facility_id or "PHC-PUN-002",
+        country_hint=req.country_code or "IND"
+    )
+    res_data = (
+        extraction_result.model_dump()
+        if hasattr(extraction_result, "model_dump")
+        else extraction_result.dict()
+        if hasattr(extraction_result, "dict")
+        else extraction_result
+    )
+    extraction_mode = res_data.get("extraction_mode", "simulated") if isinstance(res_data, dict) else "simulated"
+    
+    entries = []
+    if isinstance(res_data, dict) and "medicines" in res_data:
+        for idx, med in enumerate(res_data["medicines"]):
+            entries.append({
+                "id": str(idx + 1),
+                "item_code": med.get("item_code", ""),
+                "item_name": med.get("generic_name", ""),
+                "batch_number": med.get("batch_number", ""),
+                "quantity": med.get("quantity", 0),
+                "expiry_date": med.get("expiry_date", ""),
+                "confidence": med.get("confidence_score", 0.95)
+            })
+
+    return {
+        "status": "SUCCESS",
+        "extraction": res_data,
+        "entries": entries,
+        "raw_narrative": res_data.get("raw_text_summary") if isinstance(res_data, dict) else "",
+        "extraction_mode": extraction_mode
     }
 
 @ai_router.get("/alerts/stream", tags=["Real-Time Alerts"])

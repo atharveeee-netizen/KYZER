@@ -20,7 +20,7 @@ export const OcrTab: React.FC<OcrTabProps> = ({
   const [compressionStats, setCompressionStats] = useState<{ original: string; compressed: string; savings: string } | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isCommitted, setIsCommitted] = useState(false);
-  const [extractionMode, setExtractionMode] = useState<'gemini' | 'simulated'>('gemini');
+  const [extractionMode, setExtractionMode] = useState<'gemini' | 'simulated'>('simulated');
   const [ocrNarrative, setOcrNarrative] = useState<string>('Ready to extract structured pharmaceutical data from handwritten register.');
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -101,8 +101,8 @@ export const OcrTab: React.FC<OcrTabProps> = ({
             { id: '2', item_code: 'MED-AMX-250', item_name: 'Amoxicillin 250mg Capsules', batch_number: 'B2406', expiry_date: '2025-09-15', quantity: 320, confidence: 0.96 },
             { id: '3', item_code: 'MED-ORS-SCT', item_name: 'Oral Rehydration Salts (ORS)', batch_number: 'B2407', expiry_date: '2027-02-28', quantity: 85, confidence: 0.94 },
           ]);
-          setExtractionMode('gemini');
-          setOcrNarrative('Extracted 3 pharmaceutical lines with 98.4% mean confidence.');
+          setExtractionMode('simulated');
+          setOcrNarrative('Extracted 3 pharmaceutical lines with 98.4% mean confidence (Offline Local Verification Mode).');
         }, 1100);
       }
     } catch (err) {

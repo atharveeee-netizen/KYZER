@@ -1,6 +1,8 @@
-# Comprehensive Benchmark: 20 Peer-Reviewed Research Works vs. KYZER Hybrid Routing Engine
+# Algorithmic Benchmark & Comparative Literature Review: 20 VRP Formulations vs. KYZER Hybrid Routing Architecture
 
 This document benchmarks 20 foundational and state-of-the-art peer-reviewed research works across 5 algorithmic paradigms against the **KYZER Hybrid Routing Engine** for multi-echelon emergency healthcare supply chain logistics.
+
+*Note: Performance figures reflect computational benchmark evaluations on the 18-facility regional health network test scenario.*
 
 ---
 

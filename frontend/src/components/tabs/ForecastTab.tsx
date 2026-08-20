@@ -7,12 +7,14 @@ interface ForecastTabProps {
  forecastData: ForecastDay[];
  shapDrivers: ShapDriver[];
  facilityName: string;
+ isLive?: boolean;
 }
 
 export const ForecastTab: React.FC<ForecastTabProps> = ({
  forecastData,
  shapDrivers,
  facilityName,
+ isLive = false,
 }) => {
  return (
  <div className="p-6 max-w-7xl mx-auto space-y-6">
@@ -20,9 +22,20 @@ export const ForecastTab: React.FC<ForecastTabProps> = ({
  {/* Header Summary */}
  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-hairline pb-4">
  <div>
+ <div className="flex items-center gap-2 mb-1">
  <span className="text-[11px] font-mono uppercase bg-surface-strong px-2 py-0.5 rounded-pill text-ink font-semibold">
  LightGBM Tweedie (p=1.3) + SEIR ODE Coupling
  </span>
+ {isLive ? (
+ <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-pill bg-emerald-950/80 text-emerald-400 border border-emerald-500/40">
+ ● LIVE AI SERVICE B
+ </span>
+ ) : (
+ <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded-pill bg-[#202B33] text-[#A7B6C2] border border-[#293742]">
+ ⚡ LOCAL SEED CACHE
+ </span>
+ )}
+ </div>
  <h1 className="text-2xl font-display text-ink mt-1">7-Day Quantile Demand Forecaster</h1>
  <p className="text-xs text-muted">Target: {facilityName} - Paracetamol 500mg (MED-PCM-500)</p>
  </div>
@@ -39,7 +52,7 @@ export const ForecastTab: React.FC<ForecastTabProps> = ({
  </div>
  <div className="bg-surface-card border border-hairline rounded-md px-3 py-2 text-right">
  <span className="text-[10px] font-mono text-muted uppercase block">SEIR Calibration</span>
- <span className="text-base font-display text-ink font-semibold">R₀ = 1.03</span>
+ <span className="text-base font-display text-ink font-semibold">R₀ = 1.91</span>
  </div>
  </div>
  </div>

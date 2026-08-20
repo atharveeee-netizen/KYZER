@@ -1,4 +1,6 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import os
+
+app_code = '''import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { 
   TacticalHeader, 
   TacticalNavRail, 
@@ -10,10 +12,7 @@ import {
   ScenarioModal,
   OcrIngestionModal,
   AlertsDrawer,
-  InventoryDrawer,
-  IntelligenceDrawer,
-  OperationsDrawer,
-  DemoGuideModal
+  InventoryDrawer
 } from './components/tactical';
 import { DigitalTwin, DEFAULT_CLINICS, UrbanClinic } from './features/digital-twin';
 import { CommandPalette } from './components/ui/CommandPalette';
@@ -40,9 +39,6 @@ export const App: React.FC = () => {
   const [isScenarioModalOpen, setIsScenarioModalOpen] = useState(false);
   const [isAlertsDrawerOpen, setIsAlertsDrawerOpen] = useState(false);
   const [isInventoryDrawerOpen, setIsInventoryDrawerOpen] = useState(false);
-  const [isIntelligenceDrawerOpen, setIsIntelligenceDrawerOpen] = useState(false);
-  const [isOperationsDrawerOpen, setIsOperationsDrawerOpen] = useState(false);
-  const [isDemoGuideOpen, setIsDemoGuideOpen] = useState(false);
   const [isScenarioActive, setIsScenarioActive] = useState(false);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
 
@@ -52,7 +48,6 @@ export const App: React.FC = () => {
   const [selectedClinic, setSelectedClinic] = useState<UrbanClinic | null>(DEFAULT_CLINICS[2]); // Start with stockout clinic
   const [activeTransfer, setActiveTransfer] = useState<{ from: UrbanClinic; to: UrbanClinic; units: number } | null>(null);
   const [activeRouteResult, setActiveRouteResult] = useState<any>(null);
-  const [routingResult, setRoutingResult] = useState(MOCK_ROUTING_RESULT);
 
   // 4. AI & Backend Telemetry State
   const [facilities, setFacilities] = useState<HealthFacility[]>(BRICS_FACILITIES);
@@ -67,47 +62,12 @@ export const App: React.FC = () => {
     document.documentElement.classList.add('dark');
   }, []);
 
-  // Global Tactical Keyboard Shortcuts
+  // Global Keyboard Shortcuts (Cmd/Ctrl+K for Command Palette)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Ignore when typing inside an input or textarea
-      if (['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement)?.tagName)) {
-        return;
-      }
-
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
         e.preventDefault();
         setIsCommandPaletteOpen(prev => !prev);
-      } else if ((e.metaKey || e.ctrlKey) && e.key === '1') {
-        e.preventDefault();
-        setActiveView('command');
-        setRightPanelMode('PRIORITY');
-      } else if ((e.metaKey || e.ctrlKey) && e.key === '2') {
-        e.preventDefault();
-        setIsIntelligenceDrawerOpen(true);
-      } else if ((e.metaKey || e.ctrlKey) && e.key === '3') {
-        e.preventDefault();
-        setIsOperationsDrawerOpen(true);
-      } else if ((e.metaKey || e.ctrlKey) && e.key === '4') {
-        e.preventDefault();
-        setIsInventoryDrawerOpen(true);
-      } else if ((e.metaKey || e.ctrlKey) && e.key === '5') {
-        e.preventDefault();
-        setIsOcrModalOpen(true);
-      } else if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 's') {
-        e.preventDefault();
-        setIsScenarioModalOpen(true);
-      } else if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'a') {
-        e.preventDefault();
-        setIsAlertsDrawerOpen(true);
-      } else if (e.key === 'Escape') {
-        setIsOcrModalOpen(false);
-        setIsScenarioModalOpen(false);
-        setIsAlertsDrawerOpen(false);
-        setIsInventoryDrawerOpen(false);
-        setIsIntelligenceDrawerOpen(false);
-        setIsOperationsDrawerOpen(false);
-        setIsCommandPaletteOpen(false);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -240,28 +200,16 @@ export const App: React.FC = () => {
   };
 
   // Handle Outbreak Simulation Execution
-  const handleRunScenario = ({ 
-    scenarioName,
-    surgeMultiplier, 
-    rainMm, 
-    r0, 
-    disruptedNodes 
-  }: { 
-    scenarioName: string;
-    surgeMultiplier: number; 
-    rainMm: number; 
-    r0: number;
-    disruptedNodes: number;
-  }) => {
+  const handleRunScenario = ({ surgeMultiplier, rainMm }: { surgeMultiplier: number; rainMm: number }) => {
     setIsScenarioActive(true);
-    setClinics(prev => prev.map((c, i) => {
-      if (c.id === 'PHC-URB-03' || i < disruptedNodes) {
+    setClinics(prev => prev.map(c => {
+      if (c.id === 'PHC-URB-03') {
         return {
           ...c,
-          stock: Math.max(15, Math.round(c.stock * 0.35)),
+          stock: 35,
           daysLeft: 0.3,
           riskTier: 'P0_CRITICAL',
-          beds: { occupied: c.beds.total, total: c.beds.total },
+          beds: { occupied: 24, total: 24 },
         };
       }
       return c;
@@ -273,10 +221,10 @@ export const App: React.FC = () => {
       facility_name: 'Koregaon Bhima PHC',
       severity: 'P0',
       timestamp: 'Just now',
-      title: `⚡ ${scenarioName.toUpperCase()}`,
-      description_en: `Disaster scenario injected: ${surgeMultiplier}x demand surge, ${rainMm}mm rainfall, R₀=${r0}. Predicted stockout in <14.8 hours across ${disruptedNodes} facilities. Automated quantum redistribution dispatched.`,
-      description_mr: 'तातडीचा इशारा: आपत्कालीन संकट लागू. पुढील १४ तासांत साठा संपण्याची शक्यता.',
-      description_hi: 'आपातकालीन चेतावनी: आपदा स्थिति सक्रिय। १४ घंटे में दवा समाप्त होने का अनुमान।',
+      title: `MONSOON SURGE SHOCK: ${surgeMultiplier}x Demand Surge (${rainMm}mm Rainfall)`,
+      description_en: `Epidemic surge detected. Multi-horizon forecast predicts complete stockout in 7.2 hours. Automated redistribution dispatched.`,
+      description_mr: 'तातडीचा इशारा: पावसाळ्यानंतर साथरोग वाढला. पुढील ७ तासांत साठा संपण्याची शक्यता.',
+      description_hi: 'आपातकालीन चेतावनी: मानसून के बाद बीमारी में वृद्धि। ७ घंटे में दवा समाप्त होने का अनुमान।',
       acknowledged: false,
     };
     setAlerts(prev => [newAlert, ...prev]);
@@ -289,30 +237,6 @@ export const App: React.FC = () => {
     setActiveRouteResult(null);
   };
 
-  // Handle Road Landslide / Quantum Reroute Simulation
-  const handleRerouteRequest = (blockedRoadName: string) => {
-    alert(`⚡ 156-Qubit IBM Heron r2 QAOA Router recalculated alternate bypass around "${blockedRoadName}" in 12.66ms (33.2x convergence speedup)!`);
-  };
-
-  // Handle Demo Jump Step Execution
-  const handleJumpToStep = (stepIndex: number) => {
-    if (stepIndex === 0) {
-      const target = clinics.find(c => c.id === 'PHC-URB-03') || clinics[2];
-      setSelectedClinic(target);
-      setRightPanelMode('FACILITY');
-      if (isRightPanelCollapsed) setIsRightPanelCollapsed(false);
-    } else if (stepIndex === 1) {
-      setIsIntelligenceDrawerOpen(true);
-    } else if (stepIndex === 2) {
-      const donor = clinics.find(c => c.id === 'PHC-URB-04') || clinics[3];
-      const recipient = clinics.find(c => c.id === 'PHC-URB-03') || clinics[2];
-      setActiveTransfer({ from: donor, to: recipient, units: 450 });
-      setIsOperationsDrawerOpen(true);
-    } else if (stepIndex === 3) {
-      setIsOcrModalOpen(true);
-    }
-  };
-
   // Handle View Navigation from Nav Rail
   const handleViewChange = (view: NavViewId) => {
     setActiveView(view);
@@ -321,9 +245,10 @@ export const App: React.FC = () => {
     } else if (view === 'scenario') {
       setIsScenarioModalOpen(true);
     } else if (view === 'operations') {
-      setIsOperationsDrawerOpen(true);
+      setIsInventoryDrawerOpen(true);
     } else if (view === 'intelligence') {
-      setIsIntelligenceDrawerOpen(true);
+      setRightPanelMode('FACILITY');
+      if (isRightPanelCollapsed) setIsRightPanelCollapsed(false);
     } else if (view === 'command' || view === 'network') {
       setRightPanelMode('PRIORITY');
     }
@@ -339,7 +264,6 @@ export const App: React.FC = () => {
         onOpenOcrModal={() => setIsOcrModalOpen(true)}
         onOpenScenarioModal={() => setIsScenarioModalOpen(true)}
         onOpenAlertsDrawer={() => setIsAlertsDrawerOpen(true)}
-        onOpenDemoGuide={() => setIsDemoGuideOpen(true)}
         activeAlertCount={alerts.filter(a => !a.acknowledged).length}
         isScenarioActive={isScenarioActive}
         onResetScenario={handleResetScenario}
@@ -380,7 +304,6 @@ export const App: React.FC = () => {
           onSelectAction={handleReviewAction}
           onDispatchAction={handleDispatchAction}
           onCloseFacility={() => setSelectedClinic(null)}
-          onOpenFullForecast={() => setIsIntelligenceDrawerOpen(true)}
           onOpenInventoryDrawer={() => setIsInventoryDrawerOpen(true)}
           isCollapsed={isRightPanelCollapsed}
           onToggleCollapse={() => setIsRightPanelCollapsed(prev => !prev)}
@@ -415,77 +338,26 @@ export const App: React.FC = () => {
         onClose={() => setIsAlertsDrawerOpen(false)}
         alerts={alerts}
         onAcknowledgeAlert={(id) => setAlerts(prev => prev.map(a => a.id === id ? { ...a, acknowledged: true } : a))}
-        onSelectFacility={(facId) => {
-          const target = clinics.find(c => c.id === facId || c.name.toLowerCase().includes(facId.toLowerCase())) || clinics[2];
-          setSelectedClinic(target);
-          setRightPanelMode('FACILITY');
-          if (isRightPanelCollapsed) setIsRightPanelCollapsed(false);
-        }}
-        onDispatchTransfer={(facId) => {
-          const donor = clinics.find(c => c.id === 'PHC-URB-04') || clinics[3];
-          const recipient = clinics.find(c => c.id === facId || c.id === 'PHC-URB-03') || clinics[2];
-          setActiveTransfer({ from: donor, to: recipient, units: 450 });
-          setRightPanelMode('MISSION');
-          if (isRightPanelCollapsed) setIsRightPanelCollapsed(false);
-        }}
       />
 
       <InventoryDrawer
         isOpen={isInventoryDrawerOpen}
         onClose={() => setIsInventoryDrawerOpen(false)}
-        onInitiateTransfer={(code, fromId, toId) => {
-          const donor = clinics.find(c => c.id === fromId) || clinics[3];
-          const recipient = clinics.find(c => c.id === toId) || clinics[2];
-          setActiveTransfer({ from: donor, to: recipient, units: 450 });
-          setRightPanelMode('MISSION');
-          if (isRightPanelCollapsed) setIsRightPanelCollapsed(false);
-        }}
-      />
-
-      <IntelligenceDrawer
-        isOpen={isIntelligenceDrawerOpen}
-        onClose={() => setIsIntelligenceDrawerOpen(false)}
-        facilityName={selectedClinic?.name || 'Koregaon Bhima PHC'}
-        facilityId={selectedClinic?.id || 'PHC-PUN-002'}
-        forecastData={forecastData}
-        shapDrivers={shapDrivers}
-        isAiLive={isAiLive}
-      />
-
-      <OperationsDrawer
-        isOpen={isOperationsDrawerOpen}
-        onClose={() => setIsOperationsDrawerOpen(false)}
-        routingResult={routingResult}
-        isLive={isAiLive}
-        onSimulateReroute={handleRerouteRequest}
-      />
-
-      <DemoGuideModal
-        isOpen={isDemoGuideOpen}
-        onClose={() => setIsDemoGuideOpen(false)}
-        onJumpToStep={handleJumpToStep}
       />
 
       {/* Global Command Palette */}
       <CommandPalette
         isOpen={isCommandPaletteOpen}
         onClose={() => setIsCommandPaletteOpen(false)}
-        onNavigateTab={(tab: string) => {
-          if (tab === 'ocr') setIsOcrModalOpen(true);
-          else if (tab === 'inventory') setIsInventoryDrawerOpen(true);
-          else if (tab === 'alerts') setIsAlertsDrawerOpen(true);
-          else if (tab === 'forecast') {
-            setRightPanelMode('FACILITY');
-            if (isRightPanelCollapsed) setIsRightPanelCollapsed(false);
-          } else if (tab === 'routes') {
-            setRightPanelMode('MISSION');
-            if (isRightPanelCollapsed) setIsRightPanelCollapsed(false);
-          } else {
-            setRightPanelMode('PRIORITY');
-          }
-        }}
+        onNavigate={handleViewChange}
         onSimulateOutbreak={() => setIsScenarioModalOpen(true)}
+        facilities={facilities}
       />
     </div>
   );
 };
+'''
+
+with open('frontend/src/App.tsx', 'w', encoding='utf-8') as f:
+    f.write(app_code)
+print('App.tsx updated successfully!')

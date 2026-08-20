@@ -57,12 +57,12 @@ const SOVEREIGN_FACILITIES: HealthCentre[] = [
   { id: 'PHC-PUN-001', name: 'Shirur Sub-District Hospital (Depot)', district: 'Pune Sector', kmsHash: '0x8f9a2b71...4e1d90c2', stockLevel: 95, status: 'STABLE', icuBedsFree: 4, icuBedsTotal: 12, lat: 18.8285, lng: 74.3755 },
   { id: 'PHC-PUN-002', name: 'Koregaon Bhima PHC', district: 'Pune Sector', kmsHash: '0x3c4d1e99...9f8a44b1', stockLevel: 14, status: 'CRITICAL', icuBedsFree: 0, icuBedsTotal: 2, lat: 18.6534, lng: 74.0624 },
   { id: 'PHC-PUN-003', name: 'Shikrapur Health Centre', district: 'Pune Sector', kmsHash: '0x7e6f5a12...2b1c88dd', stockLevel: 62, status: 'STABLE', icuBedsFree: 3, icuBedsTotal: 4, lat: 18.7368, lng: 74.1567 },
-  { id: 'ZAF-TSH-001', name: 'Pretoria West Hospital (Tshwane)', district: 'South Africa Sector', kmsHash: '0x1a2b3c4d...5e6f7a8b', stockLevel: 88, status: 'STABLE', icuBedsFree: 6, icuBedsTotal: 8, lat: -25.7533, lng: 28.1524 },
+  { id: 'CHC-TSH-004', name: 'Mamelodi West Community Clinic (Tshwane)', district: 'South Africa Sector', kmsHash: '0x1a2b3c4d...5e6f7a8b', stockLevel: 88, status: 'STABLE', icuBedsFree: 6, icuBedsTotal: 8, lat: -25.7144, lng: 28.3278 },
 ];
 
 const INITIAL_AGENT_TRACES: AgentTrace[] = [
-  { id: 'tr-101', timestamp: '21:49:02', agent: 'Planner', action: 'Monsoon surge vector detected at Koregaon Bhima (PHC-PUN-002). Stock buffer depleted to 1.4 days.', status: 'EXECUTED' },
-  { id: 'tr-102', timestamp: '21:49:05', agent: 'SupplyRouter', action: 'PostGIS KNN Match + IBM Heron QAOA: Nearest domestic donor Shirur Depot (32.4 km) + Cross-border Tshwane (6,970 km air-freight).', status: 'EXECUTED' },
+  { id: 'tr-101', timestamp: '21:49:02', agent: 'Planner', action: 'Monsoon surge vector detected at Koregaon Bhima (PHC-PUN-002). Stock buffer depleted below 3.0 days (<138 units).', status: 'EXECUTED' },
+  { id: 'tr-102', timestamp: '21:49:05', agent: 'SupplyRouter', action: 'PostGIS KNN Match + IBM Heron QAOA: Nearest domestic donor Talegaon Dhamdhere (PHC-PUN-004, 9.8 km) + Cross-border Tshwane (CHC-TSH-004, 6,970.3 km).', status: 'EXECUTED' },
   { id: 'tr-103', timestamp: '21:49:08', agent: 'ComplianceVerifier', action: 'Strix Pen-Test Pass: Signed dispatch payload with Government KMS Key #9021. Donor buffer: 2.1x >= 1.9x.', status: 'EXECUTED' },
 ];
 
@@ -106,7 +106,7 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
           id: `tr-${Date.now()}`,
           timestamp: new Date().toLocaleTimeString(),
           agent: 'SupplyRouter',
-          action: 'LIVE FEFO DRAWDOWN: 450 Units allocated. Koregaon Bhima buffer < 1.0 day. Emergency redistribution triggered from Shirur Depot (32.4 km).',
+          action: 'LIVE FEFO DRAWDOWN: 450 Units allocated. Koregaon Bhima buffer < 1.0 day (<46 units). Emergency redistribution triggered from Talegaon Dhamdhere (9.8 km).',
           status: 'EXECUTED',
         },
         ...prev,

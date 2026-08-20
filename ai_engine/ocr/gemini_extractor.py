@@ -144,6 +144,7 @@ class GeminiRegisterExtractor:
 
             latency_ms = (time.perf_counter() - start_time) * 1000
             parsed_dict["processing_time_ms"] = round(latency_ms, 2)
+            parsed_dict["extraction_mode"] = "gemini"
 
             return ClinicRegisterExtractionResult.model_validate(parsed_dict)
 
@@ -193,6 +194,7 @@ class GeminiRegisterExtractor:
                 cached_data["date_of_record"] = date.today().isoformat()
                 cached_data["raw_text_summary"] = (raw_summary or cached_data.get("raw_text_summary", "")) + " [OFFLINE DISK CACHE RECOVERY]"
                 cached_data["processing_time_ms"] = round(max(latency_ms, 45.0), 2)
+                cached_data["extraction_mode"] = "simulated"
                 return ClinicRegisterExtractionResult(**cached_data)
             except Exception as e:
                 logger.warning(f"Failed to read disk cache ({e}), initializing baseline register.")
@@ -264,7 +266,8 @@ class GeminiRegisterExtractor:
                 nurses_expected=6
             ),
             raw_text_summary=raw_summary or "Digitized physical clinic register (Cached Offline Baseline)",
-            processing_time_ms=round(max(latency_ms, 45.0), 2)
+            processing_time_ms=round(max(latency_ms, 45.0), 2),
+            extraction_mode="simulated"
         )
 
         # Write to cache

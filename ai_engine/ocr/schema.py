@@ -39,3 +39,4 @@ class ClinicRegisterExtractionResult(BaseModel):
     staff: ExtractedStaff = Field(default_factory=ExtractedStaff, description="Extracted staff telemetry")
     raw_text_summary: Optional[str] = Field(default=None, description="Summary notes or illegible remarks")
     processing_time_ms: float = Field(default=0.0, description="End-to-end extraction latency in ms")
+    extraction_mode: str = Field(default="simulated", description="'gemini' for live Gemini API or 'simulated' for offline cache")

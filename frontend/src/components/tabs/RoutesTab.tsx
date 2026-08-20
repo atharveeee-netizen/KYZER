@@ -21,9 +21,10 @@ import { RoutingResult } from '../../types';
 
 interface RoutesTabProps {
   routingResult: RoutingResult;
+  isLive?: boolean;
 }
 
-export const RoutesTab: React.FC<RoutesTabProps> = ({ routingResult }) => {
+export const RoutesTab: React.FC<RoutesTabProps> = ({ routingResult, isLive = false }) => {
   const [isApprovalModalOpen, setIsApprovalModalOpen] = useState(false);
   const [isDispatched, setIsDispatched] = useState(false);
   const [doctorName, setDoctorName] = useState('Dr. A. Patil (Chief Medical Officer)');
@@ -48,6 +49,15 @@ export const RoutesTab: React.FC<RoutesTabProps> = ({ routingResult }) => {
               <span className="foundry-badge bg-[#0D8050]/20 text-[#0D8050] border border-[#0D8050]/40">
                 WHO 240-MIN COMPLIANT
               </span>
+              {isLive ? (
+                <span className="foundry-badge bg-emerald-950/80 text-emerald-400 border border-emerald-500/40 font-bold">
+                  ● LIVE OR-TOOLS & QAOA
+                </span>
+              ) : (
+                <span className="foundry-badge bg-[#202B33] text-[#A7B6C2] border border-[#293742]">
+                  ⚡ CACHED ROUTING SEED
+                </span>
+              )}
             </div>
             <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-[#F5F8FA]">
               Autonomous Medicine Redistribution & Cold-Chain Routing

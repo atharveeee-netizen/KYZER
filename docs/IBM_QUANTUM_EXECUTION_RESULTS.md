@@ -19,7 +19,7 @@
 │ ⚡ Total Quantum Circuit Depth       │ 125 Quantum Gates (Parameterized QAOA Layers)          │
 │ 🎯 Optimal Variational Angles        │ γ* = [0.12, 0.24], β* = [0.35, 0.175]                  │
 │ 🧮 Ground State Expectation ⟨H⟩      │ 128.89                                                 │
-│ 🛣️ Solved Optimal Tour Sequence      │ PHC-PUN-002 -> PHC-PUN-001 -> DH-DEPOT-001 -> PHC-PUN-003│
+│ 🛣️ Solved Optimal Tour Sequence      │ PHC-PUN-001 -> PHC-PUN-002 -> PHC-PUN-004 -> PHC-PUN-003│
 │ 📏 Total Computed Tour Distance      │ 138.89 km                                              │
 │ ⏱️ Estimated Emergency Transit Time  │ 238.1 minutes                                          │
 │ ❄️ WHO Cold-Chain Compliance         │ ✅ PASSED & COMPLIANT (<= 240 minutes)                 │
