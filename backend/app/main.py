@@ -5,7 +5,6 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.config import get_settings
 from app.database import close_db, connect_db
 from app.routes import dashboard_routes, inventory_routes, ocr_routes, redistribution_routes
 
@@ -19,10 +18,16 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="CareDOM Backend API", version="0.1.0", lifespan=lifespan)
 
-settings = get_settings()
+# allow_origins=["*"] (not settings.cors_origins, which only ever held
+# localhost:3000/5173 for local dev): this API has no auth and judges/
+# teammates hit it from origins that can't be enumerated in advance
+# (GitHub Pages, ngrok, etc during the hackathon). Starlette's CORSMiddleware
+# handles "*" + allow_credentials=True correctly - it echoes back the
+# request's actual Origin instead of a literal "*", so this isn't an
+# open-relay footgun. Matches Service B's identical setup in main_ai.py.
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.cors_origins,
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
