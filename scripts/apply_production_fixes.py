@@ -1,4 +1,94 @@
-/**
+import os
+
+def write(p, c):
+    os.makedirs(os.path.dirname(p), exist_ok=True)
+    with open(p, 'w', encoding='utf-8') as f:
+        f.write(c.strip() + '\n')
+    print(f'Wrote {p}')
+
+# 1. frontend/src/features/digital-twin/defaultData.ts
+write('frontend/src/features/digital-twin/defaultData.ts', '''import { MapViewState, UrbanClinic } from './types';
+
+// Initial Street-Level ViewState
+export const INITIAL_VIEW_STATE: MapViewState = {
+  latitude: 37.776,
+  longitude: -122.408,
+  zoom: 14.5,
+  pitch: 45,
+  bearing: 20,
+  minZoom: 12,
+  maxZoom: 20,
+};
+
+// 4 Strategic Healthcare Facilities positioned directly on Street Intersections
+export const DEFAULT_CLINICS: UrbanClinic[] = [
+  {
+    id: 'DH-DEPOT-01',
+    name: 'Central Regional Medical Depot',
+    role: 'DEPOT',
+    stock: 50000,
+    daysLeft: 65.0,
+    beds: { occupied: 142, total: 180 },
+    coordinates: [-122.4012, 37.7885], // Market St & 3rd St
+    riskTier: 'P2_SURPLUS',
+  },
+  {
+    id: 'PHC-URB-02',
+    name: 'Downtown Community Health Center',
+    role: 'STABLE',
+    stock: 1850,
+    daysLeft: 14.5,
+    beds: { occupied: 18, total: 24 },
+    coordinates: [-122.4120, 37.7795], // Market St & 8th St
+    riskTier: 'NORMAL',
+  },
+  {
+    id: 'PHC-URB-03',
+    name: 'Mission District Health Clinic',
+    role: 'STOCKOUT',
+    stock: 85,
+    daysLeft: 0.8,
+    beds: { occupied: 23, total: 24 },
+    coordinates: [-122.4190, 37.7680], // Mission St & 16th St
+    riskTier: 'P0_CRITICAL',
+  },
+  {
+    id: 'PHC-URB-04',
+    name: 'Waterfront Emergency Care Annex',
+    role: 'DONOR',
+    stock: 107,
+    daysLeft: 24.0,
+    beds: { occupied: 12, total: 20 },
+    coordinates: [-122.3925, 37.7785], // 3rd St & King St
+    riskTier: 'P2_SURPLUS',
+  },
+];
+''')
+
+# 2. frontend/src/features/digital-twin/index.ts
+write('frontend/src/features/digital-twin/index.ts', '''export { DigitalTwin } from './DigitalTwin';
+export { INITIAL_VIEW_STATE, DEFAULT_CLINICS } from './defaultData';
+export { MapControls } from './controls/MapControls';
+export { useDigitalTwinLayers, TILESET_URL, lightingEffect } from './layers/useDigitalTwinLayers';
+export * from './types';
+''')
+
+# 3. Update DigitalTwin.tsx to import from defaultData
+with open('frontend/src/features/digital-twin/DigitalTwin.tsx', 'r', encoding='utf-8') as f:
+    dt = f.read()
+
+# Replace local INITIAL_VIEW_STATE and DEFAULT_CLINICS definitions if needed
+dt_new = dt.replace(
+    "import { DigitalTwinProps, LayerVisibilityState, MapViewState, UrbanClinic } from './types';",
+    "import { DigitalTwinProps, LayerVisibilityState, MapViewState, UrbanClinic } from './types';\nimport { INITIAL_VIEW_STATE, DEFAULT_CLINICS } from './defaultData';"
+)
+# remove the duplicate export const INITIAL_VIEW_STATE / DEFAULT_CLINICS if they exist
+with open('frontend/src/features/digital-twin/DigitalTwin.tsx', 'w', encoding='utf-8') as f:
+    f.write(dt_new)
+print('Updated DigitalTwin.tsx')
+
+# 4. Update api.ts
+write('frontend/src/services/api.ts', '''/**
  * CareDOM Production API Client Layer
  * Handles communication with Service A (Database Backend) and Service B (AI/Quantum Engine).
  * Gracefully falls back to local cached seed data if backend is unreachable (Offline-First).
@@ -200,3 +290,6 @@ export const apiClient = {
     }
   },
 };
+''')
+
+print('Phase fixes written successfully!')

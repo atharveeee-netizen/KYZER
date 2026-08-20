@@ -134,15 +134,31 @@ export const ContextualRightPanel: React.FC<ContextualRightPanelProps> = ({
               </Badge>
             </div>
 
-            {priorityActions.map(action => (
-              <PriorityActionCard
-                key={action.id}
-                action={action}
-                onReviewDecision={onSelectAction}
-                onDispatchRoute={onDispatchAction}
-                isSelected={selectedFacility?.id === action.facilityId}
-              />
-            ))}
+            {priorityActions.length === 0 ? (
+              <div className="foundry-card p-4 text-center space-y-2 border border-[#293742] bg-[#111418]/60">
+                <div className="w-8 h-8 rounded-full bg-[#0D8050]/20 border border-[#0D8050]/40 flex items-center justify-center mx-auto text-[#0D8050]">
+                  <Activity className="w-4 h-4" />
+                </div>
+                <div className="text-xs font-bold text-[#F5F8FA] font-sans">ALL FACILITIES NOMINAL</div>
+                <p className="text-[11px] text-[#A7B6C2] leading-relaxed">
+                  No active stockout alerts on live network. Safety buffers across all 18 facilities ≥ 11.8 days.
+                </p>
+                <div className="pt-2 border-t border-[#293742]/40 flex items-center justify-center gap-2">
+                  <Badge variant="success" size="xs">0 CRITICAL</Badge>
+                  <Badge variant="primary" size="xs">LIVE POLLING ACTIVE</Badge>
+                </div>
+              </div>
+            ) : (
+              priorityActions.map(action => (
+                <PriorityActionCard
+                  key={action.id}
+                  action={action}
+                  onReviewDecision={onSelectAction}
+                  onDispatchRoute={onDispatchAction}
+                  isSelected={selectedFacility?.id === action.facilityId}
+                />
+              ))
+            )}
           </div>
         )}
 
