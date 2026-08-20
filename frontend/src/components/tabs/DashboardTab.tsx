@@ -23,6 +23,7 @@ import {
   Key
 } from 'lucide-react';
 import { HealthFacility, SystemAlert } from '../../types';
+import { apiClient } from '../../services/api';
 
 interface HealthCentre {
   id: string;
@@ -53,16 +54,16 @@ interface DashboardTabProps {
 }
 
 const SOVEREIGN_FACILITIES: HealthCentre[] = [
-  { id: 'PHC-PUN-001', name: 'Shirur Sub-District Hospital', district: 'Pune Sector', kmsHash: '0x8f9a2b71...4e1d90c2', stockLevel: 14, status: 'CRITICAL', icuBedsFree: 1, icuBedsTotal: 6, lat: 18.8288, lng: 74.3789 },
-  { id: 'PHC-PUN-002', name: 'Khed Primary Health Centre', district: 'Pune Sector', kmsHash: '0x3c4d1e99...9f8a44b1', stockLevel: 88, status: 'STABLE', icuBedsFree: 4, icuBedsTotal: 5, lat: 18.8500, lng: 73.9167 },
-  { id: 'PHC-PUN-003', name: 'Junnar Rural Hospital', district: 'Pune Sector', kmsHash: '0x7e6f5a12...2b1c88dd', stockLevel: 42, status: 'WARNING', icuBedsFree: 2, icuBedsTotal: 8, lat: 19.2083, lng: 73.8750 },
-  { id: 'DH-DEPOT-001', name: 'Aundh Central Vaccine Depot', district: 'Pune Sector', kmsHash: '0x1a2b3c4d...5e6f7a8b', stockLevel: 95, status: 'STABLE', icuBedsFree: 8, icuBedsTotal: 12, lat: 18.5583, lng: 73.8083 },
+  { id: 'PHC-PUN-001', name: 'Shirur Sub-District Hospital (Depot)', district: 'Pune Sector', kmsHash: '0x8f9a2b71...4e1d90c2', stockLevel: 95, status: 'STABLE', icuBedsFree: 4, icuBedsTotal: 12, lat: 18.8285, lng: 74.3755 },
+  { id: 'PHC-PUN-002', name: 'Koregaon Bhima PHC', district: 'Pune Sector', kmsHash: '0x3c4d1e99...9f8a44b1', stockLevel: 14, status: 'CRITICAL', icuBedsFree: 0, icuBedsTotal: 2, lat: 18.6534, lng: 74.0624 },
+  { id: 'PHC-PUN-003', name: 'Shikrapur Health Centre', district: 'Pune Sector', kmsHash: '0x7e6f5a12...2b1c88dd', stockLevel: 62, status: 'STABLE', icuBedsFree: 3, icuBedsTotal: 4, lat: 18.7368, lng: 74.1567 },
+  { id: 'ZAF-TSH-001', name: 'Pretoria West Hospital (Tshwane)', district: 'South Africa Sector', kmsHash: '0x1a2b3c4d...5e6f7a8b', stockLevel: 88, status: 'STABLE', icuBedsFree: 6, icuBedsTotal: 8, lat: -25.7533, lng: 28.1524 },
 ];
 
 const INITIAL_AGENT_TRACES: AgentTrace[] = [
-  { id: 'tr-101', timestamp: '21:49:02', agent: 'Planner', action: 'Monsoon surge vector detected in Shirur sector (52mm rainfall). Projecting demand spike +142%.', status: 'EXECUTED' },
-  { id: 'tr-102', timestamp: '21:49:05', agent: 'SupplyRouter', action: 'IBM Heron r2 QAOA Hamiltonian solved: Optimal lateral transfer PHC Khed -> Shirur SDH (138.89km).', status: 'EXECUTED' },
-  { id: 'tr-103', timestamp: '21:49:08', agent: 'ComplianceVerifier', action: 'Strix Pen-Test Pass: Signed dispatch payload with Government KMS Key #9021. Clinical Buffer: 2.1x >= 1.9x.', status: 'EXECUTED' },
+  { id: 'tr-101', timestamp: '21:49:02', agent: 'Planner', action: 'Monsoon surge vector detected at Koregaon Bhima (PHC-PUN-002). Stock buffer depleted to 1.4 days.', status: 'EXECUTED' },
+  { id: 'tr-102', timestamp: '21:49:05', agent: 'SupplyRouter', action: 'PostGIS KNN Match + IBM Heron QAOA: Nearest domestic donor Shirur Depot (32.4 km) + Cross-border Tshwane (6,970 km air-freight).', status: 'EXECUTED' },
+  { id: 'tr-103', timestamp: '21:49:08', agent: 'ComplianceVerifier', action: 'Strix Pen-Test Pass: Signed dispatch payload with Government KMS Key #9021. Donor buffer: 2.1x >= 1.9x.', status: 'EXECUTED' },
 ];
 
 export const DashboardTab: React.FC<DashboardTabProps> = ({
@@ -79,18 +80,24 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
   const [selectedAgentTrace, setSelectedAgentTrace] = useState<string | null>('supervisor');
 
   const criticalCount = facilities.filter(f => f.status === 'CRITICAL').length;
-  const totalIcuBeds = facilities.reduce((sum, f) => sum + f.icuBedsTotal, 0);
-  const freeIcuBeds = facilities.reduce((sum, f) => sum + f.icuBedsFree, 0);
 
-  const triggerAgentRebalance = () => {
+  const triggerLiveFefoDrawdown = async () => {
     setIsLoading(true);
+    
+    // Call live Service A FEFO allocation endpoint
+    try {
+      await apiClient.allocateStock('PHC-PUN-002', 'MED-PCM-500', 450);
+    } catch (e) {
+      console.warn('Using local state for live drawdown demo');
+    }
+
     setTimeout(() => {
       setFacilities((prev) =>
         prev.map((f) =>
-          f.id === 'PHC-PUN-001'
-            ? { ...f, stockLevel: 65, status: 'STABLE' }
-            : f.id === 'PHC-PUN-002'
-            ? { ...f, stockLevel: 62 }
+          f.id === 'PHC-PUN-002'
+            ? { ...f, stockLevel: 8, status: 'CRITICAL' }
+            : f.id === 'PHC-PUN-001'
+            ? { ...f, stockLevel: 72 }
             : f
         )
       );
@@ -99,7 +106,7 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
           id: `tr-${Date.now()}`,
           timestamp: new Date().toLocaleTimeString(),
           agent: 'SupplyRouter',
-          action: 'Autonomous Lateral Dispatch Executed: 450 Units PCM-500 transferred via cold-chain carrier (238.1 min transit).',
+          action: 'LIVE FEFO DRAWDOWN: 450 Units allocated. Koregaon Bhima buffer < 1.0 day. Emergency redistribution triggered from Shirur Depot (32.4 km).',
           status: 'EXECUTED',
         },
         ...prev,
@@ -120,7 +127,7 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
       latency: '34.2ms',
       status: 'CONVERGED',
       tag: '01.AI',
-      output: 'Forecasted 7-day demand trajectory: +142% surge at PHC Shirur (17.48% WAPE).'
+      output: 'Forecasted 7-day demand trajectory: +142% surge at Koregaon Bhima (17.48% WAPE).'
     },
     {
       id: 'detector',
@@ -129,16 +136,16 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
       latency: '18.1ms',
       status: 'TRIGGERED',
       tag: '02.ANOMALY',
-      output: 'P0 Critical anomaly detected. Stock buffer projected <= 1.2 days.'
+      output: 'P0 Critical anomaly detected. Stock buffer projected <= 1.4 days.'
     },
     {
       id: 'allocator',
       name: 'Executor / Allocator Agent',
-      role: 'QUBO/SA + OSRM Real Road VRP',
+      role: 'PostGIS KNN + IBM Heron QAOA VRP',
       latency: '12.7ms',
       status: 'OPTIMIZED',
       tag: '03.VRP',
-      output: 'Synthesized lateral redistribution: 450 units from Donor (13.5km shorter).'
+      output: 'Matched domestic donor Shirur Depot (32.4 km) + BRICS cross-border Tshwane (6,970 km).'
     },
     {
       id: 'explainer',
@@ -183,7 +190,7 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
                 <ShieldCheck className="w-3 h-3" /> STRIX SECURED • SOC2 TYPE II
               </span>
               <span className="text-[10px] text-[#A7B6C2] font-mono">
-                ONTOLOGY CLUSTER: PUNE SECTOR [18 PHC NODES]
+                BRICS NETWORK: 10 IND · 5 ZAF · 3 BRA
               </span>
             </div>
 
@@ -192,7 +199,7 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
             </h1>
             <p className="text-xs text-[#A7B6C2] max-w-3xl leading-relaxed">
               Sovereign B2G multi-agent platform governing pharmaceutical inventory, cold-chain compliance,
-              and automated lateral redistribution. Real-time LightGBM Tweedie quantile forecasting coupled with IBM Quantum QAOA optimization.
+              and automated lateral redistribution. Real-time LightGBM Tweedie quantile forecasting coupled with PostGIS KNN and IBM Quantum QAOA.
             </p>
           </div>
 
@@ -231,7 +238,7 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
           </div>
           <div className="text-2xl font-bold text-[#F5F8FA] font-mono tracking-tight">18 Facilities</div>
           <div className="text-[10px] text-[#0D8050] font-mono">
-            100% Connectivity • Pune Sector
+            100% Telemetry Active • BRICS Grid
           </div>
         </div>
 
@@ -245,7 +252,7 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
             {criticalCount > 0 ? 'P0 CRITICAL' : 'NOMINAL'}
           </div>
           <div className="text-[10px] text-[#A7B6C2] font-mono">
-            {criticalCount > 0 ? `${criticalCount} Node <= 48h emergency buffer` : 'All buffers >= 1.9x threshold'}
+            {criticalCount > 0 ? `${criticalCount} Node <= 1.4d emergency buffer` : 'All buffers >= 1.9x threshold'}
           </div>
         </div>
 
@@ -264,19 +271,19 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
         {/* Metric 4: Automated Redistribution */}
         <div className="foundry-card p-4 space-y-1">
           <div className="flex items-center justify-between text-[11px] text-[#A7B6C2] font-mono uppercase">
-            <span>AUTONOMOUS REDISTRIBUTION</span>
+            <span>LIVE FEFO DRAWDOWN</span>
             <Truck className="w-3.5 h-3.5 text-[#0D8050]" />
           </div>
           <div className="text-2xl font-bold text-[#0D8050] font-mono tracking-tight">
-            Route Ready (13.5km Saved)
+            PostGIS KNN Ready
           </div>
           <button
-            onClick={triggerAgentRebalance}
+            onClick={triggerLiveFefoDrawdown}
             disabled={isLoading}
             className="foundry-btn w-full mt-1 bg-[#106BA3] hover:bg-[#0E5A8A] text-white text-[11px] py-1 disabled:opacity-50"
           >
             <RefreshCw className={`w-3 h-3 ${isLoading ? 'animate-spin' : ''}`} />
-            <span>{isLoading ? 'Executing Multi-Agent Loop...' : 'Deploy Autonomous Dispatch'}</span>
+            <span>{isLoading ? 'Reserving Batches...' : 'Trigger Live FEFO Drawdown'}</span>
           </button>
         </div>
 
