@@ -6,7 +6,14 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.database import close_db, connect_db
-from app.routes import dashboard_routes, facilities_routes, inventory_routes, ocr_routes, redistribution_routes
+from app.routes import (
+    alerts_routes,
+    dashboard_routes,
+    facilities_routes,
+    inventory_routes,
+    ocr_routes,
+    redistribution_routes,
+)
 
 
 @asynccontextmanager
@@ -33,6 +40,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(alerts_routes.router)
 app.include_router(dashboard_routes.router)
 app.include_router(facilities_routes.router)
 app.include_router(inventory_routes.router)
