@@ -1,23 +1,34 @@
 #!/usr/bin/env python3
 """CareDOM demo rehearsal driver.
 
-Drives and verifies the live "stock drawdown -> P0 alert -> redistribution
-suggestion" demo sequence against the DEPLOYED caredom-db-service, so the
-sequence can be rehearsed and then run again, identically, during recording.
+Drives and verifies two independent live demo sequences against the DEPLOYED
+caredom-db-service, so each can be rehearsed and then run again, identically,
+during recording:
+
+  run  - stock drawdown -> P0 alert -> redistribution suggestion, on
+         PHC-PUN-002/MED-PCM-500 (single-batch, no FEFO split to show).
+  fefo - a clean two-batch FEFO split on PHC-PUN-001/MED-PCM-500 (three
+         batches, staggered expiry), for the FEFO slide `run` can't provide.
 
 Standalone script - not a FastAPI route, not imported by the backend. Talks to
 the deployed service over HTTPS (stdlib urllib) for everything that already
-has an endpoint, and to Neon directly (asyncpg) only for the two things no
+has an endpoint, and to Neon directly (asyncpg) only for the things no
 endpoint exposes: reading facility_item_consumption.avg_daily_consumption
-(Stage 2's arithmetic) and reversing a `run`'s /inventory/allocate call. There
-is no unreserve/transfer endpoint in this build - allocate_fefo_stock
+(`run`'s Stage 2 arithmetic), reading individual batch rows (`fefo`'s Stage 1
+and Stage 4 - /api/v1/facilities only reports aggregate current_stock_pcm500,
+not per-batch state), and reversing an /inventory/allocate call for either
+pair. There is no unreserve/transfer endpoint in this build - allocate_fefo_stock
 (backend/db/schema.sql) only ever moves stock from quantity_available into
 quantity_reserved and writes a RESERVE ledger row; nothing reverses that. So
-without `reset`, a `run` spends the only rehearsal this facility has before
-someone has to fix the DB by hand.
+without `reset`, a `run` or `fefo` spends the only rehearsal its facility has
+before someone has to fix the DB by hand.
+
+`reset` restores whichever of the two demos have pending state - one, both, or
+neither - in a single transaction, and is safe to call when only one was run.
 
 Usage:
     python scripts/demo_drawdown.py run
+    python scripts/demo_drawdown.py fefo
     python scripts/demo_drawdown.py reset
 
 Requires: asyncpg (`pip install asyncpg`). Everything else is stdlib.
@@ -66,6 +77,21 @@ CROSS_BORDER_DONOR_ID = "CHC-TSH-004"
 # ~6,970 km per spec; PostGIS ST_Distance on this fixed 18-facility dataset is
 # deterministic, the range only absorbs float-formatting/rounding slack.
 CROSS_BORDER_DONOR_KM_RANGE = (6900.0, 7050.0)
+
+# `fefo`'s pair: PHC-PUN-002/MED-PCM-500 has a single batch (see the Task 1
+# analysis this was picked over), so it can't demonstrate FEFO batch-splitting.
+# PHC-PUN-001/MED-PCM-500 has three - a deliberate second, independent demo
+# target, same item so the on-camera story stays about one medicine.
+FEFO_FACILITY_ID = "PHC-PUN-001"
+FEFO_ITEM_CODE = "MED-PCM-500"
+
+# Person 2's notebook trace was 784+116=900 (784 fully drains batch1, 116 is
+# ~15% of a 784-unit batch2). That number is NOT reproduced here on purpose -
+# per spec this is derived live as batch1_qty + roughly-half of batch2_qty,
+# which will not equal 900 unless batch2 happens to be ~232 units. `fefo`
+# prints both numbers side by side so the mismatch is visible, not silent.
+FEFO_NOTEBOOK_REQUEST_QTY = 900
+FEFO_NOTEBOOK_BATCH2_PULL = 116
 
 STATE_FILE = Path(__file__).resolve().parent / ".demo_drawdown_state.json"
 BACKEND_ENV_FILE = Path(__file__).resolve().parent.parent / "backend" / ".env"
@@ -147,29 +173,58 @@ def get_db_url() -> str:
 
 
 # ---------------------------------------------------------------------------
-# State file (records what a `run` did, so `reset` can undo exactly that and
-# nothing else)
+# State file (records what `run` / `fefo` did, so `reset` can undo exactly
+# that and nothing else). Keyed by "facility_id|item_code" so the two demo
+# pairs persist independently - either, both, or neither can be pending at
+# once, and `reset` restores whatever it finds.
 # ---------------------------------------------------------------------------
 
-def save_state(state: dict):
-    STATE_FILE.write_text(json.dumps(state, indent=2))
+ALLOWED_PAIRS = {(FACILITY_ID, ITEM_CODE), (FEFO_FACILITY_ID, FEFO_ITEM_CODE)}
 
 
-def load_state() -> dict:
+def _run_key(facility_id: str, item_code: str) -> str:
+    return f"{facility_id}|{item_code}"
+
+
+def _load_all_runs() -> dict:
     if not STATE_FILE.exists():
-        fatal(f"No state file at {STATE_FILE} - nothing to reset (or it was already reset).")
-    state = json.loads(STATE_FILE.read_text())
-    if state["facility_id"] != FACILITY_ID or state["item_code"] != ITEM_CODE:
-        fatal(
-            f"State file references {state['facility_id']}/{state['item_code']}, "
-            f"but this script only ever touches {FACILITY_ID}/{ITEM_CODE}. Refusing."
-        )
-    return state
+        return {}
+    return json.loads(STATE_FILE.read_text())
 
 
-def clear_state():
-    if STATE_FILE.exists():
+def _write_all_runs(runs: dict):
+    if runs:
+        STATE_FILE.write_text(json.dumps(runs, indent=2))
+    elif STATE_FILE.exists():
         STATE_FILE.unlink()
+
+
+def save_run_state(facility_id: str, item_code: str, entry: dict):
+    runs = _load_all_runs()
+    runs[_run_key(facility_id, item_code)] = entry
+    _write_all_runs(runs)
+
+
+def load_pending_runs() -> dict:
+    """All pending run entries, keyed by 'facility_id|item_code'. Refuses
+    (rather than silently ignoring) any entry outside this script's two known
+    pairs - same "no flags to widen scope" guarantee as before, extended to
+    both pairs instead of hardcoded to one."""
+    runs = _load_all_runs()
+    for entry in runs.values():
+        pair = (entry["facility_id"], entry["item_code"])
+        if pair not in ALLOWED_PAIRS:
+            fatal(
+                f"State file contains an entry for {entry['facility_id']}/{entry['item_code']}, which is not "
+                f"one of this script's two known pairs ({sorted(ALLOWED_PAIRS)}). Refusing to touch it."
+            )
+    return runs
+
+
+def clear_run_state(facility_id: str, item_code: str):
+    runs = _load_all_runs()
+    runs.pop(_run_key(facility_id, item_code), None)
+    _write_all_runs(runs)
 
 
 # ---------------------------------------------------------------------------
@@ -264,12 +319,11 @@ def stage2_compute_allocation(current_stock: int, avg_daily_consumption: float) 
     return allocate_qty
 
 
-def stage3_allocate(allocate_qty: int) -> dict:
-    print("=== Stage 3: POST /api/v1/inventory/allocate ===")
+def post_allocate(facility_id: str, item_code: str, quantity: int) -> dict:
     status, payload, elapsed = post_json("/api/v1/inventory/allocate", {
-        "facility_id": FACILITY_ID,
-        "item_code": ITEM_CODE,
-        "quantity": allocate_qty,
+        "facility_id": facility_id,
+        "item_code": item_code,
+        "quantity": quantity,
     })
     print(f"  POST /api/v1/inventory/allocate -> {status} in {elapsed:.2f}s")
     if status != 200:
@@ -279,9 +333,18 @@ def stage3_allocate(allocate_qty: int) -> dict:
     print(f"  requested_quantity: {payload['requested_quantity']}")
     n = len(payload["allocations"])
     print(f"  FEFO split, earliest expiry drained first ({n} batch{'es' if n != 1 else ''}):")
+    # width=20 matches `run`'s original fixed padding exactly for its short
+    # "B240812"-style batch numbers; `fefo`'s much longer "SEED-..." names
+    # (up to 31 chars) widen it automatically instead of getting truncated.
+    width = max(20, max((len(a["batch_number"]) for a in payload["allocations"]), default=20))
     for i, alloc in enumerate(payload["allocations"], 1):
-        print(f"    {i}. batch {alloc['batch_number']:<20} qty={alloc['allocated_qty']:>5}  expiry={alloc['expiry_date']}  batch_id={alloc['batch_id']}")
+        print(f"    {i}. batch {alloc['batch_number']:<{width}} qty={alloc['allocated_qty']:>5}  expiry={alloc['expiry_date']}  batch_id={alloc['batch_id']}")
+    return payload
 
+
+def stage3_allocate(allocate_qty: int) -> dict:
+    print("=== Stage 3: POST /api/v1/inventory/allocate ===")
+    payload = post_allocate(FACILITY_ID, ITEM_CODE, allocate_qty)
     print("\nStage 3 OK.\n")
     return payload
 
@@ -374,7 +437,7 @@ def cmd_run(_args):
             payload = stage3_allocate(allocate_qty)
             window_end = await conn.fetchval("SELECT NOW()")
 
-            save_state({
+            save_run_state(FACILITY_ID, ITEM_CODE, {
                 "facility_id": FACILITY_ID,
                 "item_code": ITEM_CODE,
                 "window_start": window_start.isoformat(),
@@ -398,94 +461,312 @@ def cmd_run(_args):
 
 
 # ---------------------------------------------------------------------------
+# `fefo`
+# ---------------------------------------------------------------------------
+
+async def fefo_stage1_pre_state(conn: asyncpg.Connection) -> list[dict]:
+    print("=== Stage 1: pre-state (direct DB read - no per-batch API endpoint exists) ===")
+    batches = await conn.fetch(
+        """SELECT batch_id, batch_number, expiry_date, quantity_available, quantity_reserved
+           FROM inventory_batches
+           WHERE facility_id = $1 AND item_code = $2
+           ORDER BY expiry_date ASC""",
+        FEFO_FACILITY_ID, FEFO_ITEM_CODE,
+    )
+    if len(batches) < 2:
+        fatal(f"{FEFO_FACILITY_ID}/{FEFO_ITEM_CODE} has fewer than 2 batches - can't demonstrate a multi-batch FEFO split.")
+
+    for b in batches:
+        print(f"  batch {b['batch_number']:<35} expiry={b['expiry_date']}  quantity_available={b['quantity_available']:>5}  quantity_reserved={b['quantity_reserved']}")
+
+    if any(b["quantity_reserved"] != 0 for b in batches):
+        fatal(
+            f"{FEFO_FACILITY_ID}/{FEFO_ITEM_CODE} has nonzero quantity_reserved on at least one batch - "
+            f"a previous `fefo` run was not reset. Run `python {Path(__file__).name} reset` first."
+        )
+
+    notebook_expected = [784, 784, 785]
+    live_qtys = [b["quantity_available"] for b in batches[:3]]
+    if live_qtys != notebook_expected:
+        print(f"\n  Note: live quantities {live_qtys} differ from the notebook's {notebook_expected} - using the real numbers below.")
+
+    print("\nStage 1 OK - clean baseline confirmed, batches read from live DB.\n")
+    return [dict(b) for b in batches]
+
+
+def fefo_stage2_compute(batches: list[dict]) -> tuple[int, int]:
+    print("=== Stage 2: compute the two-batch split (arithmetic, no calls yet) ===")
+    batch1, batch2, batch3 = batches[0], batches[1], batches[2]
+    batch1_qty = batch1["quantity_available"]
+    batch2_qty = batch2["quantity_available"]
+
+    # "roughly half", per spec - NOT the notebook's fixed 900. See
+    # FEFO_NOTEBOOK_REQUEST_QTY's comment: this will only equal 900 if
+    # batch2_qty happens to be ~232, which it isn't for the current seed data.
+    batch2_slice = batch2_qty // 2
+    request_qty = batch1_qty + batch2_slice
+
+    print(f"  batch1 ({batch1['batch_number']}, expiry {batch1['expiry_date']})  quantity_available = {batch1_qty}")
+    print(f"  batch2 ({batch2['batch_number']}, expiry {batch2['expiry_date']})  quantity_available = {batch2_qty}")
+    print(f"  batch3 ({batch3['batch_number']}, expiry {batch3['expiry_date']})  quantity_available = {batch3['quantity_available']}  (must stay untouched)")
+    print(f"  batch2_slice  = floor(batch2_qty / 2) = floor({batch2_qty} / 2) = {batch2_slice}   (\"roughly half\", per spec)")
+    print(f"  request_qty   = batch1_qty + batch2_slice = {batch1_qty} + {batch2_slice} = {request_qty}")
+    print(f"  batch2 remaining after allocation = {batch2_qty} - {batch2_slice} = {batch2_qty - batch2_slice}")
+
+    notebook_pull_pct = FEFO_NOTEBOOK_BATCH2_PULL / 784 * 100
+    derived_pull_pct = batch2_slice / batch2_qty * 100 if batch2_qty else 0
+    print(
+        f"\n  Note: your notebook's trace was {784}+{FEFO_NOTEBOOK_BATCH2_PULL}={FEFO_NOTEBOOK_REQUEST_QTY} "
+        f"(batch2 pull = {FEFO_NOTEBOOK_BATCH2_PULL}, {notebook_pull_pct:.1f}% of a 784-unit batch2) - not "
+        f"\"roughly half\". This run uses the roughly-half derivation you specified instead: request_qty="
+        f"{request_qty} (batch2_slice={batch2_slice}, {derived_pull_pct:.1f}% of batch2)."
+    )
+
+    if not (0 < request_qty < batch1_qty + batch2_qty):
+        fatal(f"computed request_qty={request_qty} would not produce a clean two-batch split (batch1={batch1_qty}, batch2={batch2_qty}).")
+
+    print("\nStage 2 OK.\n")
+    return request_qty, batch2_slice
+
+
+def fefo_stage3_allocate(request_qty: int) -> dict:
+    print("=== Stage 3: POST /api/v1/inventory/allocate ===")
+    payload = post_allocate(FEFO_FACILITY_ID, FEFO_ITEM_CODE, request_qty)
+    print("\nStage 3 OK.\n")
+    return payload
+
+
+async def fefo_stage4_verify(conn: asyncpg.Connection, pre_batches: list[dict], payload: dict, batch2_slice: int) -> bool:
+    print("=== Stage 4: verify the two-batch FEFO split ===")
+    all_ok = True
+    batch1, batch2, batch3 = pre_batches[0], pre_batches[1], pre_batches[2]
+    allocations = payload["allocations"]
+
+    ok = len(allocations) == 2
+    all_ok &= check("exactly 2 batches touched (batch3 untouched by this allocation)", ok, f"got {len(allocations)}")
+
+    ok1 = len(allocations) > 0 and allocations[0]["batch_id"] == str(batch1["batch_id"])
+    all_ok &= check(
+        "earliest-expiry batch (batch1) allocated first",
+        ok1,
+        f"allocations[0].batch_id={allocations[0]['batch_id'] if allocations else '?'} vs batch1.batch_id={batch1['batch_id']}",
+    )
+
+    ok2 = len(allocations) > 1 and allocations[1]["batch_id"] == str(batch2["batch_id"])
+    all_ok &= check(
+        "second-earliest-expiry batch (batch2) allocated second",
+        ok2,
+        f"allocations[1].batch_id={allocations[1]['batch_id'] if len(allocations) > 1 else '?'} vs batch2.batch_id={batch2['batch_id']}",
+    )
+
+    rows = await conn.fetch(
+        """SELECT batch_id, quantity_available, quantity_reserved
+           FROM inventory_batches WHERE facility_id = $1 AND item_code = $2""",
+        FEFO_FACILITY_ID, FEFO_ITEM_CODE,
+    )
+    by_id = {str(r["batch_id"]): r for r in rows}
+
+    b1_now = by_id[str(batch1["batch_id"])]
+    ok = b1_now["quantity_available"] == 0 and b1_now["quantity_reserved"] == batch1["quantity_available"]
+    all_ok &= check(
+        "batch1 fully drained",
+        ok,
+        f"quantity_available={b1_now['quantity_available']} quantity_reserved={b1_now['quantity_reserved']}",
+    )
+
+    expected_b2_available = batch2["quantity_available"] - batch2_slice
+    b2_now = by_id[str(batch2["batch_id"])]
+    ok = (
+        b2_now["quantity_available"] == expected_b2_available
+        and 0 < b2_now["quantity_available"] < batch2["quantity_available"]
+        and b2_now["quantity_reserved"] == batch2_slice
+    )
+    all_ok &= check(
+        "batch2 partially consumed (not fully drained, not untouched)",
+        ok,
+        f"quantity_available={b2_now['quantity_available']} (expected {expected_b2_available}) quantity_reserved={b2_now['quantity_reserved']}",
+    )
+
+    b3_now = by_id[str(batch3["batch_id"])]
+    ok = b3_now["quantity_available"] == batch3["quantity_available"] and b3_now["quantity_reserved"] == 0
+    all_ok &= check(
+        "batch3 untouched",
+        ok,
+        f"quantity_available={b3_now['quantity_available']} (expected {batch3['quantity_available']}) quantity_reserved={b3_now['quantity_reserved']}",
+    )
+
+    print()
+    if all_ok:
+        print("Stage 4 OK - clean two-batch FEFO split verified.\n")
+    else:
+        print("Stage 4: one or more checks FAILED - do not record yet, investigate first.\n")
+    return all_ok
+
+
+def cmd_fefo(_args):
+    stage0_warmup()
+    wall_start = time.monotonic()
+
+    async def _stages1to4():
+        db_url = get_db_url()
+        conn = await asyncpg.connect(db_url)
+        try:
+            pre_batches = await fefo_stage1_pre_state(conn)
+            request_qty, batch2_slice = fefo_stage2_compute(pre_batches)
+
+            # Same clock-skew reasoning as `run`: window bounds come from
+            # Neon's own clock via this connection, not this machine's.
+            window_start = await conn.fetchval("SELECT NOW()")
+            payload = fefo_stage3_allocate(request_qty)
+            window_end = await conn.fetchval("SELECT NOW()")
+
+            save_run_state(FEFO_FACILITY_ID, FEFO_ITEM_CODE, {
+                "facility_id": FEFO_FACILITY_ID,
+                "item_code": FEFO_ITEM_CODE,
+                "window_start": window_start.isoformat(),
+                "window_end": window_end.isoformat(),
+                "allocations": [
+                    {"batch_id": a["batch_id"], "allocated_qty": a["allocated_qty"]}
+                    for a in payload["allocations"]
+                ],
+                # Recorded here (not hardcoded, since these quantities can
+                # legitimately drift) so `reset` can verify the facility's
+                # aggregate stock, not just individual batch rows.
+                "expected_restored_total": sum(b["quantity_available"] for b in pre_batches),
+            })
+
+            return await fefo_stage4_verify(conn, pre_batches, payload, batch2_slice)
+        finally:
+            await conn.close()
+
+    all_ok = asyncio.run(_stages1to4())
+    wall_elapsed = time.monotonic() - wall_start
+    print(f"Total wall-clock for stages 1-4: {wall_elapsed:.1f}s")
+
+    if not all_ok:
+        sys.exit(1)
+
+
+# ---------------------------------------------------------------------------
 # `reset`
 # ---------------------------------------------------------------------------
 
-async def do_reset(state: dict):
+async def do_reset(pending: dict):
     db_url = get_db_url()
     conn = await asyncpg.connect(db_url)
     try:
-        window_start = datetime.fromisoformat(state["window_start"])
-        window_end = datetime.fromisoformat(state["window_end"])
-        allocations = state["allocations"]
+        print(f"This reset covers {len(pending)} pending demo(s), each scoped to its own facility/item/window only:\n")
+        for entry in pending.values():
+            fid, item = entry["facility_id"], entry["item_code"]
+            allocations = entry["allocations"]
+            window_start = datetime.fromisoformat(entry["window_start"])
+            window_end = datetime.fromisoformat(entry["window_end"])
+            print(f"  {fid}/{item} - {len(allocations)} batch(es):")
+            for a in allocations:
+                print(f"    batch_id {a['batch_id']}: quantity_available += {a['allocated_qty']}, quantity_reserved -= {a['allocated_qty']}")
+            print(
+                f"    DELETE FROM inventory_ledger WHERE transaction_type='RESERVE' "
+                f"AND from_facility_id='{fid}' AND item_code='{item}'"
+                f"\n      AND batch_id/quantity matching the {len(allocations)} row(s) above"
+                f"\n      AND created_at BETWEEN {window_start.isoformat()} AND {window_end.isoformat()}\n"
+            )
+        print("(each pair's own window only - earlier RESERVE rows from other testing, and the other pair's rows, are untouched)\n")
 
-        print(f"This will change {len(allocations)} batch(es) for {FACILITY_ID}/{ITEM_CODE} only:\n")
-        for a in allocations:
-            print(f"  batch_id {a['batch_id']}: quantity_available += {a['allocated_qty']}, quantity_reserved -= {a['allocated_qty']}")
-        print(
-            f"\n  DELETE FROM inventory_ledger WHERE transaction_type='RESERVE' "
-            f"AND from_facility_id='{FACILITY_ID}' AND item_code='{ITEM_CODE}'"
-            f"\n    AND batch_id/quantity matching the {len(allocations)} row(s) above"
-            f"\n    AND created_at BETWEEN {window_start.isoformat()} AND {window_end.isoformat()}"
-            f"\n  (this run's own window only - earlier RESERVE rows from other testing are untouched)\n"
-        )
-
-        confirm = input("Type RESET to apply these changes: ")
+        confirm = input("Type RESET to apply all of the above in one transaction: ")
         if confirm.strip() != "RESET":
             print("Aborted - no changes made.")
             sys.exit(1)
 
         async with conn.transaction():
             deleted_total = 0
-            for a in allocations:
-                tag = await conn.execute(
-                    """UPDATE inventory_batches
-                       SET quantity_available = quantity_available + $1,
-                           quantity_reserved = quantity_reserved - $1
-                       WHERE batch_id = $2 AND facility_id = $3 AND item_code = $4""",
-                    a["allocated_qty"], a["batch_id"], FACILITY_ID, ITEM_CODE,
-                )
-                if tag != "UPDATE 1":
-                    raise RuntimeError(f"expected to update exactly 1 batch row for {a['batch_id']}, got: {tag}")
+            batches_touched = 0
+            for entry in pending.values():
+                fid, item = entry["facility_id"], entry["item_code"]
+                window_start = datetime.fromisoformat(entry["window_start"])
+                window_end = datetime.fromisoformat(entry["window_end"])
+                for a in entry["allocations"]:
+                    tag = await conn.execute(
+                        """UPDATE inventory_batches
+                           SET quantity_available = quantity_available + $1,
+                               quantity_reserved = quantity_reserved - $1
+                           WHERE batch_id = $2 AND facility_id = $3 AND item_code = $4""",
+                        a["allocated_qty"], a["batch_id"], fid, item,
+                    )
+                    if tag != "UPDATE 1":
+                        raise RuntimeError(f"expected to update exactly 1 batch row for {a['batch_id']}, got: {tag}")
+                    batches_touched += 1
 
-                result = await conn.execute(
-                    """DELETE FROM inventory_ledger
-                       WHERE transaction_type = 'RESERVE'
-                         AND batch_id = $1
-                         AND quantity = $2
-                         AND from_facility_id = $3
-                         AND item_code = $4
-                         AND created_at BETWEEN $5 AND $6""",
-                    a["batch_id"], a["allocated_qty"], FACILITY_ID, ITEM_CODE, window_start, window_end,
-                )
-                deleted_total += int(result.split()[-1])
+                    result = await conn.execute(
+                        """DELETE FROM inventory_ledger
+                           WHERE transaction_type = 'RESERVE'
+                             AND batch_id = $1
+                             AND quantity = $2
+                             AND from_facility_id = $3
+                             AND item_code = $4
+                             AND created_at BETWEEN $5 AND $6""",
+                        a["batch_id"], a["allocated_qty"], fid, item, window_start, window_end,
+                    )
+                    deleted_total += int(result.split()[-1])
 
-        print(f"\nCommitted. {len(allocations)} batch(es) restored, {deleted_total} ledger row(s) deleted.")
+        print(f"\nCommitted. {batches_touched} batch(es) restored across {len(pending)} demo(s), {deleted_total} ledger row(s) deleted.")
     finally:
         await conn.close()
 
 
-def verify_reset() -> bool:
+def verify_reset(pending: dict) -> bool:
     print("\n=== Verifying reset against the live API ===")
+    all_ok = True
+
     status, facilities, _ = get_json("/api/v1/facilities")
-    facility = None
-    if status == 200:
-        facility = next((f for f in facilities["facilities"] if f["facility_id"] == FACILITY_ID), None)
-    ok_fac = bool(facility) and facility["current_stock_pcm500"] == EXPECTED_BASELINE_STOCK and facility["risk_tier"] == EXPECTED_BASELINE_TIER
-    print(
-        f"  GET /api/v1/facilities -> {FACILITY_ID}: "
-        f"current_stock_pcm500={facility['current_stock_pcm500'] if facility else '?'} "
-        f"risk_tier={facility['risk_tier'] if facility else '?'}  [{'PASS' if ok_fac else 'FAIL'}]"
-    )
+    fac_list = facilities["facilities"] if status == 200 else []
+
+    for entry in pending.values():
+        fid, item = entry["facility_id"], entry["item_code"]
+        facility = next((f for f in fac_list if f["facility_id"] == fid), None)
+
+        if (fid, item) == (FACILITY_ID, ITEM_CODE):
+            # Unchanged guarantee: known-good hardcoded baseline for this pair.
+            ok = bool(facility) and facility["current_stock_pcm500"] == EXPECTED_BASELINE_STOCK and facility["risk_tier"] == EXPECTED_BASELINE_TIER
+            print(
+                f"  GET /api/v1/facilities -> {fid}: "
+                f"current_stock_pcm500={facility['current_stock_pcm500'] if facility else '?'} "
+                f"risk_tier={facility['risk_tier'] if facility else '?'}  [{'PASS' if ok else 'FAIL'}]"
+            )
+        else:
+            # No hardcoded baseline for this pair (quantities can drift per
+            # spec) - verify against the total recorded at `fefo` time instead.
+            expected_total = entry.get("expected_restored_total")
+            ok = bool(facility) and facility["current_stock_pcm500"] == expected_total
+            print(
+                f"  GET /api/v1/facilities -> {fid}: "
+                f"current_stock_pcm500={facility['current_stock_pcm500'] if facility else '?'} "
+                f"(expected {expected_total})  [{'PASS' if ok else 'FAIL'}]"
+            )
+        all_ok = all_ok and ok
 
     status, alerts, _ = get_json("/api/v1/alerts")
     ok_alerts = status == 200 and alerts.get("count") == 0
     print(f"  GET /api/v1/alerts -> count={alerts.get('count')}  [{'PASS' if ok_alerts else 'FAIL'}]")
+    all_ok = all_ok and ok_alerts
 
-    return ok_fac and ok_alerts
+    return all_ok
 
 
 def cmd_reset(_args):
-    state = load_state()
-    asyncio.run(do_reset(state))
+    pending = load_pending_runs()
+    if not pending:
+        fatal(f"No pending demo state at {STATE_FILE} - nothing to reset (or it was already reset).")
 
-    if not verify_reset():
+    asyncio.run(do_reset(pending))
+
+    if not verify_reset(pending):
         fatal(
-            "reset committed in the DB but the live API doesn't show the clean baseline. "
-            "State file kept (not cleared) so this can be investigated - do not run `run` again yet."
+            "reset committed in the DB but the live API doesn't show the clean baseline for at least one pair. "
+            "State file kept (not cleared) so this can be investigated - do not run `run`/`fefo` again yet."
         )
 
-    clear_state()
+    for entry in pending.values():
+        clear_run_state(entry["facility_id"], entry["item_code"])
     print("\nReset verified - DB and live API are back to the clean baseline. State file cleared.\n")
 
 
@@ -495,11 +776,14 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = parser.add_subparsers(dest="command", required=True)
     sub.add_parser("run", help="Drive the drawdown demo sequence against the deployed service.")
-    sub.add_parser("reset", help="Reverse the last `run`'s allocation and restore the clean baseline.")
+    sub.add_parser("fefo", help="Drive the two-batch FEFO split demo (PHC-PUN-001/MED-PCM-500) against the deployed service.")
+    sub.add_parser("reset", help="Reverse any pending `run`/`fefo` allocations and restore the clean baseline.")
     args = parser.parse_args()
 
     if args.command == "run":
         cmd_run(args)
+    elif args.command == "fefo":
+        cmd_fefo(args)
     elif args.command == "reset":
         cmd_reset(args)
 
