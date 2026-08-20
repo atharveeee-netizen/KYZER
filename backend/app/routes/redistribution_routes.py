@@ -28,6 +28,15 @@ from app.database import get_db
 
 router = APIRouter(prefix="/api/v1/redistribution", tags=["Redistribution"])
 
+# Previously "POST /api/v1/inventory/transfer" — that route was never
+# implemented anywhere in this codebase, so following it from either response
+# shape below 404s. No inter-facility transfer endpoint exists and none is
+# being built this week; /api/v1/inventory/allocate is NOT a substitute — it
+# reserves stock for one facility from its own batches, it doesn't move stock
+# between facilities. This string is honest about that gap instead of
+# pointing at a route that doesn't exist.
+_DISPATCH_ACTION = "Manual dispatch — no automated transfer endpoint in this build"
+
 _SUGGEST_QUERY = """
 SELECT
     f.facility_id,
@@ -157,7 +166,7 @@ async def suggest_resource_redistribution(
                 "batch_expiry": str(domestic_row["expiry_date"]),
                 "available_stock": domestic_row["quantity_available"],
             },
-            "dispatch_action": "POST /api/v1/inventory/transfer",
+            "dispatch_action": _DISPATCH_ACTION,
         }
 
     cross_border_row = await db.fetchrow(_CROSS_BORDER_QUERY, requesting_facility_id, item_code, needed_qty)
@@ -179,5 +188,5 @@ async def suggest_resource_redistribution(
         # result. Only 404 when neither exists (checked above).
         "suggested_donor": _donor_dict(domestic_row, cross_border=False),
         "cross_border_donor": _donor_dict(cross_border_row, cross_border=True),
-        "dispatch_action": "POST /api/v1/inventory/transfer",
+        "dispatch_action": _DISPATCH_ACTION,
     }

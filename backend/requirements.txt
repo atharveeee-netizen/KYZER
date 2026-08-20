@@ -1,5 +1,12 @@
-fastapi>=0.110.0
-uvicorn[standard]>=0.28.0
-pydantic>=2.5.0
-pydantic-settings>=2.2.0
-asyncpg>=0.29.0
+# Pinned to the exact versions running in the deployed caredom-db-service
+# image (read out of a local `docker build` of this Dockerfile+requirements
+# pair, matching the pip install layer already cached from the same content
+# hash — see git log for backend/requirements.txt, unchanged since 2026-08-18).
+# Render auto-deploys from main with no lockfile; `>=` here let an upstream
+# release between now and Demo Day (2026-09-04) break a build with no commit
+# to blame. Bump deliberately, not via a bare `pip install -U`.
+fastapi==0.141.1
+uvicorn[standard]==0.52.3
+pydantic==2.13.4
+pydantic-settings==2.15.0
+asyncpg==0.31.0
