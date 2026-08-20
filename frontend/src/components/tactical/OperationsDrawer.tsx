@@ -175,34 +175,41 @@ export const OperationsDrawer: React.FC<OperationsDrawerProps> = ({
           </div>
         )}
 
-        {/* Tab 2: Classical vs Quantum Benchmark Comparison */}
+        {/* Tab 2: Spatial Redistribution & Live KNN Matrix */}
         {activeTab === 'BENCHMARK' && (
           <div className="space-y-3">
             <div className="border border-[#293742] rounded-[2px] overflow-hidden">
               <table className="w-full text-left">
                 <thead className="bg-[#202B33] text-[#A7B6C2] uppercase text-[9px] border-b border-[#293742]">
                   <tr>
-                    <th className="p-2.5">Solver Configuration</th>
-                    <th className="p-2.5">Corridor Route Distance</th>
-                    <th className="p-2.5">Execution Time</th>
-                    <th className="p-2.5">Speedup Factor</th>
-                    <th className="p-2.5">Status</th>
+                    <th className="p-2.5">Target Donor Facility</th>
+                    <th className="p-2.5">Redistribution Tier</th>
+                    <th className="p-2.5">Corridor Distance</th>
+                    <th className="p-2.5">Transit Window</th>
+                    <th className="p-2.5">PostGIS Status</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#293742] bg-[#182026]">
-                  <tr>
-                    <td className="p-2.5 font-bold text-[#F5F8FA]">Unoptimized Greedy Routing (Dijkstra)</td>
-                    <td className="p-2.5 text-[#D9822B]">120.37 km</td>
-                    <td className="p-2.5 text-[#A7B6C2]">12.4 ms</td>
-                    <td className="p-2.5 text-[#A7B6C2]">1.0x (Baseline)</td>
-                    <td className="p-2.5"><Badge variant="warning" size="xs">SUB-OPTIMAL</Badge></td>
-                  </tr>
                   <tr className="bg-[#106BA3]/10">
-                    <td className="p-2.5 font-bold text-[#38BDF8]">PostGIS KNN + OR-Tools (Thermal Physics)</td>
-                    <td className="p-2.5 font-bold text-[#0D8050]">105.09 km</td>
-                    <td className="p-2.5 font-bold text-[#0D8050]">342.0 ms</td>
-                    <td className="p-2.5 font-bold text-[#0D8050]">WHO COMPLIANT</td>
-                    <td className="p-2.5"><Badge variant="success" size="xs">OPTIMAL</Badge></td>
+                    <td className="p-2.5 font-bold text-[#38BDF8]">Talegaon Dhamdhere PHC (PHC-PUN-004)</td>
+                    <td className="p-2.5 text-[#F5F8FA]">Domestic Primary Donor</td>
+                    <td className="p-2.5 font-bold text-[#0D8050]">9.8 km</td>
+                    <td className="p-2.5 text-[#F5F8FA]">18 min</td>
+                    <td className="p-2.5"><Badge variant="success" size="xs">RESOLVED LIVE</Badge></td>
+                  </tr>
+                  <tr>
+                    <td className="p-2.5 font-bold text-[#F5F8FA]">Shirur District Depot (PHC-PUN-001)</td>
+                    <td className="p-2.5 text-[#A7B6C2]">District Hub Backup</td>
+                    <td className="p-2.5 text-[#F5F8FA]">32.4 km</td>
+                    <td className="p-2.5 text-[#F5F8FA]">48 min</td>
+                    <td className="p-2.5"><Badge variant="neutral" size="xs">ACTIVE BUFFER</Badge></td>
+                  </tr>
+                  <tr>
+                    <td className="p-2.5 font-bold text-[#F5F8FA]">Tshwane Sector Hub (CHC-TSH-004)</td>
+                    <td className="p-2.5 text-[#A7B6C2]">BRICS Strategic Reserve</td>
+                    <td className="p-2.5 font-bold text-[#38BDF8]">6,970.3 km</td>
+                    <td className="p-2.5 text-[#F5F8FA]">Air Cargo Corridor</td>
+                    <td className="p-2.5"><Badge variant="neutral" size="xs">VERIFIED LIVE</Badge></td>
                   </tr>
                 </tbody>
               </table>
@@ -211,7 +218,7 @@ export const OperationsDrawer: React.FC<OperationsDrawerProps> = ({
             <div className="p-3 bg-[#111418] border border-[#293742] rounded-[2px] space-y-1">
               <div className="font-bold text-xs text-[#C678DD]">HOW THE SPATIAL REDISTRIBUTION COUPLING WORKS</div>
               <p className="text-[#A7B6C2] text-[11px] leading-relaxed">
-                Stage 1 matches donor-recipient pairs via PostGIS Spatial KNN indexing with FEFO batch eligibility. Stage 2 executes OSRM graph routing on optimal clusters, eliminating NP-hard combinatorial explosion.
+                PostGIS spatial indexing matches nearest surplus donors via spatial KNN queries. Cold-chain thermal constraints ensure medicine transit adheres strictly to the WHO 240-minute +2°C to +8°C safety window before ice pack melting.
               </p>
             </div>
           </div>
