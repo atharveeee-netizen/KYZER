@@ -47,6 +47,9 @@ dist-ssr/
 .DS_Store
 Thumbs.db
 
+# Demo rehearsal state (scripts/demo_drawdown.py) — ephemeral, per-run
+scripts/.demo_drawdown_state.json
+
 # Project generated artifacts
 outputs/*.png
 outputs/*.csv

@@ -14,8 +14,7 @@
 
 ## 🌐 LIVE PLATFORM DEMO
 👉 **Live Web Application:** **[https://atharveeee-netizen.github.io/KYZER/](https://atharveeee-netizen.github.io/KYZER/)**  
-👉 **API Documentation (Swagger):** `https://caredom-db-service.onrender.com/docs`  
-👉 **Algorithmic Benchmark (20 Papers):** [ROUTING_BENCHMARK_20_PAPERS.md](docs/ROUTING_BENCHMARK_20_PAPERS.md)
+👉 **API Documentation (Swagger):** `https://caredom-db-service.onrender.com/docs`
 
 ---
 
