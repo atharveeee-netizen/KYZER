@@ -62,7 +62,7 @@ const SOVEREIGN_FACILITIES: HealthCentre[] = [
 
 const INITIAL_AGENT_TRACES: AgentTrace[] = [
   { id: 'tr-101', timestamp: '21:49:02', agent: 'Planner', action: 'Monsoon surge vector detected at Koregaon Bhima (PHC-PUN-002). Stock buffer depleted below 3.0 days (<138 units).', status: 'EXECUTED' },
-  { id: 'tr-102', timestamp: '21:49:05', agent: 'SupplyRouter', action: 'PostGIS KNN Match + IBM Heron QAOA: Nearest domestic donor Talegaon Dhamdhere (PHC-PUN-004, 9.8 km) + Cross-border Tshwane (CHC-TSH-004, 6,970.3 km).', status: 'EXECUTED' },
+  { id: 'tr-102', timestamp: '21:49:05', agent: 'SupplyRouter', action: 'PostGIS KNN Match + Hybrid QAOA: Nearest domestic donor Talegaon Dhamdhere (PHC-PUN-004, 9.8 km) + Cross-border Tshwane (CHC-TSH-004, 6,970.3 km).', status: 'EXECUTED' },
   { id: 'tr-103', timestamp: '21:49:08', agent: 'ComplianceVerifier', action: 'Strix Pen-Test Pass: Signed dispatch payload with Government KMS Key #9021. Donor buffer: 2.1x >= 1.9x.', status: 'EXECUTED' },
 ];
 
@@ -141,7 +141,7 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
     {
       id: 'allocator',
       name: 'Executor / Allocator Agent',
-      role: 'PostGIS KNN + IBM Heron QAOA VRP',
+      role: 'PostGIS KNN + Hybrid QAOA VRP',
       latency: '12.7ms',
       status: 'OPTIMIZED',
       tag: '03.VRP',
@@ -208,10 +208,10 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
             <div className="px-3.5 py-2 rounded-[3px] bg-[#111418] border border-[#293742] text-left font-mono">
               <div className="flex items-center gap-1.5 text-[9px] text-[#5C7080] uppercase">
                 <span className="w-1.5 h-1.5 rounded-full bg-[#0D8050] animate-pulse"></span>
-                <span>IBM Quantum QPU</span>
+                <span>Hybrid QAOA Router</span>
               </div>
               <div className="text-xs font-bold text-[#F5F8FA] mt-0.5">
-                ibm_fez (156-Qubit Heron r2)
+                16-Qubit QAOA (Qiskit Aer)
               </div>
             </div>
 

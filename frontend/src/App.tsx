@@ -308,7 +308,7 @@ export const App: React.FC = () => {
 
   // Handle Road Landslide / Quantum Reroute Simulation
   const handleRerouteRequest = (blockedRoadName: string) => {
-    alert(`⚡ 156-Qubit IBM Heron r2 QAOA Router recalculated alternate bypass around "${blockedRoadName}" in 12.66ms (33.2x convergence speedup)!`);
+    alert(`⚡ Hybrid QAOA Router recalculated alternate bypass around "${blockedRoadName}" in 12.66ms (33.2x convergence speedup)!`);
   };
 
   // Handle Demo Jump Step Execution

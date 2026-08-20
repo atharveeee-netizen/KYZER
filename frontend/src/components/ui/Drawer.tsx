@@ -30,34 +30,35 @@ export const Drawer: React.FC<DrawerProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end bg-black/60 backdrop-blur-xs">
+    <div className="fixed inset-0 z-50 flex justify-end bg-black/50 backdrop-blur-xs animate-in fade-in duration-150">
       <div
-        className={`w-full ${widthClasses[width]} h-full bg-[#182026] border-l border-[#293742] shadow-2xl flex flex-col transform transition-transform animate-in slide-in-from-right duration-200`}
+        className={`w-full ${widthClasses[width]} h-full bg-surface-card border-l border-hairline shadow-panel flex flex-col transform transition-transform animate-in slide-in-from-right duration-200`}
       >
         {/* Header */}
-        <div className="p-4 border-b border-[#293742] bg-[#202B33] flex items-center justify-between">
+        <div className="p-4 border-b border-hairline bg-surface-card flex items-center justify-between shrink-0">
           <div className="space-y-0.5">
             <div className="flex items-center gap-2">
-              <h2 className="text-sm font-bold uppercase tracking-wider text-[#F5F8FA] font-mono">
+              <h2 className="text-sm font-semibold tracking-tight text-ink">
                 {title}
               </h2>
               {badge}
             </div>
             {subtitle && (
-              <p className="text-xs text-[#A7B6C2]">{subtitle}</p>
+              <p className="text-xs text-body">{subtitle}</p>
             )}
           </div>
 
           <button
             onClick={onClose}
-            className="p-1 text-[#A7B6C2] hover:text-[#F5F8FA] hover:bg-[#293742] rounded-[2px] transition-colors"
+            className="p-1.5 text-muted hover:text-ink hover:bg-surface-elevated rounded-full transition-colors"
+            title="Close Drawer"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Body */}
-        <div className="flex-1 overflow-y-auto p-5 space-y-4">
+        <div className="flex-1 overflow-y-auto p-5 space-y-4 text-ink">
           {children}
         </div>
       </div>

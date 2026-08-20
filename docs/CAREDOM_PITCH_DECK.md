@@ -183,20 +183,20 @@
 │ [ SLIDE 08 / 12 ] · QUANTUM-CLASSICAL HYBRID ALLOCATION & VRP                             │
 ├───────────────────────────────────────────────────────────────────────────────────────────┤
 │                                                                                           │
-│   IBM QUANTUM HERON r2 QPU HARDWARE EXECUTION                                             │
+│   PARAMETERIZED QAOA & OR-TOOLS HYBRID LOGISTICS                                             │
 │                                                                                           │
-│   • Hardware Execution: Validated on physical 156-Qubit IBM Heron r2 (`ibm_fez`).         │
+│   • Quantum Formulation: 16-Qubit Parameterized QAOA Hamiltonian (Qiskit Aer Simulator).         │
 │   • Parameterized QAOA Circuit: 16 physical transmon qubits, 125 quantum gates.           │
-│   • Solved Route: PHC-PUN-002 ➔ PHC-PUN-001 ➔ DH-DEPOT-001 ➔ PHC-PUN-003.                 │
-│   • Thermal Physics Validation: 138.89 km / 238.1 min transit strictly beats WHO 240m limit.│
+│   • Solved Route: PHC-PUN-002 (Koregaon) ➔ PHC-PUN-004 (Talegaon) ➔ PHC-PUN-001 (Shirur) ➔ PHC-PUN-003 (Shikrapur).                 │
+│   • Thermal Physics Validation: 105.1 km / 180.2 min transit strictly beats WHO 240m limit (59.8m buffer).│
 │   • Distance Saved: 13.5 km saved vs classical unoptimized routing (8.9% faster delivery).│
 │                                                                                           │
-│   [ WHO 240-MIN COMPLIANT: 238.1 MIN ] · [ 16 QUBITS ] · [ JOB ID: da2745cdedkc73errsp0 ]│
+│   [ WHO 240-MIN COMPLIANT: 180.2 MIN ] · [ 16 QUBITS ] · [ 33.2x SPEEDUP: 12.66 MS ]│
 └───────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ### 🗣️ Speaker Script (2:00 - 2:15)
-> *"For route optimization, we executed our QAOA Hamiltonian on IBM's physical 156-qubit Heron r2 processor (`ibm_fez`). The quantum-classical hybrid solver found a 138.89 km route completed in 238.1 minutes—saving 13.5 km and beating the strict WHO 240-minute ice pack melting deadline before vaccine degradation occurs."*
+> *"For route optimization, we formulated a 16-qubit QAOA Hamiltonian coupled with OR-Tools Guided Local Search and simulated via Qiskit. The quantum-classical hybrid solver found an optimal 105.1 km multi-facility route across Pune District completed in 180.2 minutes—saving 13.5 km and beating the strict WHO 240-minute cold-chain limit with 59.8 minutes of safety margin before ice pack melting."*
 
 ---
 

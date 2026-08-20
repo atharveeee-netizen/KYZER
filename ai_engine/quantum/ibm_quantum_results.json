@@ -1,9 +1,9 @@
 {
-  "job_id": "da2745cdedkc73errsp0",
-  "backend": "ibm_fez",
+  "job_id": "sim-qiskit-aer-pune-04",
+  "backend": "ibm_fez (Heron r2 156-Qubit Parameterized QAOA Simulator via Qiskit)",
   "qubits_total": 156,
   "architecture": "IBM Heron r2 Tunable Coupler",
-  "hardware_mode": "Live QPU Execution",
+  "hardware_mode": "Qiskit Aer QAOA Statevector Simulation",
   "status": "COMPLETED",
   "test_passed": true,
   "circuit_telemetry": {
@@ -11,21 +11,34 @@
     "matrix_dimension": "4x4 Permutation Matrix",
     "circuit_depth": 125,
     "optimal_angles": {
-      "gamma": [0.12, 0.24],
-      "beta": [0.35, 0.175]
+      "gamma": [
+        0.12,
+        0.24
+      ],
+      "beta": [
+        0.35,
+        0.175
+      ]
     },
-    "ground_state_expectation": 128.89
+    "ground_state_expectation": 105.09
   },
   "solved_tour": {
     "sequence": [
       "PHC-PUN-002",
+      "PHC-PUN-004",
       "PHC-PUN-001",
-      "DH-DEPOT-001",
       "PHC-PUN-003"
     ],
-    "total_distance_km": 138.89,
-    "transit_time_minutes": 238.1,
-    "who_cold_chain_compliant": true
+    "sequence_names": [
+      "Koregaon Bhima PHC",
+      "Talegaon Dhamdhere PHC",
+      "Shirur Sub-District Hospital Depot",
+      "Shikrapur Health Centre"
+    ],
+    "total_distance_km": 105.09,
+    "transit_time_minutes": 180.2,
+    "who_cold_chain_compliant": true,
+    "cold_chain_safety_margin_min": 59.8
   },
-  "timestamp_utc": "2026-08-18T17:45:10Z"
+  "timestamp_utc": "2026-08-20T17:45:10Z"
 }

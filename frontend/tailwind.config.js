@@ -13,15 +13,21 @@ export default {
           soft: 'var(--color-canvas-soft)',
         },
         surface: {
+          DEFAULT: 'var(--color-surface-card)',
           card: 'var(--color-surface-card)',
-          strong: 'var(--color-surface-strong)',
+          elevated: 'var(--color-surface-elevated)',
+          dark: 'var(--color-surface-dark)',
+          soft: 'var(--color-surface-soft)',
         },
         hairline: {
           DEFAULT: 'var(--color-hairline)',
           soft: 'var(--color-hairline-soft)',
           strong: 'var(--color-hairline-strong)',
         },
-        ink: 'var(--color-ink)',
+        ink: {
+          DEFAULT: 'var(--color-ink)',
+          deep: 'var(--color-ink-deep)',
+        },
         body: {
           DEFAULT: 'var(--color-body)',
           strong: 'var(--color-body-strong)',
@@ -31,32 +37,44 @@ export default {
           soft: 'var(--color-muted-soft)',
         },
         primary: {
-          DEFAULT: '#f54e00',
-          active: '#d04200',
+          DEFAULT: 'var(--color-primary)',
+          active: 'var(--color-primary-active)',
+          foreground: 'var(--color-primary-foreground)',
         },
-        timeline: {
-          thinking: '#dfa88f', // Peach
-          grep: '#9fc9a2',     // Mint
-          read: '#9fbbe0',     // Pastel blue
-          edit: '#c0a8dd',     // Lavender
-          done: '#c08532',     // Warm gold
+        intent: {
+          primary: 'var(--color-intent-primary)',
+          success: 'var(--color-intent-success)',
+          warning: 'var(--color-intent-warning)',
+          danger: 'var(--color-intent-danger)',
+          info: 'var(--color-intent-info)',
         },
         semantic: {
-          success: '#10b981',
-          error: '#ef4444',
+          success: 'var(--color-intent-success)',
+          warning: 'var(--color-intent-warning)',
+          error: 'var(--color-intent-danger)',
+          info: 'var(--color-intent-info)',
         }
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
-        mono: ['"JetBrains Mono"', 'monospace'],
+        sans: ['Inter', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+        mono: ['"JetBrains Mono"', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
       },
       borderRadius: {
+        none: '0px',
         xs: '4px',
         sm: '6px',
         md: '8px',
         lg: '12px',
         xl: '16px',
         pill: '9999px',
+        full: '9999px',
+      },
+      boxShadow: {
+        subtle: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+        card: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1)',
+        elevated: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1)',
+        panel: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1)',
+        none: 'none',
       }
     },
   },

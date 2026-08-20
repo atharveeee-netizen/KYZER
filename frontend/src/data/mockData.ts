@@ -290,7 +290,7 @@ export const MOCK_SHAP_DRIVERS: ShapDriver[] = [
 
 export const MOCK_ROUTING_RESULT: RoutingResult = {
  scale_tier: 'MICRO_QUANTUM',
- algorithm: 'IBM Quantum QAOA (156-Qubit Heron r2) + OR-Tools Guided Local Search',
+ algorithm: 'Hybrid QAOA (16-Qubit Qiskit Aer) + OR-Tools Guided Local Search',
  total_distance_km: 79.69,
  total_time_min: 138.4,
  cold_chain_compliant: true,
@@ -301,7 +301,7 @@ export const MOCK_ROUTING_RESULT: RoutingResult = {
  stops: [
  {
  sequence: 1,
- facility_id: 'DH-DEPOT-001',
+ facility_id: 'PHC-PUN-001',
  name: 'Aundh Central Depot (Origin)',
  arrival_time: '08:00',
  departure_time: '08:30',
@@ -328,7 +328,7 @@ export const MOCK_ROUTING_RESULT: RoutingResult = {
  },
  {
  sequence: 4,
- facility_id: 'DH-DEPOT-001',
+ facility_id: 'PHC-PUN-001',
  name: 'Aundh Central Depot (Return)',
  arrival_time: '12:20',
  departure_time: '12:30',

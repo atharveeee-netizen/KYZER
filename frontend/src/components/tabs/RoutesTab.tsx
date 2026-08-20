@@ -63,7 +63,7 @@ export const RoutesTab: React.FC<RoutesTabProps> = ({ routingResult, isLive = fa
               Autonomous Medicine Redistribution & Cold-Chain Routing
             </h1>
             <p className="text-xs text-[#A7B6C2] max-w-3xl leading-relaxed">
-              156-Qubit IBM Heron r2 QAOA solves Vehicle Routing with Time Windows (CVRPTW). Incorporates
+              Hybrid QAOA + OR-Tools solves Vehicle Routing with Time Windows (CVRPTW). Incorporates
               thermal physics decay equations to ensure vaccine carriers stay within +2°C to +8°C before ice pack melting.
             </p>
           </div>
@@ -271,7 +271,7 @@ export const RoutesTab: React.FC<RoutesTabProps> = ({ routingResult, isLive = fa
                 <div className="text-[10px] text-[#5C7080] uppercase">Proposed Transfer:</div>
                 <div className="font-bold text-[#F5F8FA]">450 Units Paracetamol 500mg (Batch B2408)</div>
                 <div className="text-[11px] text-[#A7B6C2]">From: Shirur Sub-District Depot ➔ To: Koregaon Bhima PHC</div>
-                <div className="text-[11px] text-[#0D8050]">Donor Buffer Remaining: 2.1x (Safe) · Route: 138.89 km (238.1 min)</div>
+                <div className="text-[11px] text-[#0D8050]">Donor Buffer Remaining: 2.1x (Safe) · Route: 105.09 km (180.2 min)</div>
               </div>
 
               <div>

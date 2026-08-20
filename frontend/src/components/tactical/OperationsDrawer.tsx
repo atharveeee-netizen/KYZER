@@ -45,7 +45,7 @@ export const OperationsDrawer: React.FC<OperationsDrawerProps> = ({
       isOpen={isOpen}
       onClose={onClose}
       title="Quantum-Hybrid VRP & Cold-Chain Routing Console"
-      subtitle="156-Qubit IBM Heron r2 QAOA + OR-Tools Guided Local Search (CVRPTW)"
+      subtitle="Qiskit QAOA Circuit + OR-Tools Guided Local Search (CVRPTW)"
       badge={
         <Badge variant={isLive ? "success" : "warning"} size="xs">
           {isLive ? "LIVE OR-TOOLS & QAOA" : "SIMULATED CACHE"}
@@ -198,7 +198,7 @@ export const OperationsDrawer: React.FC<OperationsDrawerProps> = ({
                     <td className="p-2.5"><Badge variant="neutral" size="xs">CPU BOUND</Badge></td>
                   </tr>
                   <tr className="bg-[#106BA3]/10">
-                    <td className="p-2.5 font-bold text-[#38BDF8]">Quantum-Hybrid QAOA (IBM Heron r2)</td>
+                    <td className="p-2.5 font-bold text-[#38BDF8]">Quantum-Hybrid QAOA (Qiskit Aer)</td>
                     <td className="p-2.5 font-bold text-[#0D8050]">178.26 km</td>
                     <td className="p-2.5 font-bold text-[#0D8050]">12.66 ms</td>
                     <td className="p-2.5 font-bold text-[#0D8050]">33.2x FASTER</td>

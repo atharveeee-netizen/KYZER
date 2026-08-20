@@ -16,17 +16,17 @@ export const Card: React.FC<CardProps> = ({
 }) => {
   return (
     <div
-      className={`foundry-card overflow-hidden ${isInteractive ? 'cursor-pointer hover:border-[#106BA3]' : ''} ${className}`}
+      className={`foundry-card overflow-hidden ${isInteractive ? 'cursor-pointer hover:border-hairline-strong' : ''} ${className}`}
       {...props}
     >
       {header && (
-        <div className="px-4 py-2.5 border-b border-[#293742] bg-[#182026]/50 flex items-center justify-between">
+        <div className="px-4 py-2.5 border-b border-hairline bg-surface-elevated/40 flex items-center justify-between">
           {header}
         </div>
       )}
       <div className="p-4">{children}</div>
       {footer && (
-        <div className="px-4 py-2 border-t border-[#293742] bg-[#182026]/30 text-xs text-[#A7B6C2]">
+        <div className="px-4 py-2 border-t border-hairline bg-surface-elevated/20 text-xs text-body">
           {footer}
         </div>
       )}

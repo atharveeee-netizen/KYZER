@@ -13,17 +13,17 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const variantClasses: Record<ButtonVariant, string> = {
-  primary: 'bg-[#106BA3] hover:bg-[#0E5A8A] text-white border border-[#106BA3]',
-  secondary: 'bg-[#202B33] hover:bg-[#293742] text-[#F5F8FA] border border-[#293742]',
-  success: 'bg-[#0D8050] hover:bg-[#0A6640] text-white border border-[#0D8050]',
-  danger: 'bg-[#C23030] hover:bg-[#A82A2A] text-white border border-[#C23030]',
-  ghost: 'bg-transparent hover:bg-[#202B33] text-[#A7B6C2] hover:text-[#F5F8FA]',
-  outline: 'bg-transparent hover:bg-[#202B33] text-[#F5F8FA] border border-[#293742] hover:border-[#394B59]',
+  primary: 'bg-primary hover:bg-primary-active text-primary-foreground border border-primary shadow-subtle',
+  secondary: 'bg-surface-card hover:bg-surface-elevated text-ink border border-hairline hover:border-hairline-strong shadow-subtle',
+  success: 'bg-intent-success hover:opacity-90 text-white border border-intent-success shadow-subtle',
+  danger: 'bg-intent-danger hover:opacity-90 text-white border border-intent-danger shadow-subtle',
+  ghost: 'bg-transparent hover:bg-surface-elevated text-body hover:text-ink',
+  outline: 'bg-transparent hover:bg-surface-elevated text-ink border border-hairline hover:border-hairline-strong',
 };
 
 const sizeClasses: Record<ButtonSize, string> = {
-  xs: 'text-[11px] px-2 py-1 gap-1.5',
-  sm: 'text-xs px-3 py-1.5 gap-2',
+  xs: 'text-[11px] px-2.5 py-1 gap-1.5',
+  sm: 'text-xs px-3.5 py-1.5 gap-2',
   md: 'text-xs px-4 py-2 gap-2',
   lg: 'text-sm px-5 py-2.5 gap-2.5',
 };
@@ -42,7 +42,7 @@ export const Button: React.FC<ButtonProps> = ({
   return (
     <button
       disabled={disabled || isLoading}
-      className={`foundry-btn font-medium transition-all select-none disabled:opacity-50 disabled:cursor-not-allowed ${variantClasses[variant]} ${sizeClasses[size]} ${className}`}
+      className={`foundry-btn font-medium select-none disabled:opacity-40 disabled:cursor-not-allowed ${variantClasses[variant]} ${sizeClasses[size]} ${className}`}
       {...props}
     >
       {isLoading ? (

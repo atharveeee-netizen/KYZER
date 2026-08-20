@@ -1,9 +1,9 @@
-﻿import sys
+import sys
 
 def write_file(path, content):
     with open(path, 'w', encoding='utf-8') as f:
         f.write(content)
-    print(fWrote {path})
+    print(f'Wrote {path}')
 
 # 1. Badge.tsx
 write_file('frontend/src/components/ui/Badge.tsx', '''import React from 'react';

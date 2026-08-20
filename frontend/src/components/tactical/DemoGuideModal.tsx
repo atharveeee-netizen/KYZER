@@ -69,9 +69,9 @@ export const DemoGuideModal: React.FC<DemoGuideModalProps> = ({
       time: '1:30 - 2:15',
       badge: '33.2x SPEEDUP',
       icon: <Cpu className="w-5 h-5 text-[#C678DD]" />,
-      headline: '156-Qubit IBM Heron r2 Solving CVRPTW with Thermal Cold-Chain Safety',
+      headline: 'Hybrid QAOA + OR-Tools CVRPTW with Thermal Cold-Chain Safety',
       bullets: [
-        'Stage 1 QUBO matrix matches surplus donor (Talegaon Dhamdhere) with recipient in 12.66ms.',
+        'Stage 1 QUBO matrix matches surplus donor (Talegaon Dhamdhere PHC-PUN-004, 9.8 km) in 12.66ms.',
         'Stage 2 OSRM street-snapped graph router renders 60fps vehicle transit along SH-27.',
         'Cold-chain sensor integration enforces WHO 240-min +2°C to +8°C temperature safety limit.',
       ],
