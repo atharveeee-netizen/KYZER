@@ -63,7 +63,7 @@ export const RoutesTab: React.FC<RoutesTabProps> = ({ routingResult, isLive = fa
               Autonomous Medicine Redistribution & Cold-Chain Routing
             </h1>
             <p className="text-xs text-[#A7B6C2] max-w-3xl leading-relaxed">
-              Hybrid QAOA + OR-Tools solves Vehicle Routing with Time Windows (CVRPTW). Incorporates
+              Google OR-Tools Guided Local Search solves Capacitated Vehicle Routing with Time Windows (CVRPTW). Incorporates
               thermal physics decay equations to ensure vaccine carriers stay within +2°C to +8°C before ice pack melting.
             </p>
           </div>

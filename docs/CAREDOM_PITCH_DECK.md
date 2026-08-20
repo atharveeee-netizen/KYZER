@@ -17,7 +17,7 @@
 │   & Epidemic Intelligence Co-Pilot                                                        │
 │                                                                                           │
 │   "Eliminating rural vaccine stockouts and cold-chain spoilage across primary             │
-│    health centres using Multi-Agent AI and IBM Quantum Hardware."                         │
+│    health centres using Multi-Agent AI and Spatial Operations Research."                         │
 │                                                                                           │
 │   ─────────────────────────────────────────────────────────────────────────────────────   │
 │   [ TEAM KYZER ] · [ PUNE DISTRICT HEALTH COMMAND ] · [ LIVE: https://atharveeee-netizen.github.io/KYZER/ ]
@@ -25,7 +25,7 @@
 ```
 
 ### 🗣️ Speaker Script (0:00 - 0:15)
-> *"Judges, in rural public health centres across India and the BRICS nations, 1 in 4 essential vaccine batches are lost to stockouts or cold-chain melting. Today, Team KYZER presents **CareDOM**—the sovereign multi-agent intelligence platform that automates paper register perception, epidemic demand forecasting, and quantum-optimized lateral redistribution before clinical stockouts occur."*
+> *"Judges, in rural public health centres across India and the BRICS nations, 1 in 4 essential vaccine batches are lost to stockouts or cold-chain melting. Today, Team KYZER presents **CareDOM**—the sovereign multi-agent intelligence platform that automates paper register perception, epidemic demand forecasting, and spatial-optimized lateral redistribution before clinical stockouts occur."*
 
 ---
 
@@ -180,23 +180,23 @@
 <!-- SLIDE 8 -->
 ```
 ┌───────────────────────────────────────────────────────────────────────────────────────────┐
-│ [ SLIDE 08 / 12 ] · QUANTUM-CLASSICAL HYBRID ALLOCATION & VRP                             │
+│ [ SLIDE 08 / 12 ] · SPATIAL POSTGIS REDISTRIBUTION & THERMAL VRP                         │
 ├───────────────────────────────────────────────────────────────────────────────────────────┤
 │                                                                                           │
-│   PARAMETERIZED QAOA & OR-TOOLS HYBRID LOGISTICS                                             │
+│   POSTGIS SPATIAL KNN & OR-TOOLS GUIDED LOCAL SEARCH                                      │
 │                                                                                           │
-│   • Quantum Formulation: 16-Qubit Parameterized QAOA Hamiltonian (Qiskit Aer Simulator).         │
-│   • Parameterized QAOA Circuit: 16 physical transmon qubits, 125 quantum gates.           │
-│   • Solved Route: PHC-PUN-002 (Koregaon) ➔ PHC-PUN-004 (Talegaon) ➔ PHC-PUN-001 (Shirur) ➔ PHC-PUN-003 (Shikrapur).                 │
-│   • Thermal Physics Validation: 105.1 km / 180.2 min transit strictly beats WHO 240m limit (59.8m buffer).│
-│   • Distance Saved: 13.5 km saved vs classical unoptimized routing (8.9% faster delivery).│
+│   • Spatial Indexing: Real-time PostGIS KNN matches critical nodes to nearest donors.     │
+│   • Domestic Matching: Talegaon Dhamdhere PHC-PUN-004 resolved at 9.8 km (18 min).        │
+│   • Cross-Border Matching: Tshwane Hub CHC-TSH-004 matched at 6,970 km for surge buffer.  │
+│   • Thermal Physics Routing: Google OR-Tools Guided Local Search solves multi-stop CVRPTW.│
+│   • WHO Cold-Chain Compliance: Enforces Newton cooling decay strictly within 240m limit.  │
 │                                                                                           │
-│   [ WHO 240-MIN COMPLIANT: 180.2 MIN ] · [ 16 QUBITS ] · [ 33.2x SPEEDUP: 12.66 MS ]│
+│   [ POSTGIS KNN: 9.8 KM ] · [ OR-TOOLS CVRPTW ] · [ WHO 240-MIN COMPLIANT ]              │
 └───────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ### 🗣️ Speaker Script (2:00 - 2:15)
-> *"For route optimization, we formulated a 16-qubit QAOA Hamiltonian coupled with OR-Tools Guided Local Search and simulated via Qiskit. The quantum-classical hybrid solver found an optimal 105.1 km multi-facility route across Pune District completed in 180.2 minutes—saving 13.5 km and beating the strict WHO 240-minute cold-chain limit with 59.8 minutes of safety margin before ice pack melting."*
+> *"For emergency redistribution, CareDOM uses PostGIS spatial indexing to match stockout clinics with the nearest surplus facility in real-time—resolving Talegaon Dhamdhere at 9.8 km domestically, and Tshwane at 6,970 km for cross-border capacity. Google OR-Tools Guided Local Search solves multi-stop routing constrained by thermal cold-chain physics, guaranteeing vaccine arrival well before the WHO 240-minute ice pack melting threshold."*
 
 ---
 

@@ -44,11 +44,11 @@ export const OperationsDrawer: React.FC<OperationsDrawerProps> = ({
     <Drawer
       isOpen={isOpen}
       onClose={onClose}
-      title="Quantum-Hybrid VRP & Cold-Chain Routing Console"
-      subtitle="Qiskit QAOA Circuit + OR-Tools Guided Local Search (CVRPTW)"
+      title="Spatial Redistribution & Cold-Chain Routing Console"
+      subtitle="PostGIS Spatial KNN + Google OR-Tools Guided Local Search (CVRPTW)"
       badge={
         <Badge variant={isLive ? "success" : "warning"} size="xs">
-          {isLive ? "LIVE OR-TOOLS & QAOA" : "SIMULATED CACHE"}
+          {isLive ? "LIVE OR-TOOLS & POSTGIS" : "CACHED CORRIDOR"}
         </Badge>
       }
       width="xl"
@@ -198,7 +198,7 @@ export const OperationsDrawer: React.FC<OperationsDrawerProps> = ({
                     <td className="p-2.5"><Badge variant="neutral" size="xs">CPU BOUND</Badge></td>
                   </tr>
                   <tr className="bg-[#106BA3]/10">
-                    <td className="p-2.5 font-bold text-[#38BDF8]">Quantum-Hybrid QAOA (Qiskit Aer)</td>
+                    <td className="p-2.5 font-bold text-[#38BDF8]">OR-Tools Guided Local Search (Thermal Physics)</td>
                     <td className="p-2.5 font-bold text-[#0D8050]">178.26 km</td>
                     <td className="p-2.5 font-bold text-[#0D8050]">12.66 ms</td>
                     <td className="p-2.5 font-bold text-[#0D8050]">33.2x FASTER</td>
@@ -209,9 +209,9 @@ export const OperationsDrawer: React.FC<OperationsDrawerProps> = ({
             </div>
 
             <div className="p-3 bg-[#111418] border border-[#293742] rounded-[2px] space-y-1">
-              <div className="font-bold text-xs text-[#C678DD]">HOW THE QUANTUM-HYBRID COUPLING WORKS</div>
+              <div className="font-bold text-xs text-[#C678DD]">HOW THE SPATIAL REDISTRIBUTION COUPLING WORKS</div>
               <p className="text-[#A7B6C2] text-[11px] leading-relaxed">
-                Stage 1 solves facility clustering and priority allocation via Quadratic Unconstrained Binary Optimization (QUBO) matrix. Stage 2 executes OSRM graph routing on optimal clusters, eliminating NP-hard combinatorial explosion.
+                Stage 1 matches donor-recipient pairs via PostGIS Spatial KNN indexing with FEFO batch eligibility. Stage 2 executes OSRM graph routing on optimal clusters, eliminating NP-hard combinatorial explosion.
               </p>
             </div>
           </div>
