@@ -6,7 +6,8 @@ import {
   ArrowLeftRight, 
   Camera, 
   ChevronLeft, 
-  ChevronRight
+  ChevronRight,
+  Landmark
 } from 'lucide-react';
 
 export type NavViewId = 'command' | 'network' | 'intelligence' | 'operations' | 'scenario' | 'ingestion';
@@ -34,39 +35,39 @@ export const TacticalNavRail: React.FC<TacticalNavRailProps> = ({
   const navItems: NavItem[] = [
     {
       id: 'command',
-      label: 'Overview',
-      sublabel: 'District status & needs',
+      label: 'Dashboard',
+      sublabel: 'District supply status',
       icon: <LayoutDashboard className="w-4 h-4" />,
     },
     {
       id: 'network',
       label: 'Facilities Map',
-      sublabel: '18 centres & live routes',
+      sublabel: '18 centres & transit',
       icon: <Map className="w-4 h-4" />,
     },
     {
       id: 'intelligence',
       label: 'Inventory',
-      sublabel: 'Batches & expiry dates',
+      sublabel: 'Stock on hand & batches',
       icon: <Package className="w-4 h-4" />,
     },
     {
       id: 'operations',
       label: 'Redistribution',
-      sublabel: 'Nearby stock transfers',
+      sublabel: 'Peer stock transfers',
       icon: <ArrowLeftRight className="w-4 h-4" />,
     },
     {
       id: 'ingestion',
       label: 'Logbook Scan',
-      sublabel: 'Digitize paper records',
+      sublabel: 'Paper register entry',
       icon: <Camera className="w-4 h-4" />,
     },
   ];
 
   return (
     <nav
-      className={`h-full bg-[#161616] border-r border-[#393939] flex flex-col justify-between select-none transition-all duration-150 z-20 shrink-0 ${
+      className={`h-full bg-[#FFFFFF] dark:bg-[#242424] border-r border-[#D6D6D6] dark:border-[#3A3A3A] flex flex-col justify-between select-none transition-all duration-120 z-20 shrink-0 font-sans ${
         isCollapsed ? 'w-14' : 'w-52'
       }`}
     >
@@ -79,19 +80,19 @@ export const TacticalNavRail: React.FC<TacticalNavRailProps> = ({
               key={item.id}
               onClick={() => onViewChange(item.id)}
               title={isCollapsed ? item.label : undefined}
-              className={`w-full flex items-center gap-3 px-3.5 py-3 rounded-none transition-colors text-left border-l-2 ${
+              className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-[2px] transition-colors text-left border-l-3 ${
                 isActive
-                  ? 'bg-[#262626] text-white border-[#0F62FE] font-medium'
-                  : 'text-[#C6C6C6] hover:text-white hover:bg-[#262626]/60 border-transparent'
+                  ? 'bg-[#174A7C]/10 dark:bg-[#174A7C]/25 text-[#174A7C] dark:text-[#6EA8D8] border-[#174A7C] dark:border-[#6EA8D8] font-medium'
+                  : 'text-[#5F6368] dark:text-[#B8B8B8] hover:text-[#202124] dark:hover:text-white hover:bg-[#F7F7F7] dark:hover:bg-[#2D2D2D] border-transparent'
               }`}
             >
-              <div className={`shrink-0 ${isActive ? 'text-[#0F62FE]' : 'text-[#8D8D8D]'}`}>
+              <div className={`shrink-0 ${isActive ? 'text-[#174A7C] dark:text-[#6EA8D8]' : 'text-[#70757A]'}`}>
                 {item.icon}
               </div>
               {!isCollapsed && (
                 <div className="flex flex-col min-w-0">
                   <span className="text-xs truncate">{item.label}</span>
-                  <span className="text-[11px] text-[#8D8D8D] font-light truncate">{item.sublabel}</span>
+                  <span className="text-[11px] text-[#70757A] dark:text-[#8E8E8E] truncate">{item.sublabel}</span>
                 </div>
               )}
             </button>
@@ -101,10 +102,10 @@ export const TacticalNavRail: React.FC<TacticalNavRailProps> = ({
 
       {/* Collapse Footer */}
       {onToggleCollapse && (
-        <div className="p-2 border-t border-[#393939]">
+        <div className="p-2 border-t border-[#D6D6D6] dark:border-[#3A3A3A]">
           <button
             onClick={onToggleCollapse}
-            className="w-full flex items-center justify-center p-2 text-[#8D8D8D] hover:text-white hover:bg-[#262626] rounded-none transition-colors"
+            className="w-full flex items-center justify-center p-2 text-[#70757A] hover:text-[#202124] dark:hover:text-white hover:bg-[#F7F7F7] dark:hover:bg-[#2D2D2D] rounded-[2px] transition-colors"
           >
             {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
           </button>
