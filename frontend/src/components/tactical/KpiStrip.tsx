@@ -1,14 +1,11 @@
 import React from 'react';
 import { 
   Building2, 
-  AlertTriangle, 
+  AlertCircle, 
   Truck, 
   ThermometerSnowflake, 
-  Cpu, 
-  Activity,
-  CheckCircle2
+  Check
 } from 'lucide-react';
-import { Badge } from '../ui/Badge';
 
 interface KpiStripProps {
   totalFacilities?: number;
@@ -28,51 +25,37 @@ export const KpiStrip: React.FC<KpiStripProps> = ({
   isAiLive = true,
 }) => {
   return (
-    <div className="h-10 bg-[#182026] border-t border-[#293742] px-4 flex items-center justify-between text-xs font-mono text-[#F5F8FA] select-none z-20 shrink-0 overflow-x-auto gap-4">
-      {/* Left: 4 Tactical Telemetry Pillars */}
-      <div className="flex items-center gap-6 shrink-0">
-        {/* Total Network Nodes */}
-        <div className="flex items-center gap-2">
-          <Building2 className="w-3.5 h-3.5 text-[#106BA3]" />
-          <span className="text-[#A7B6C2]">NETWORK:</span>
-          <span className="font-bold text-[#F5F8FA]">{totalFacilities} NODES</span>
+    <div className="h-9 bg-[#161D26] border-t border-[#222E3C] px-4 flex items-center justify-between text-xs text-[#94A3B8] select-none z-20 shrink-0 overflow-x-auto gap-4">
+      {/* Left: Operational Metrics */}
+      <div className="flex items-center gap-5 shrink-0">
+        <div className="flex items-center gap-1.5">
+          <Building2 className="w-3.5 h-3.5 text-[#64748B]" />
+          <span>{totalFacilities} health centres tracked</span>
         </div>
 
-        {/* Critical & Warning Stockouts */}
-        <div className="flex items-center gap-2">
-          <AlertTriangle className="w-3.5 h-3.5 text-[#C23030]" />
-          <span className="text-[#A7B6C2]">AT RISK:</span>
-          <span className="font-bold text-[#C23030]">{criticalCount} P0 CRITICAL</span>
-          <span className="text-[#A7B6C2]">/</span>
-          <span className="font-bold text-[#D9822B]">{warningCount} P1</span>
+        <div className="flex items-center gap-1.5">
+          <AlertCircle className="w-3.5 h-3.5 text-[#EF4444]" />
+          <span className="text-[#EF4444] font-medium">{criticalCount} low on stock</span>
         </div>
 
-        {/* Active Logistics Transfers */}
-        <div className="flex items-center gap-2">
-          <Truck className="w-3.5 h-3.5 text-[#0D8050]" />
-          <span className="text-[#A7B6C2]">MISSIONS:</span>
-          <span className="font-bold text-[#0D8050]">{activeTransfersCount} DISPATCHED</span>
+        <div className="flex items-center gap-1.5">
+          <Truck className="w-3.5 h-3.5 text-[#10B981]" />
+          <span>{activeTransfersCount} transfer in progress</span>
         </div>
 
-        {/* Active Cold Chain Integrity */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           <ThermometerSnowflake className="w-3.5 h-3.5 text-[#38BDF8]" />
-          <span className="text-[#A7B6C2]">COLD-CHAIN:</span>
-          <span className="font-bold text-[#38BDF8]">{coldChainTemp} (WHO COMPLIANT)</span>
+          <span>Cold chain: <strong className="text-[#F8FAFC]">{coldChainTemp}</strong> (Safe)</span>
         </div>
       </div>
 
-      {/* Right: Engine Status & Quantum Solvers */}
-      <div className="flex items-center gap-3 shrink-0">
-        <div className="flex items-center gap-1.5 text-[11px] text-[#A7B6C2]">
-          <Cpu className="w-3.5 h-3.5 text-[#8F3985]" />
-          <span>SOLVER:</span>
-          <span className="font-bold text-[#C678DD]">OR-TOOLS + QAOA</span>
-        </div>
-
-        <Badge variant={isAiLive ? "success" : "warning"} dot pulse size="xs">
-          {isAiLive ? "SERVICE B CONNECTED" : "OFFLINE CACHE"}
-        </Badge>
+      {/* Right: Operational Freshness */}
+      <div className="flex items-center gap-3 shrink-0 text-[11px] text-[#64748B]">
+        <span>Last updated 2 min ago</span>
+        <span className="flex items-center gap-1 text-[#10B981]">
+          <span className="w-1.5 h-1.5 rounded-full bg-[#10B981]" />
+          <span>Live sync</span>
+        </span>
       </div>
     </div>
   );

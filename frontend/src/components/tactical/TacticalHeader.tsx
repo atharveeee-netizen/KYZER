@@ -1,17 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Activity, 
-  ShieldCheck, 
-  Globe2, 
-  UploadCloud, 
-  Zap, 
-  Bell, 
+  Building2, 
   Clock, 
-  Radio,
-  ChevronDown,
-  Sparkles
+  Camera, 
+  Zap, 
+  CheckCircle2,
+  BookOpen
 } from 'lucide-react';
-import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
 
 interface TacticalHeaderProps {
@@ -28,7 +23,7 @@ interface TacticalHeaderProps {
 }
 
 export const TacticalHeader: React.FC<TacticalHeaderProps> = ({
-  districtName = 'Pune District (MH, India)',
+  districtName = 'Pune District (MH)',
   countryCode = 'IND',
   onCountryChange,
   onOpenOcrModal,
@@ -44,7 +39,7 @@ export const TacticalHeader: React.FC<TacticalHeaderProps> = ({
   useEffect(() => {
     const updateTime = () => {
       const now = new Date();
-      setTimeStr(now.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' }) + ' IST');
+      setTimeStr(now.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit' }));
     };
     updateTime();
     const interval = setInterval(updateTime, 1000);
@@ -52,133 +47,79 @@ export const TacticalHeader: React.FC<TacticalHeaderProps> = ({
   }, []);
 
   return (
-    <header className="h-12 bg-[#182026] border-b border-[#293742] px-4 flex items-center justify-between select-none z-30 shrink-0 text-[#F5F8FA] font-sans">
-      {/* Left: Brand + Telemetry Status */}
-      <div className="flex items-center gap-3.5">
+    <header className="h-12 bg-[#161D26] border-b border-[#222E3C] px-4 flex items-center justify-between select-none z-30 shrink-0 text-[#F8FAFC] font-sans">
+      {/* Left: Product Name & Operational Purpose */}
+      <div className="flex items-center gap-3">
         <div className="flex items-center gap-2">
-          <div className="w-6 h-6 rounded-[2px] bg-[#106BA3] flex items-center justify-center font-mono font-black text-white text-xs tracking-tighter shadow-sm">
-            K
+          <div className="w-6 h-6 rounded-md bg-[#0F6254] flex items-center justify-center font-semibold text-white text-xs">
+            C
           </div>
           <div className="flex flex-col">
-            <span className="font-mono font-black text-sm tracking-wider text-[#F5F8FA] leading-none">
-              KYZER
+            <span className="font-semibold text-sm tracking-tight text-[#F8FAFC] leading-none">
+              CareDOM
             </span>
-            <span className="text-[9px] text-[#A7B6C2] font-mono tracking-tight leading-none mt-0.5">
-              HEALTH LOGISTICS OS
+            <span className="text-[10px] text-[#94A3B8] leading-none mt-0.5">
+              Healthcare supply, without the guesswork
             </span>
           </div>
         </div>
 
-        <div className="h-4 w-[1px] bg-[#293742] hidden sm:block" />
+        <div className="h-4 w-[1px] bg-[#222E3C] hidden sm:block mx-1" />
 
-        {/* Live Pulse Indicator */}
-        <div className="hidden md:flex items-center gap-2">
-          <Badge variant="success" dot pulse size="xs">
-            SYSTEM ONLINE
-          </Badge>
-          <Badge variant="primary" size="xs">
-            AI SERVICE B (LIVE)
-          </Badge>
+        {/* Live Network Status */}
+        <div className="hidden md:flex items-center gap-1.5 text-xs text-[#94A3B8]">
+          <span className="w-2 h-2 rounded-full bg-[#10B981]" />
+          <span>Pune Network · 18 health centres active</span>
         </div>
       </div>
 
-      {/* Center: District Switcher & Clock */}
-      <div className="flex items-center gap-3 font-mono text-xs">
-        <div className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 bg-[#111418] border border-[#293742] rounded-[2px] text-[#A7B6C2]">
-          <Clock className="w-3.5 h-3.5 text-[#106BA3]" />
-          <span>{timeStr || '19:58:00 IST'}</span>
+      {/* Center / Right Controls */}
+      <div className="flex items-center gap-2.5 text-xs">
+        <div className="hidden lg:flex items-center gap-1 text-[#94A3B8] font-mono text-[11px] px-2 py-1 bg-[#11161D] border border-[#222E3C] rounded-md">
+          <Clock className="w-3 h-3 text-[#64748B]" />
+          <span>{timeStr || '19:58'} IST</span>
         </div>
 
-        {/* BRICS Sovereign Switcher */}
-        <div className="flex items-center gap-1 bg-[#111418] border border-[#293742] rounded-[2px] p-0.5">
-          <button
-            onClick={() => onCountryChange && onCountryChange('IND')}
-            className={`px-2 py-0.5 text-[11px] rounded-[1px] transition-colors ${
-              countryCode === 'IND' ? 'bg-[#106BA3] text-white font-bold' : 'text-[#A7B6C2] hover:text-[#F5F8FA]'
-            }`}
-          >
-            IND (Pune)
-          </button>
-          <button
-            onClick={() => onCountryChange && onCountryChange('ZAF')}
-            className={`px-2 py-0.5 text-[11px] rounded-[1px] transition-colors ${
-              countryCode === 'ZAF' ? 'bg-[#106BA3] text-white font-bold' : 'text-[#A7B6C2] hover:text-[#F5F8FA]'
-            }`}
-          >
-            ZAF (Tshwane)
-          </button>
-          <button
-            onClick={() => onCountryChange && onCountryChange('BRA')}
-            className={`px-2 py-0.5 text-[11px] rounded-[1px] transition-colors ${
-              countryCode === 'BRA' ? 'bg-[#106BA3] text-white font-bold' : 'text-[#A7B6C2] hover:text-[#F5F8FA]'
-            }`}
-          >
-            BRA (Amazonas)
-          </button>
-        </div>
-      </div>
-
-      {/* Right: Quick Action Triggers */}
-      <div className="flex items-center gap-2">
-        {/* Guided Demo Pitch Guide */}
+        {/* Quick Demo Script Helper */}
         {onOpenDemoGuide && (
-          <Button
-            variant="secondary"
-            size="xs"
+          <button
             onClick={onOpenDemoGuide}
-            leftIcon={<Sparkles className="w-3 h-3 text-[#38BDF8]" />}
-            className="hidden sm:inline-flex bg-[#106BA3]/10 border-[#106BA3]/40 text-[#38BDF8] hover:bg-[#106BA3]/20"
+            className="flex items-center gap-1.5 px-2.5 py-1 text-xs text-[#E2E8F0] hover:text-white bg-[#1E2734] hover:bg-[#253243] border border-[#222E3C] rounded-full transition-colors"
           >
-            DEMO GUIDE 🎓
-          </Button>
+            <BookOpen className="w-3.5 h-3.5 text-[#38BDF8]" />
+            <span className="hidden sm:inline">Recording Guide</span>
+          </button>
         )}
 
-        {/* Scenario Lab Status */}
+        {/* Register Ingestion (Primary Task) */}
+        {onOpenOcrModal && (
+          <button
+            onClick={onOpenOcrModal}
+            className="flex items-center gap-1.5 px-3 py-1 text-xs font-medium text-white bg-[#0F6254] hover:bg-[#0B4E43] rounded-full transition-colors"
+          >
+            <Camera className="w-3.5 h-3.5" />
+            <span>Scan Logbook</span>
+          </button>
+        )}
+
+        {/* Test Shortage Surge Simulation */}
         {isScenarioActive ? (
-          <Button
-            variant="danger"
-            size="xs"
+          <button
             onClick={onResetScenario}
-            leftIcon={<Zap className="w-3 h-3 animate-pulse" />}
+            className="flex items-center gap-1 px-2.5 py-1 text-xs text-[#F59E0B] bg-[#F59E0B]/10 border border-[#F59E0B]/30 rounded-full"
           >
-            RESET SCENARIO
-          </Button>
-        ) : (
-          <Button
-            variant="secondary"
-            size="xs"
+            <CheckCircle2 className="w-3.5 h-3.5" />
+            <span>Reset Test</span>
+          </button>
+        ) : onOpenScenarioModal ? (
+          <button
             onClick={onOpenScenarioModal}
-            leftIcon={<Zap className="w-3 h-3 text-[#D9822B]" />}
-            className="hidden sm:inline-flex"
+            className="flex items-center gap-1 px-2.5 py-1 text-xs text-[#94A3B8] hover:text-[#E2E8F0] bg-[#11161D] hover:bg-[#1E2734] border border-[#222E3C] rounded-full transition-colors"
           >
-            SCENARIO LAB
-          </Button>
-        )}
-
-        {/* OCR Register Import Trigger */}
-        <Button
-          variant="primary"
-          size="xs"
-          onClick={onOpenOcrModal}
-          leftIcon={<UploadCloud className="w-3 h-3" />}
-        >
-          <span className="hidden sm:inline">IMPORT REGISTER</span>
-          <span className="sm:hidden">OCR</span>
-        </Button>
-
-        {/* Alerts Badge Trigger */}
-        <button
-          onClick={onOpenAlertsDrawer}
-          className="relative p-1.5 text-[#A7B6C2] hover:text-[#F5F8FA] hover:bg-[#202B33] border border-[#293742] rounded-[2px] transition-colors"
-          title="Actionable Triage Alerts"
-        >
-          <Bell className="w-4 h-4" />
-          {activeAlertCount > 0 && (
-            <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#C23030] text-white font-mono text-[9px] font-bold flex items-center justify-center shadow-xs">
-              {activeAlertCount}
-            </span>
-          )}
-        </button>
+            <Zap className="w-3.5 h-3.5 text-[#F59E0B]" />
+            <span className="hidden md:inline">Simulate Shortage</span>
+          </button>
+        ) : null}
       </div>
     </header>
   );

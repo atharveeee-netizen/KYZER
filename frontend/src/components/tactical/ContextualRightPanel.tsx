@@ -77,42 +77,42 @@ export const ContextualRightPanel: React.FC<ContextualRightPanelProps> = ({
   }
 
   return (
-    <aside className="w-80 sm:w-96 bg-[#182026] border-l border-[#293742] flex flex-col h-full select-none z-20 shrink-0 font-sans text-[#F5F8FA] overflow-hidden">
+    <aside className="w-80 sm:w-96 bg-[#161D26] border-l border-[#222E3C] flex flex-col h-full select-none z-20 shrink-0 font-sans text-[#F8FAFC] overflow-hidden">
       {/* Panel Top Switcher */}
-      <div className="p-2.5 border-b border-[#293742] bg-[#202B33] flex items-center justify-between font-mono text-xs">
+      <div className="p-2.5 border-b border-[#222E3C] bg-[#1A232E] flex items-center justify-between text-xs">
         <div className="flex items-center gap-1">
           <button
             onClick={() => onModeChange('PRIORITY')}
-            className={`px-2 py-1 rounded-[2px] text-[10px] font-bold uppercase transition-colors ${
-              mode === 'PRIORITY' ? 'bg-[#106BA3] text-white' : 'text-[#A7B6C2] hover:text-[#F5F8FA]'
+            className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
+              mode === 'PRIORITY' ? 'bg-[#0F6254] text-white' : 'text-[#94A3B8] hover:text-[#F8FAFC]'
             }`}
           >
-            TRIAGE ({priorityActions.length})
+            Requests ({priorityActions.length})
           </button>
           <button
             onClick={() => onModeChange('FACILITY')}
             disabled={!selectedFacility}
-            className={`px-2 py-1 rounded-[2px] text-[10px] font-bold uppercase transition-colors disabled:opacity-30 ${
-              mode === 'FACILITY' ? 'bg-[#106BA3] text-white' : 'text-[#A7B6C2] hover:text-[#F5F8FA]'
+            className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors disabled:opacity-30 ${
+              mode === 'FACILITY' ? 'bg-[#0F6254] text-white' : 'text-[#94A3B8] hover:text-[#F8FAFC]'
             }`}
           >
-            FACILITY
+            Centre Details
           </button>
           <button
             onClick={() => onModeChange('MISSION')}
             disabled={!activeTransfer}
-            className={`px-2 py-1 rounded-[2px] text-[10px] font-bold uppercase transition-colors disabled:opacity-30 ${
-              mode === 'MISSION' ? 'bg-[#106BA3] text-white' : 'text-[#A7B6C2] hover:text-[#F5F8FA]'
+            className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors disabled:opacity-30 ${
+              mode === 'MISSION' ? 'bg-[#0F6254] text-white' : 'text-[#94A3B8] hover:text-[#F8FAFC]'
             }`}
           >
-            MISSION
+            Delivery Route
           </button>
         </div>
 
         {onToggleCollapse && (
           <button
             onClick={onToggleCollapse}
-            className="p-1 text-[#A7B6C2] hover:text-[#F5F8FA] hover:bg-[#293742] rounded-[2px]"
+            className="p-1 text-[#94A3B8] hover:text-[#F8FAFC] hover:bg-[#222E3C] rounded-md"
             title="Collapse Panel"
           >
             <ChevronRight className="w-4 h-4" />
@@ -126,27 +126,23 @@ export const ContextualRightPanel: React.FC<ContextualRightPanelProps> = ({
         {mode === 'PRIORITY' && (
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#A7B6C2]">
-                Actionable Stockout Feed
+              <span className="text-xs font-semibold text-[#F8FAFC]">
+                Active Stock Requests
               </span>
-              <Badge variant="danger" size="xs">
-                {priorityActions.filter(p => p.tier === 'P0_CRITICAL').length} CRITICAL
-              </Badge>
+              <span className="text-[11px] font-medium text-[#EF4444] px-2 py-0.5 bg-[#EF4444]/15 rounded-full">
+                {priorityActions.filter(p => p.tier === 'P0_CRITICAL').length} Need Action
+              </span>
             </div>
 
             {priorityActions.length === 0 ? (
-              <div className="foundry-card p-4 text-center space-y-2 border border-[#293742] bg-[#111418]/60">
-                <div className="w-8 h-8 rounded-full bg-[#0D8050]/20 border border-[#0D8050]/40 flex items-center justify-center mx-auto text-[#0D8050]">
+              <div className="p-4 text-center space-y-2 border border-[#222E3C] bg-[#11161D] rounded-xl">
+                <div className="w-8 h-8 rounded-full bg-[#10B981]/20 border border-[#10B981]/40 flex items-center justify-center mx-auto text-[#10B981]">
                   <Activity className="w-4 h-4" />
                 </div>
-                <div className="text-xs font-bold text-[#F5F8FA] font-sans">ALL FACILITIES NOMINAL</div>
-                <p className="text-[11px] text-[#A7B6C2] leading-relaxed">
-                  No active stockout alerts on live network. Safety buffers across all 18 facilities ≥ 11.8 days.
+                <div className="text-xs font-medium text-[#F8FAFC]">All Stock Levels Normal</div>
+                <p className="text-[11px] text-[#94A3B8] leading-relaxed">
+                  No health centres are currently below minimum safety stock.
                 </p>
-                <div className="pt-2 border-t border-[#293742]/40 flex items-center justify-center gap-2">
-                  <Badge variant="success" size="xs">0 CRITICAL</Badge>
-                  <Badge variant="primary" size="xs">LIVE POLLING ACTIVE</Badge>
-                </div>
               </div>
             ) : (
               priorityActions.map(action => (

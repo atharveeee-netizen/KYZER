@@ -2,13 +2,12 @@ import React from 'react';
 import { 
   LayoutDashboard, 
   Map, 
-  LineChart, 
-  Truck, 
+  Package, 
+  ArrowLeftRight, 
   Camera, 
   Zap, 
   ChevronLeft, 
-  ChevronRight,
-  ShieldCheck
+  ChevronRight
 } from 'lucide-react';
 
 export type NavViewId = 'command' | 'network' | 'intelligence' | 'operations' | 'scenario' | 'ingestion';
@@ -25,7 +24,6 @@ interface NavItem {
   label: string;
   sublabel: string;
   icon: React.ReactNode;
-  badge?: string;
 }
 
 export const TacticalNavRail: React.FC<TacticalNavRailProps> = ({
@@ -37,48 +35,40 @@ export const TacticalNavRail: React.FC<TacticalNavRailProps> = ({
   const navItems: NavItem[] = [
     {
       id: 'command',
-      label: 'COMMAND CENTER',
-      sublabel: 'District Digital Twin',
+      label: 'Overview',
+      sublabel: 'District status & needs',
       icon: <LayoutDashboard className="w-4 h-4" />,
     },
     {
       id: 'network',
-      label: 'NETWORK GRAPH',
-      sublabel: '18 Facility Nodes',
+      label: 'Facilities Map',
+      sublabel: '18 centres & live routes',
       icon: <Map className="w-4 h-4" />,
     },
     {
       id: 'intelligence',
-      label: 'INTELLIGENCE',
-      sublabel: 'LightGBM + TreeSHAP',
-      icon: <LineChart className="w-4 h-4" />,
-      badge: 'ML',
+      label: 'Inventory',
+      sublabel: 'Batches & expiry dates',
+      icon: <Package className="w-4 h-4" />,
     },
     {
       id: 'operations',
-      label: 'OPERATIONS',
-      sublabel: 'FEFO & QAOA VRP',
-      icon: <Truck className="w-4 h-4" />,
-      badge: 'VRP',
-    },
-    {
-      id: 'scenario',
-      label: 'SCENARIO LAB',
-      sublabel: 'Monsoon Surge Test',
-      icon: <Zap className="w-4 h-4 text-[#D9822B]" />,
+      label: 'Redistribution',
+      sublabel: 'Nearby stock transfers',
+      icon: <ArrowLeftRight className="w-4 h-4" />,
     },
     {
       id: 'ingestion',
-      label: 'DATA INGESTION',
-      sublabel: 'Physical Register OCR',
-      icon: <Camera className="w-4 h-4 text-[#106BA3]" />,
+      label: 'Logbook Scan',
+      sublabel: 'Digitize paper records',
+      icon: <Camera className="w-4 h-4" />,
     },
   ];
 
   return (
     <nav
-      className={`h-full bg-[#182026] border-r border-[#293742] flex flex-col justify-between select-none transition-all duration-200 z-20 shrink-0 ${
-        isCollapsed ? 'w-14' : 'w-56'
+      className={`h-full bg-[#161D26] border-r border-[#222E3C] flex flex-col justify-between select-none transition-all duration-200 z-20 shrink-0 ${
+        isCollapsed ? 'w-14' : 'w-52'
       }`}
     >
       {/* Navigation Links */}
@@ -90,32 +80,19 @@ export const TacticalNavRail: React.FC<TacticalNavRailProps> = ({
               key={item.id}
               onClick={() => onViewChange(item.id)}
               title={isCollapsed ? item.label : undefined}
-              className={`w-full flex items-center gap-3 px-2.5 py-2 rounded-[2px] transition-all text-left font-mono ${
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors text-left ${
                 isActive
-                  ? 'bg-[#106BA3]/20 border-l-2 border-[#106BA3] text-[#F5F8FA] font-bold'
-                  : 'hover:bg-[#202B33] text-[#A7B6C2] hover:text-[#F5F8FA] border-l-2 border-transparent'
+                  ? 'bg-[#1E2734] text-white font-medium border border-[#2D3D50]'
+                  : 'text-[#94A3B8] hover:text-[#F8FAFC] hover:bg-[#1A232E]'
               }`}
             >
-              <div className={`shrink-0 ${isActive ? 'text-[#106BA3]' : 'text-[#A7B6C2]'}`}>
+              <div className={`shrink-0 ${isActive ? 'text-[#38BDF8]' : 'text-[#64748B]'}`}>
                 {item.icon}
               </div>
-
               {!isCollapsed && (
-                <div className="flex-1 min-w-0 flex items-center justify-between">
-                  <div className="truncate">
-                    <div className="text-xs leading-tight font-bold tracking-wider">
-                      {item.label}
-                    </div>
-                    <div className="text-[9px] text-[#A7B6C2] leading-none mt-0.5 truncate">
-                      {item.sublabel}
-                    </div>
-                  </div>
-
-                  {item.badge && (
-                    <span className="ml-1 px-1 py-0.2 text-[8px] font-bold rounded-[1px] bg-[#293742] text-[#A7B6C2]">
-                      {item.badge}
-                    </span>
-                  )}
+                <div className="flex flex-col min-w-0">
+                  <span className="text-xs truncate">{item.label}</span>
+                  <span className="text-[10px] text-[#64748B] truncate">{item.sublabel}</span>
                 </div>
               )}
             </button>
@@ -123,25 +100,17 @@ export const TacticalNavRail: React.FC<TacticalNavRailProps> = ({
         })}
       </div>
 
-      {/* Footer / Collapse Toggle */}
-      <div className="p-2 border-t border-[#293742] flex items-center justify-between text-xs font-mono text-[#A7B6C2]">
-        {!isCollapsed && (
-          <div className="flex items-center gap-1.5 text-[10px] text-[#0D8050]">
-            <ShieldCheck className="w-3.5 h-3.5" />
-            <span>DPDP & ABDM READY</span>
-          </div>
-        )}
-
-        {onToggleCollapse && (
+      {/* Collapse Footer */}
+      {onToggleCollapse && (
+        <div className="p-2 border-t border-[#222E3C]">
           <button
             onClick={onToggleCollapse}
-            className="p-1.5 hover:bg-[#202B33] rounded-[2px] text-[#A7B6C2] hover:text-[#F5F8FA] transition-colors ml-auto"
-            title={isCollapsed ? 'Expand Navigation' : 'Collapse Navigation'}
+            className="w-full flex items-center justify-center p-2 text-[#64748B] hover:text-[#F8FAFC] hover:bg-[#1E2734] rounded-md transition-colors"
           >
-            {isCollapsed ? <ChevronRight className="w-3.5 h-3.5" /> : <ChevronLeft className="w-3.5 h-3.5" />}
+            {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
           </button>
-        )}
-      </div>
+        </div>
+      )}
     </nav>
   );
 };

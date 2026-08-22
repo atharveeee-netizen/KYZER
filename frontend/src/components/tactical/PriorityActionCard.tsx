@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, CheckCircle2 } from 'lucide-react';
 import { Badge } from '../ui/Badge';
 import { Button } from '../ui/Button';
 
@@ -36,70 +36,60 @@ export const PriorityActionCard: React.FC<PriorityActionCardProps> = ({
 
   return (
     <div
-      className={`foundry-card p-3.5 space-y-2.5 transition-all ${
-        isSelected ? 'border-[#106BA3] bg-[#202B33]' : 'hover:border-[#394B59]'
+      className={`p-3.5 rounded-xl border transition-all space-y-2.5 ${
+        isSelected 
+          ? 'bg-[#1E2734] border-[#38BDF8]' 
+          : 'bg-[#161D26] border-[#222E3C] hover:border-[#2D3D50]'
       }`}
     >
-      {/* Top Tag & Facility Name */}
+      {/* Header: Facility & Shortage Level */}
       <div className="flex items-center justify-between gap-2">
-        <Badge variant={isCritical ? 'danger' : 'warning'} dot pulse size="xs">
-          {isCritical ? 'P0 CRITICAL STOCKOUT' : 'P1 BUFFER WARNING'}
-        </Badge>
-        <span className="font-mono text-[10px] text-[#A7B6C2]">
+        <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${
+          isCritical 
+            ? 'bg-[#EF4444]/15 text-[#EF4444] border border-[#EF4444]/30' 
+            : 'bg-[#F59E0B]/15 text-[#F59E0B] border border-[#F59E0B]/30'
+        }`}>
+          {isCritical ? 'Urgent Shortage' : 'Low Stock'}
+        </span>
+        <span className="text-[11px] text-[#64748B] font-mono">
           {action.facilityId}
         </span>
       </div>
 
       <div>
-        <h4 className="text-xs font-bold text-[#F5F8FA] truncate font-sans">
+        <h4 className="text-xs font-semibold text-[#F8FAFC] truncate">
           {action.facilityName}
         </h4>
-        <div className="text-[11px] font-mono text-[#D9822B] mt-0.5">
-          {action.medicineName} ({action.medicineCode})
-        </div>
+        <p className="text-xs text-[#94A3B8] mt-0.5">
+          Needs <strong className="text-[#F8FAFC]">{action.recommendedUnits} units</strong> {action.medicineName.split(' ')[0]} ({action.daysRemaining.toFixed(1)} days left)
+        </p>
       </div>
 
-      {/* Metric Breakdown Strip */}
-      <div className="grid grid-cols-2 gap-2 p-2 bg-[#111418] border border-[#293742] rounded-[2px] font-mono text-xs">
-        <div>
-          <div className="text-[9px] text-[#A7B6C2]">STOCK LEVEL</div>
-          <div className="font-bold text-[#C23030]">
-            {action.currentStock} units ({action.daysRemaining.toFixed(1)}d)
-          </div>
+      {/* Nearby Solution Finding */}
+      <div className="p-2.5 bg-[#11161D] border border-[#222E3C] rounded-lg text-xs space-y-1">
+        <div className="text-[11px] text-[#94A3B8]">
+          Nearby source: <strong className="text-[#F8FAFC]">{action.donorFacilityName}</strong>
         </div>
-        <div>
-          <div className="text-[9px] text-[#A7B6C2]">DONOR CANDIDATE</div>
-          <div className="font-bold text-[#0D8050] truncate">
-            {action.donorFacilityId} ({action.distanceKm} km)
-          </div>
+        <div className="text-[11px] text-[#10B981]">
+          Available nearby: {action.distanceKm} km away · {action.transitTimeMin} min transit
         </div>
-      </div>
-
-      {/* Proposed Transfer Action */}
-      <div className="flex items-center justify-between text-xs font-mono text-[#A7B6C2] pt-0.5">
-        <span>PROPOSED TRANSFER:</span>
-        <span className="font-bold text-[#F5F8FA]">
-          {action.recommendedUnits} units ({action.transitTimeMin}m ETA)
-        </span>
       </div>
 
       {/* Action Buttons */}
-      <div className="grid grid-cols-2 gap-2 pt-1 border-t border-[#293742]">
-        <Button
-          variant="secondary"
-          size="xs"
+      <div className="grid grid-cols-2 gap-2 pt-1">
+        <button
           onClick={() => onReviewDecision(action)}
+          className="px-2.5 py-1.5 text-xs text-[#94A3B8] hover:text-[#F8FAFC] bg-[#1E2734] hover:bg-[#253243] border border-[#222E3C] rounded-full transition-colors text-center"
         >
-          REVIEW AI
-        </Button>
-        <Button
-          variant="primary"
-          size="xs"
+          View on Map
+        </button>
+        <button
           onClick={() => onDispatchRoute(action)}
-          rightIcon={<ArrowRight className="w-3 h-3" />}
+          className="px-3 py-1.5 text-xs font-medium text-white bg-[#0F6254] hover:bg-[#0B4E43] rounded-full transition-colors flex items-center justify-center gap-1"
         >
-          DISPATCH
-        </Button>
+          <span>Approve Transfer</span>
+          <ArrowRight className="w-3 h-3" />
+        </button>
       </div>
     </div>
   );
