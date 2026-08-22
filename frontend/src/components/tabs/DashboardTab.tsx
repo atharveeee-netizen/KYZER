@@ -7,9 +7,7 @@ import {
   ArrowRight, 
   Search, 
   RefreshCw,
-  Clock,
-  CheckCircle2,
-  MapPin
+  CheckCircle2
 } from 'lucide-react';
 import { apiClient } from '../../services/api';
 import { SystemAlert, HealthFacility } from '../../types';
@@ -80,15 +78,15 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
     : centres;
 
   return (
-    <div className="p-4 sm:p-6 max-w-6xl mx-auto space-y-6 font-sans text-[#F8FAFC]">
+    <div className="p-4 sm:p-6 max-w-6xl mx-auto space-y-6 font-sans text-[#F4F4F4]">
       
-      {/* 1. Page Header with Purpose */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#222E3C]">
+      {/* 1. Page Header with Carbon Light Display Headline */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#393939]">
         <div>
-          <h1 className="text-xl sm:text-2xl font-semibold tracking-tight text-[#F8FAFC]">
+          <h1 className="text-2xl sm:text-3xl font-light tracking-tight text-white">
             District Supply Overview
           </h1>
-          <p className="text-xs text-[#94A3B8] mt-1">
+          <p className="text-xs text-[#C6C6C6] mt-1 font-light">
             Tracking essential medicine stock, run-rates, and peer redistribution across 18 health centres.
           </p>
         </div>
@@ -97,7 +95,7 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
           {onSimulateOutbreak && (
             <button
               onClick={onSimulateOutbreak}
-              className="px-3 py-1.5 text-xs text-[#94A3B8] hover:text-[#F8FAFC] bg-[#161D26] hover:bg-[#1E2734] border border-[#222E3C] rounded-full transition-colors"
+              className="px-3.5 py-2 text-xs text-[#C6C6C6] hover:text-white bg-[#262626] hover:bg-[#393939] border border-[#393939] rounded-none transition-colors"
             >
               Test Shortage Surge
             </button>
@@ -105,95 +103,95 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
         </div>
       </div>
 
-      {/* 2. Today's Network Summary Strip */}
+      {/* 2. Today's Network Summary Strip (Carbon 0px Tiles) */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="p-3.5 bg-[#161D26] border border-[#222E3C] rounded-xl">
-          <div className="text-[11px] text-[#94A3B8]">Health centres</div>
-          <div className="text-xl font-semibold text-[#F8FAFC] mt-0.5 font-mono">18 active</div>
-          <div className="text-[10px] text-[#10B981] mt-0.5">All reporting today</div>
+        <div className="p-4 bg-[#161616] border border-[#393939] rounded-none">
+          <div className="text-[11px] text-[#8D8D8D]">Health centres</div>
+          <div className="text-2xl font-light text-white mt-1 font-mono">18 active</div>
+          <div className="text-[11px] text-[#24A148] mt-1">All reporting today</div>
         </div>
 
-        <div className="p-3.5 bg-[#161D26] border border-[#222E3C] rounded-xl">
-          <div className="text-[11px] text-[#94A3B8]">Stock status</div>
-          <div className="text-xl font-semibold text-[#EF4444] mt-0.5 font-mono">
+        <div className="p-4 bg-[#161616] border border-[#393939] rounded-none">
+          <div className="text-[11px] text-[#8D8D8D]">Stock status</div>
+          <div className="text-2xl font-light text-[#DA1E28] mt-1 font-mono">
             {criticalCount > 0 ? `${criticalCount} urgent shortage` : 'Normal'}
           </div>
-          <div className="text-[10px] text-[#94A3B8] mt-0.5">{warningCount} low-stock items</div>
+          <div className="text-[11px] text-[#C6C6C6] mt-1">{warningCount} low-stock items</div>
         </div>
 
-        <div className="p-3.5 bg-[#161D26] border border-[#222E3C] rounded-xl">
-          <div className="text-[11px] text-[#94A3B8]">Redistribution</div>
-          <div className="text-xl font-semibold text-[#10B981] mt-0.5 font-mono">
+        <div className="p-4 bg-[#161616] border border-[#393939] rounded-none">
+          <div className="text-[11px] text-[#8D8D8D]">Redistribution</div>
+          <div className="text-2xl font-light text-[#24A148] mt-1 font-mono">
             {transferApproved ? '1 resolved' : '1 available nearby'}
           </div>
-          <div className="text-[10px] text-[#94A3B8] mt-0.5">Talegaon → Koregaon (9.8 km)</div>
+          <div className="text-[11px] text-[#C6C6C6] mt-1">Talegaon → Koregaon (9.8 km)</div>
         </div>
 
-        <div className="p-3.5 bg-[#161D26] border border-[#222E3C] rounded-xl">
-          <div className="text-[11px] text-[#94A3B8]">Cold-chain integrity</div>
-          <div className="text-xl font-semibold text-[#38BDF8] mt-0.5 font-mono">+4.2°C</div>
-          <div className="text-[10px] text-[#10B981] mt-0.5">Within +2°C to +8°C window</div>
+        <div className="p-4 bg-[#161616] border border-[#393939] rounded-none">
+          <div className="text-[11px] text-[#8D8D8D]">Cold-chain integrity</div>
+          <div className="text-2xl font-light text-[#0F62FE] mt-1 font-mono">+4.2°C</div>
+          <div className="text-[11px] text-[#24A148] mt-1">Within +2°C to +8°C window</div>
         </div>
       </div>
 
-      {/* 3. Hero Operational Section: Active Shortage & Nearby Solution */}
-      <div className="p-5 bg-[#161D26] border border-[#222E3C] rounded-xl space-y-3">
+      {/* 3. Hero Operational Section: Active Shortage & Recommended Transfer */}
+      <div className="p-5 bg-[#161616] border border-[#393939] rounded-none space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-[#F8FAFC] flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-[#EF4444]" />
+          <h2 className="text-base font-normal text-white flex items-center gap-2">
+            <span className="w-2 h-2 rounded-none bg-[#DA1E28]" />
             <span>Active Shortage & Recommended Transfer</span>
           </h2>
-          <span className="text-xs text-[#94A3B8]">Source: Real-time clinic stock</span>
+          <span className="text-xs text-[#8D8D8D] font-mono">Source: Real-time clinic stock</span>
         </div>
 
         {transferApproved ? (
-          <div className="p-4 bg-[#10B981]/10 border border-[#10B981]/30 rounded-lg flex items-center justify-between">
+          <div className="p-4 bg-[#24A148]/10 border border-[#24A148]/40 rounded-none flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <CheckCircle2 className="w-5 h-5 text-[#10B981] shrink-0" />
+              <CheckCircle2 className="w-5 h-5 text-[#24A148] shrink-0" />
               <div>
-                <div className="text-xs font-semibold text-[#F8FAFC]">Transfer Approved & Recorded</div>
-                <div className="text-xs text-[#94A3B8] mt-0.5">
+                <div className="text-sm font-medium text-white">Transfer Approved & Recorded</div>
+                <div className="text-xs text-[#C6C6C6] mt-0.5 font-light">
                   450 units Paracetamol 500mg dispatched from Talegaon Dhamdhere (PHC-PUN-004) to Koregaon Bhima (PHC-PUN-002). ETA: 18 minutes.
                 </div>
               </div>
             </div>
-            <span className="text-xs font-medium text-[#10B981] px-2.5 py-1 bg-[#10B981]/20 rounded-full">
+            <span className="text-xs font-mono text-[#24A148] px-3 py-1 bg-[#24A148]/20 border border-[#24A148]/40 rounded-none">
               RESOLVED
             </span>
           </div>
         ) : (
-          <div className="p-4 bg-[#11161D] border border-[#222E3C] rounded-lg space-y-3">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="p-4 bg-[#262626] border border-[#393939] rounded-none space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
               {/* Problem */}
-              <div className="space-y-1">
-                <div className="text-[11px] text-[#EF4444] font-medium uppercase">1. Shortage at Centre</div>
-                <div className="text-xs font-semibold text-[#F8FAFC]">Koregaon Bhima PHC</div>
-                <div className="text-xs text-[#94A3B8]">
-                  Has <strong>130 units</strong> Paracetamol 500mg (2.8 days left at 46 units/day). Needs 450 units.
+              <div className="space-y-1.5">
+                <div className="text-[11px] text-[#FA4D56] font-mono uppercase">1. Shortage at Centre</div>
+                <div className="text-sm font-normal text-white">Koregaon Bhima PHC</div>
+                <div className="text-xs text-[#C6C6C6] font-light leading-relaxed">
+                  Has <strong className="text-white font-mono">130 units</strong> Paracetamol 500mg (2.8 days left at 46 units/day). Needs 450 units.
                 </div>
               </div>
 
               {/* Nearby Source */}
-              <div className="space-y-1">
-                <div className="text-[11px] text-[#10B981] font-medium uppercase">2. Found Nearby Surplus</div>
-                <div className="text-xs font-semibold text-[#F8FAFC]">Talegaon Dhamdhere PHC</div>
-                <div className="text-xs text-[#94A3B8]">
-                  Has <strong>820 units</strong> available. Distance: <strong>9.8 km</strong> (18 min road transit).
+              <div className="space-y-1.5">
+                <div className="text-[11px] text-[#24A148] font-mono uppercase">2. Found Nearby Surplus</div>
+                <div className="text-sm font-normal text-white">Talegaon Dhamdhere PHC</div>
+                <div className="text-xs text-[#C6C6C6] font-light leading-relaxed">
+                  Has <strong className="text-white font-mono">820 units</strong> available. Distance: <strong className="text-white font-mono">9.8 km</strong> (18 min road transit).
                 </div>
               </div>
 
               {/* Recommendation & Action */}
-              <div className="space-y-1">
-                <div className="text-[11px] text-[#38BDF8] font-medium uppercase">3. Recommendation</div>
-                <div className="text-xs text-[#94A3B8]">
-                  Transfer <strong>450 units</strong>. Source still keeps 370 units (7.4 days buffer).
+              <div className="space-y-1.5">
+                <div className="text-[11px] text-[#0F62FE] font-mono uppercase">3. Recommendation</div>
+                <div className="text-xs text-[#C6C6C6] font-light leading-relaxed">
+                  Transfer <strong className="text-white font-mono">450 units</strong>. Source still keeps 370 units (7.4 days buffer).
                 </div>
                 <button
                   onClick={handleApproveTransfer}
                   disabled={isLoading}
-                  className="mt-2 w-full px-3 py-1.5 text-xs font-medium text-white bg-[#0F6254] hover:bg-[#0B4E43] rounded-full transition-colors flex items-center justify-center gap-1.5"
+                  className="mt-2 w-full px-4 py-2.5 text-xs font-normal text-white bg-[#0F62FE] hover:bg-[#0043CE] rounded-none transition-colors flex items-center justify-center gap-2"
                 >
-                  <RefreshCw className={`w-3 h-3 ${isLoading ? 'animate-spin' : ''}`} />
+                  <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
                   <span>{isLoading ? 'Recording transfer...' : 'Approve Transfer (450 units)'}</span>
                 </button>
               </div>
@@ -202,60 +200,60 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
         )}
       </div>
 
-      {/* 4. Practical Facility Inventory Table */}
-      <div className="p-5 bg-[#161D26] border border-[#222E3C] rounded-xl space-y-3">
+      {/* 4. Practical Facility Inventory Table (Carbon 1px Hairline Table) */}
+      <div className="p-5 bg-[#161616] border border-[#393939] rounded-none space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h2 className="text-sm font-semibold text-[#F8FAFC]">Facility Stock & Run-Rates</h2>
-            <p className="text-xs text-[#94A3B8]">Essential medicines inventory across Pune District</p>
+            <h2 className="text-base font-normal text-white">Facility Stock & Run-Rates</h2>
+            <p className="text-xs text-[#C6C6C6] font-light">Essential medicines inventory across Pune District</p>
           </div>
 
           <div className="relative">
-            <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-[#64748B]" />
+            <Search className="w-3.5 h-3.5 absolute left-3 top-3 text-[#8D8D8D]" />
             <input
               type="text"
               placeholder="Search facility name or ID..."
               value={searchFilter}
               onChange={(e) => setSearchFilter(e.target.value)}
-              className="pl-8 pr-3 py-1.5 text-xs bg-[#11161D] border border-[#222E3C] rounded-md text-[#F8FAFC] placeholder-[#64748B] focus:outline-none focus:border-[#38BDF8]"
+              className="pl-8 pr-4 py-2 text-xs bg-[#262626] border-b border-[#6F6F6F] focus:border-[#0F62FE] rounded-none text-white placeholder-[#8D8D8D] focus:outline-none"
             />
           </div>
         </div>
 
-        <div className="overflow-x-auto border border-[#222E3C] rounded-lg">
+        <div className="overflow-x-auto border border-[#393939] rounded-none">
           <table className="w-full text-left text-xs">
-            <thead className="bg-[#11161D] text-[#94A3B8] border-b border-[#222E3C]">
+            <thead className="bg-[#262626] text-[#C6C6C6] border-b border-[#393939]">
               <tr>
-                <th className="p-3 font-medium">Health Centre</th>
-                <th className="p-3 font-medium">District</th>
-                <th className="p-3 font-medium">Paracetamol 500mg</th>
-                <th className="p-3 font-medium">Daily Consumption</th>
-                <th className="p-3 font-medium">Days Remaining</th>
-                <th className="p-3 font-medium">Status</th>
+                <th className="p-3 font-normal">Health Centre</th>
+                <th className="p-3 font-normal">District</th>
+                <th className="p-3 font-normal">Paracetamol 500mg</th>
+                <th className="p-3 font-normal">Daily Consumption</th>
+                <th className="p-3 font-normal">Days Remaining</th>
+                <th className="p-3 font-normal">Status</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#222E3C]">
+            <tbody className="divide-y divide-[#393939]">
               {filteredCentres.map((c) => (
-                <tr key={c.id} className="hover:bg-[#1E2734]/50 transition-colors">
-                  <td className="p-3 font-medium text-[#F8FAFC]">
-                    <div>{c.name}</div>
-                    <div className="text-[10px] text-[#64748B] font-mono">{c.id}</div>
+                <tr key={c.id} className="hover:bg-[#262626]/50 transition-colors">
+                  <td className="p-3 text-white">
+                    <div className="font-normal">{c.name}</div>
+                    <div className="text-[10px] text-[#8D8D8D] font-mono">{c.id}</div>
                   </td>
-                  <td className="p-3 text-[#94A3B8]">{c.district}</td>
-                  <td className="p-3 font-mono font-medium text-[#F8FAFC]">{c.stockLevel} units</td>
-                  <td className="p-3 font-mono text-[#94A3B8]">{c.dailyRunRate} / day</td>
+                  <td className="p-3 text-[#C6C6C6] font-light">{c.district}</td>
+                  <td className="p-3 font-mono text-white">{c.stockLevel} units</td>
+                  <td className="p-3 font-mono text-[#C6C6C6]">{c.dailyRunRate} / day</td>
                   <td className="p-3 font-mono">
-                    <span className={c.daysLeft <= 3 ? 'text-[#EF4444] font-semibold' : c.daysLeft <= 6 ? 'text-[#F59E0B]' : 'text-[#10B981]'}>
+                    <span className={c.daysLeft <= 3 ? 'text-[#FA4D56]' : c.daysLeft <= 6 ? 'text-[#F1C21B]' : 'text-[#24A148]'}>
                       {c.daysLeft} days
                     </span>
                   </td>
                   <td className="p-3">
-                    <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${
+                    <span className={`text-[10px] font-mono uppercase px-2 py-0.5 rounded-none border ${
                       c.status === 'CRITICAL' 
-                        ? 'bg-[#EF4444]/15 text-[#EF4444]' 
+                        ? 'bg-[#DA1E28]/15 text-[#FA4D56] border-[#DA1E28]/40' 
                         : c.status === 'WARNING' 
-                        ? 'bg-[#F59E0B]/15 text-[#F59E0B]' 
-                        : 'bg-[#10B981]/15 text-[#10B981]'
+                        ? 'bg-[#F1C21B]/15 text-[#F1C21B] border-[#F1C21B]/40' 
+                        : 'bg-[#24A148]/15 text-[#24A148] border-[#24A148]/40'
                     }`}>
                       {c.status === 'CRITICAL' ? 'Urgent Shortage' : c.status === 'WARNING' ? 'Low Stock' : 'Adequate'}
                     </span>

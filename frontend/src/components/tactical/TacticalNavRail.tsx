@@ -5,7 +5,6 @@ import {
   Package, 
   ArrowLeftRight, 
   Camera, 
-  Zap, 
   ChevronLeft, 
   ChevronRight
 } from 'lucide-react';
@@ -67,12 +66,12 @@ export const TacticalNavRail: React.FC<TacticalNavRailProps> = ({
 
   return (
     <nav
-      className={`h-full bg-[#161D26] border-r border-[#222E3C] flex flex-col justify-between select-none transition-all duration-200 z-20 shrink-0 ${
+      className={`h-full bg-[#161616] border-r border-[#393939] flex flex-col justify-between select-none transition-all duration-150 z-20 shrink-0 ${
         isCollapsed ? 'w-14' : 'w-52'
       }`}
     >
       {/* Navigation Links */}
-      <div className="p-2 space-y-1">
+      <div className="py-2 space-y-0.5">
         {navItems.map((item) => {
           const isActive = activeView === item.id;
           return (
@@ -80,19 +79,19 @@ export const TacticalNavRail: React.FC<TacticalNavRailProps> = ({
               key={item.id}
               onClick={() => onViewChange(item.id)}
               title={isCollapsed ? item.label : undefined}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors text-left ${
+              className={`w-full flex items-center gap-3 px-3.5 py-3 rounded-none transition-colors text-left border-l-2 ${
                 isActive
-                  ? 'bg-[#1E2734] text-white font-medium border border-[#2D3D50]'
-                  : 'text-[#94A3B8] hover:text-[#F8FAFC] hover:bg-[#1A232E]'
+                  ? 'bg-[#262626] text-white border-[#0F62FE] font-medium'
+                  : 'text-[#C6C6C6] hover:text-white hover:bg-[#262626]/60 border-transparent'
               }`}
             >
-              <div className={`shrink-0 ${isActive ? 'text-[#38BDF8]' : 'text-[#64748B]'}`}>
+              <div className={`shrink-0 ${isActive ? 'text-[#0F62FE]' : 'text-[#8D8D8D]'}`}>
                 {item.icon}
               </div>
               {!isCollapsed && (
                 <div className="flex flex-col min-w-0">
                   <span className="text-xs truncate">{item.label}</span>
-                  <span className="text-[10px] text-[#64748B] truncate">{item.sublabel}</span>
+                  <span className="text-[11px] text-[#8D8D8D] font-light truncate">{item.sublabel}</span>
                 </div>
               )}
             </button>
@@ -102,10 +101,10 @@ export const TacticalNavRail: React.FC<TacticalNavRailProps> = ({
 
       {/* Collapse Footer */}
       {onToggleCollapse && (
-        <div className="p-2 border-t border-[#222E3C]">
+        <div className="p-2 border-t border-[#393939]">
           <button
             onClick={onToggleCollapse}
-            className="w-full flex items-center justify-center p-2 text-[#64748B] hover:text-[#F8FAFC] hover:bg-[#1E2734] rounded-md transition-colors"
+            className="w-full flex items-center justify-center p-2 text-[#8D8D8D] hover:text-white hover:bg-[#262626] rounded-none transition-colors"
           >
             {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
           </button>

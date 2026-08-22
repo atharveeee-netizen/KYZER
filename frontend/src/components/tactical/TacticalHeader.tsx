@@ -47,66 +47,66 @@ export const TacticalHeader: React.FC<TacticalHeaderProps> = ({
   }, []);
 
   return (
-    <header className="h-12 bg-[#161D26] border-b border-[#222E3C] px-4 flex items-center justify-between select-none z-30 shrink-0 text-[#F8FAFC] font-sans">
-      {/* Left: Product Name & Operational Purpose */}
-      <div className="flex items-center gap-3">
-        <div className="flex items-center gap-2">
-          <div className="w-6 h-6 rounded-md bg-[#0F6254] flex items-center justify-center font-semibold text-white text-xs">
-            C
+    <header className="h-12 bg-[#161616] border-b border-[#393939] px-4 flex items-center justify-between select-none z-30 shrink-0 text-[#F4F4F4] font-sans">
+      {/* Left: Carbon Brand Logomark & Operational Subtitle */}
+      <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2.5">
+          <div className="w-6 h-6 rounded-none bg-[#0F62FE] flex items-center justify-center font-mono font-bold text-white text-xs">
+            K
           </div>
           <div className="flex flex-col">
-            <span className="font-semibold text-sm tracking-tight text-[#F8FAFC] leading-none">
+            <span className="font-semibold text-sm tracking-tight text-white leading-none">
               KYZER
             </span>
-            <span className="text-[10px] text-[#94A3B8] leading-none mt-0.5">
-              Healthcare supply, without the guesswork
+            <span className="text-[11px] text-[#C6C6C6] font-light leading-none mt-0.5">
+              Healthcare Supply Chain & Logistics
             </span>
           </div>
         </div>
 
-        <div className="h-4 w-[1px] bg-[#222E3C] hidden sm:block mx-1" />
+        <div className="h-4 w-[1px] bg-[#393939] hidden sm:block mx-1" />
 
         {/* Live Network Status */}
-        <div className="hidden md:flex items-center gap-1.5 text-xs text-[#94A3B8]">
-          <span className="w-2 h-2 rounded-full bg-[#10B981]" />
-          <span>Pune Network · 18 health centres active</span>
+        <div className="hidden md:flex items-center gap-2 text-xs text-[#C6C6C6]">
+          <span className="w-2 h-2 rounded-none bg-[#24A148]" />
+          <span>Pune District · 18 health centres online</span>
         </div>
       </div>
 
-      {/* Center / Right Controls */}
-      <div className="flex items-center gap-2.5 text-xs">
-        <div className="hidden lg:flex items-center gap-1 text-[#94A3B8] font-mono text-[11px] px-2 py-1 bg-[#11161D] border border-[#222E3C] rounded-md">
-          <Clock className="w-3 h-3 text-[#64748B]" />
+      {/* Right Controls */}
+      <div className="flex items-center gap-2 text-xs">
+        <div className="hidden lg:flex items-center gap-1.5 text-[#C6C6C6] font-mono text-[11px] px-2.5 py-1 bg-[#262626] border border-[#393939] rounded-none">
+          <Clock className="w-3 h-3 text-[#8D8D8D]" />
           <span>{timeStr || '19:58'} IST</span>
         </div>
 
-        {/* Quick Demo Script Helper */}
+        {/* Demo Recording Guide */}
         {onOpenDemoGuide && (
           <button
             onClick={onOpenDemoGuide}
-            className="flex items-center gap-1.5 px-2.5 py-1 text-xs text-[#E2E8F0] hover:text-white bg-[#1E2734] hover:bg-[#253243] border border-[#222E3C] rounded-full transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-white bg-[#262626] hover:bg-[#393939] border border-[#393939] rounded-none transition-colors"
           >
-            <BookOpen className="w-3.5 h-3.5 text-[#38BDF8]" />
+            <BookOpen className="w-3.5 h-3.5 text-[#0F62FE]" />
             <span className="hidden sm:inline">Recording Guide</span>
           </button>
         )}
 
-        {/* Register Ingestion (Primary Task) */}
+        {/* Register Ingestion CTA */}
         {onOpenOcrModal && (
           <button
             onClick={onOpenOcrModal}
-            className="flex items-center gap-1.5 px-3 py-1 text-xs font-medium text-white bg-[#0F6254] hover:bg-[#0B4E43] rounded-full transition-colors"
+            className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-normal text-white bg-[#0F62FE] hover:bg-[#0043CE] rounded-none transition-colors"
           >
             <Camera className="w-3.5 h-3.5" />
             <span>Scan Logbook</span>
           </button>
         )}
 
-        {/* Test Shortage Surge Simulation */}
+        {/* Test Shortage Simulation */}
         {isScenarioActive ? (
           <button
             onClick={onResetScenario}
-            className="flex items-center gap-1 px-2.5 py-1 text-xs text-[#F59E0B] bg-[#F59E0B]/10 border border-[#F59E0B]/30 rounded-full"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-[#F1C21B] bg-[#F1C21B]/10 border border-[#F1C21B]/40 rounded-none"
           >
             <CheckCircle2 className="w-3.5 h-3.5" />
             <span>Reset Test</span>
@@ -114,9 +114,9 @@ export const TacticalHeader: React.FC<TacticalHeaderProps> = ({
         ) : onOpenScenarioModal ? (
           <button
             onClick={onOpenScenarioModal}
-            className="flex items-center gap-1 px-2.5 py-1 text-xs text-[#94A3B8] hover:text-[#E2E8F0] bg-[#11161D] hover:bg-[#1E2734] border border-[#222E3C] rounded-full transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-[#C6C6C6] hover:text-white bg-[#262626] hover:bg-[#393939] border border-[#393939] rounded-none transition-colors"
           >
-            <Zap className="w-3.5 h-3.5 text-[#F59E0B]" />
+            <Zap className="w-3.5 h-3.5 text-[#F1C21B]" />
             <span className="hidden md:inline">Simulate Shortage</span>
           </button>
         ) : null}

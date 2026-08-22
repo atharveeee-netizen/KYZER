@@ -1,95 +1,95 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 /* ==========================================================================
-   SEMANTIC DESIGN TOKENS (LIGHT & DARK DUAL THEME)
+   IBM CARBON DESIGN SYSTEM TOKENS (LIGHT & DARK DUAL THEME)
    ========================================================================== */
 
 :root {
-  /* Surface Palette (Light Theme) */
+  /* Carbon Surface Palette (White Canvas + Gray-10 Elevation) */
   --color-canvas: #FFFFFF;
-  --color-canvas-soft: #F8FAFC;
+  --color-canvas-soft: #F4F4F4;
   --color-surface-card: #FFFFFF;
-  --color-surface-elevated: #F1F5F9;
-  --color-surface-soft: #F8FAFC;
-  --color-surface-dark: #0F172A;
+  --color-surface-elevated: #F4F4F4;
+  --color-surface-soft: #F4F4F4;
+  --color-surface-dark: #161616;
   
-  /* Hairline Borders (1px Precision) */
-  --color-hairline: #E2E8F0;
-  --color-hairline-soft: #F1F5F9;
-  --color-hairline-strong: #CBD5E1;
+  /* Hairline Borders (1px Carbon Precision) */
+  --color-hairline: #E0E0E0;
+  --color-hairline-soft: #F4F4F4;
+  --color-hairline-strong: #8D8D8D;
   
-  /* Typography & Ink */
-  --color-ink: #0F172A;
-  --color-ink-deep: #020617;
-  --color-body: #475569;
-  --color-body-strong: #1E293B;
-  --color-muted: #94A3B8;
-  --color-muted-soft: #CBD5E1;
+  /* Carbon Typography & Ink */
+  --color-ink: #161616;
+  --color-ink-deep: #000000;
+  --color-body: #525252;
+  --color-body-strong: #161616;
+  --color-muted: #6F6F6F;
+  --color-muted-soft: #8D8D8D;
   
-  /* Primary Action Pill (Pure Ink Pill on Light) */
-  --color-primary: #0F172A;
-  --color-primary-active: #1E293B;
+  /* IBM Blue Primary Action (Flat 0px Carbon CTA) */
+  --color-primary: #0F62FE;
+  --color-primary-active: #0043CE;
   --color-primary-foreground: #FFFFFF;
   
-  /* Semantic Operational Status */
-  --color-intent-primary: #0284C7;
-  --color-intent-success: #059669;
-  --color-intent-warning: #D97706;
-  --color-intent-danger: #DC2626;
-  --color-intent-info: #2563EB;
+  /* Carbon Semantic Operational Status */
+  --color-intent-primary: #0F62FE;
+  --color-intent-success: #24A148;
+  --color-intent-warning: #F1C21B;
+  --color-intent-danger: #DA1E28;
+  --color-intent-info: #0043CE;
   
-  /* Focus & Elevation */
-  --color-focus-ring: rgba(2, 132, 199, 0.4);
-  --color-backdrop: rgba(15, 23, 42, 0.4);
-  --color-scroll-thumb: #CBD5E1;
+  /* Focus Ring */
+  --color-focus-ring: #0F62FE;
+  --color-backdrop: rgba(22, 22, 22, 0.5);
+  --color-scroll-thumb: #8D8D8D;
 }
 
 .dark {
-  /* Surface Palette (Dark Theme - Deep Obsidian Hierarchy) */
-  --color-canvas: #0B0F14;
-  --color-canvas-soft: #11161D;
-  --color-surface-card: #161D26;
-  --color-surface-elevated: #1E2734;
-  --color-surface-soft: #141B24;
-  --color-surface-dark: #070A0D;
+  /* Carbon Gray-100 Theme (Obsidian & Charcoal Enterprise Hierarchy) */
+  --color-canvas: #161616;
+  --color-canvas-soft: #121212;
+  --color-surface-card: #262626;
+  --color-surface-elevated: #393939;
+  --color-surface-soft: #262626;
+  --color-surface-dark: #0F0F0F;
   
   /* Hairline Borders (1px Precision) */
-  --color-hairline: #222E3C;
-  --color-hairline-soft: #19222D;
-  --color-hairline-strong: #2D3D50;
+  --color-hairline: #393939;
+  --color-hairline-soft: #262626;
+  --color-hairline-strong: #6F6F6F;
   
   /* Typography & Ink */
-  --color-ink: #F8FAFC;
+  --color-ink: #F4F4F4;
   --color-ink-deep: #FFFFFF;
-  --color-body: #94A3B8;
-  --color-body-strong: #E2E8F0;
-  --color-muted: #64748B;
-  --color-muted-soft: #475569;
+  --color-body: #C6C6C6;
+  --color-body-strong: #F4F4F4;
+  --color-muted: #8D8D8D;
+  --color-muted-soft: #6F6F6F;
   
-  /* Primary Action Pill (Clean Crisp Pill on Dark) */
-  --color-primary: #F8FAFC;
-  --color-primary-active: #E2E8F0;
-  --color-primary-foreground: #0B0F14;
+  /* IBM Blue Primary Action (Carbon Blue-60 on Dark) */
+  --color-primary: #0F62FE;
+  --color-primary-active: #0043CE;
+  --color-primary-foreground: #FFFFFF;
   
-  /* Semantic Operational Status */
-  --color-intent-primary: #38BDF8;
-  --color-intent-success: #10B981;
-  --color-intent-warning: #F59E0B;
-  --color-intent-danger: #EF4444;
-  --color-intent-info: #60A5FA;
+  /* Carbon Semantic Status */
+  --color-intent-primary: #4589FF;
+  --color-intent-success: #42BE65;
+  --color-intent-warning: #F1C21B;
+  --color-intent-danger: #FA4D56;
+  --color-intent-info: #78A9FF;
   
-  /* Focus & Elevation */
-  --color-focus-ring: rgba(56, 189, 248, 0.4);
-  --color-backdrop: rgba(0, 0, 0, 0.7);
-  --color-scroll-thumb: #222E3C;
+  /* Focus Ring */
+  --color-focus-ring: #4589FF;
+  --color-backdrop: rgba(0, 0, 0, 0.75);
+  --color-scroll-thumb: #525252;
 }
 
 /* ==========================================================================
-   GLOBAL BASE STYLES
+   CARBON BASE STYLES & TYPOGRAPHY
    ========================================================================== */
 
 html, body, #root {
@@ -99,85 +99,130 @@ html, body, #root {
   padding: 0 !important;
   min-height: 100vh;
   width: 100%;
-  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  letter-spacing: 0.16px;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Subdued Tactile Grain */
-.anti-ai-grain {
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 9999;
-  opacity: 0.02;
-  mix-blend-mode: overlay;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+/* Carbon Light Display Treatment (Signature 300 Weight) */
+.carbon-display-xl {
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 76px;
+  font-weight: 300;
+  line-height: 1.17;
+  letter-spacing: -0.5px;
+}
+
+.carbon-display-lg {
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 60px;
+  font-weight: 300;
+  line-height: 1.17;
+  letter-spacing: -0.4px;
+}
+
+.carbon-display-md {
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 42px;
+  font-weight: 300;
+  line-height: 1.20;
+  letter-spacing: 0;
+}
+
+.carbon-headline-light {
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 28px;
+  font-weight: 300;
+  line-height: 1.25;
 }
 
 /* ==========================================================================
-   COMPONENT PRIMITIVES & REUSABLE CLASSES
+   CARBON COMPONENT PRIMITIVES (0px FLAT GEOMETRY)
    ========================================================================== */
 
-/* Modern Precision Card (12px rounded-lg with 1px hairline) */
-.foundry-card {
+/* Flat Carbon Card (0px Border Radius, 1px Hairline) */
+.foundry-card, .carbon-card {
   background-color: var(--color-surface-card);
   border: 1px solid var(--color-hairline);
-  border-radius: 12px;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
-  transition: border-color 0.15s ease, background-color 0.15s ease;
+  border-radius: 0px !important;
+  box-shadow: none !important;
+  transition: border-color 0.11s ease, background-color 0.11s ease;
 }
 
-.foundry-card:hover {
+.foundry-card:hover, .carbon-card:hover {
   border-color: var(--color-hairline-strong);
 }
 
-/* Geometric Pill Classification Badge */
-.foundry-badge {
-  font-family: 'JetBrains Mono', ui-monospace, monospace;
+/* Carbon Flat Badge */
+.foundry-badge, .carbon-badge {
+  font-family: 'IBM Plex Mono', monospace;
   font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  padding: 3px 10px;
-  border-radius: 9999px;
+  font-weight: 500;
+  letter-spacing: 0.16px;
+  padding: 2px 8px;
+  border-radius: 0px !important;
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: 4px;
   line-height: 14px;
 }
 
-/* Precision Geometric Button */
-.foundry-btn {
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  font-size: 13px;
-  font-weight: 500;
-  border-radius: 9999px;
-  padding: 8px 18px;
+/* Carbon Button Primitive (0px Square Geometry, 12px 16px Padding) */
+.foundry-btn, .carbon-btn {
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  letter-spacing: 0.16px;
+  border-radius: 0px !important;
+  padding: 10px 16px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+  gap: 8px;
+  transition: background-color 0.11s ease, border-color 0.11s ease;
   outline: none;
+  border: 1px solid transparent;
 }
 
-.foundry-btn:focus-visible {
-  box-shadow: 0 0 0 2px var(--color-canvas), 0 0 0 4px var(--color-focus-ring);
+.foundry-btn:focus-visible, .carbon-btn:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: -2px;
 }
 
-.foundry-btn:active {
-  transform: scale(0.98);
+.foundry-btn:active, .carbon-btn:active {
+  transform: none;
 }
 
-/* Data Table Tabular Numerals */
+/* Carbon Input Field (Square with Bottom Focus Underline) */
+.carbon-input {
+  background-color: var(--color-surface-elevated);
+  color: var(--color-ink);
+  border: none;
+  border-bottom: 1px solid var(--color-hairline-strong);
+  border-radius: 0px !important;
+  padding: 11px 16px;
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 14px;
+  letter-spacing: 0.16px;
+  outline: none;
+  transition: border-color 0.11s ease;
+}
+
+.carbon-input:focus {
+  border-bottom: 2px solid var(--color-primary);
+}
+
+/* Tabular Numerals for Healthcare Inventory */
 .tabular-nums {
+  font-family: 'IBM Plex Mono', monospace;
   font-variant-numeric: tabular-nums;
 }
 
-/* Minimalist Dual-Theme Scrollbar */
+/* Carbon Scrollbar */
 ::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
+  width: 4px;
+  height: 4px;
 }
 
 ::-webkit-scrollbar-track {
@@ -186,10 +231,9 @@ html, body, #root {
 
 ::-webkit-scrollbar-thumb {
   background: var(--color-scroll-thumb);
-  border-radius: 9999px;
+  border-radius: 0px;
 }
 
-/* Hide MapLibre attribution */
 .mapboxgl-ctrl-attrib {
   display: none !important;
 }
