@@ -78,11 +78,11 @@ export const PublicPortalPage: React.FC<PublicPortalPageProps> = ({
             {/* Right: Public Health Photograph & Small Factual Caption */}
             <div className="lg:col-span-5">
               <div className="bg-white border border-[#D6D6D6] rounded-[2px] overflow-hidden">
-                <div className="h-64 sm:h-72 w-full overflow-hidden bg-[#E9EEF3]">
+                <div className="h-72 sm:h-80 w-full overflow-hidden bg-[#E9EEF3]">
                   <img
                     src={modiHeroImage}
                     alt="Shri Narendra Modi at a public health event"
-                    className="w-full h-full object-cover object-top"
+                    className="w-full h-full object-cover object-center"
                   />
                 </div>
                 <div className="p-3 bg-white border-t border-[#D6D6D6]">
