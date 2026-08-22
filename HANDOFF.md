@@ -1,4 +1,4 @@
-# 🤝 CAREDOM AI ENGINE: PERSON 1 TO PERSON 2/3/4 HANDOFF SPECIFICATION
+# 🤝 KYZER AI ENGINE: PERSON 1 TO PERSON 2/3/4 HANDOFF SPECIFICATION
 
 > **Repository**: `KYZER` (`main` branch)  
 > **Status**: 🟢 **Production-Ready, Fully Serialized & Benchmark Verified**  
@@ -9,13 +9,13 @@
 
 ## ⚡ 1. QUICK START FOR BACKEND DEVELOPERS (PERSON 2)
 
-Person 2 can import the complete CareDOM AI & Quantum Engine in **3 lines of Python**:
+Person 2 can import the complete KYZER AI & Quantum Engine in **3 lines of Python**:
 
 ```python
-from ai_engine.engine import CareDOMEngine
+from ai_engine.engine import KYZEREngine
 
 # Initialize once at FastAPI startup (pre-loads serialized models in ~150ms)
-engine = CareDOMEngine(use_quantum=True)
+engine = KYZEREngine(use_quantum=True)
 
 # Run full 6-stage AI pipeline for any clinic & item
 result_dict = engine.run(
@@ -60,7 +60,7 @@ All models are serialized and pre-calibrated on real historical data. **No retra
 
 ## ⚛️ 4. QUANTUM HARDWARE CONFIGURATION & GRACEFUL DEGRADATION
 
-CareDOM automatically inspects environment variables in `.env`:
+KYZER automatically inspects environment variables in `.env`:
 - If `IBM_QUANTUM_TOKEN` is present: Dispatches QAOA to **IBM Heron r2 (156-qubit QPU)**.
 - If `DWAVE_API_TOKEN` is present: Dispatches BQM QUBO to **D-Wave Advantage (5000+ qubits)**.
 - If unset: Executes **high-fidelity Qiskit statevector simulation** and **Google OR-Tools Guided Local Search** with **0% downtime**.

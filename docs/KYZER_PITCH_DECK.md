@@ -1,4 +1,4 @@
-# 🏛️ CAREDOM — SOVEREIGN HEALTHCARE INTELLIGENCE PLATFORM
+# 🏛️ KYZER — SOVEREIGN HEALTHCARE INTELLIGENCE PLATFORM
 ## Official 12-Slide Pitch Deck Specification
 **Team:** KYZER | **Event:** Google Cloud: Build with AI — Code for Communities Season 2  
 **Design Standard:** Cursor Editorial Aesthetics (`#f7f7f4` Warm Cream, `#26251e` Ink, `#f54e00` Cursor Orange) + Natural Language Architecture Diagrams
@@ -11,7 +11,7 @@
 │ [ SLIDE 01 / 12 ] · TITLE & EXECUTIVE HOOK                                                │
 ├───────────────────────────────────────────────────────────────────────────────────────────┤
 │                                                                                           │
-│   ● CAREDOM SOVEREIGN OS                                            [ GOOGLE CLOUD AI ]   │
+│   ● KYZER SOVEREIGN OS                                            [ GOOGLE CLOUD AI ]   │
 │                                                                                           │
 │   Autonomous Public Health Supply Chain                                                   │
 │   & Epidemic Intelligence Co-Pilot                                                        │
@@ -25,7 +25,7 @@
 ```
 
 ### 🗣️ Speaker Script (0:00 - 0:15)
-> *"Judges, in rural public health centres across India and the BRICS nations, 1 in 4 essential vaccine batches are lost to stockouts or cold-chain melting. Today, Team KYZER presents **CareDOM**—the sovereign multi-agent intelligence platform that automates paper register perception, epidemic demand forecasting, and spatial-optimized lateral redistribution before clinical stockouts occur."*
+> *"Judges, in rural public health centres across India and the BRICS nations, 1 in 4 essential vaccine batches are lost to stockouts or cold-chain melting. Today, Team KYZER presents **KYZER**—the sovereign multi-agent intelligence platform that automates paper register perception, epidemic demand forecasting, and spatial-optimized lateral redistribution before clinical stockouts occur."*
 
 ---
 
@@ -68,7 +68,7 @@
 │   │ • Facility: Koregaon Bhima PHC         │  │ • Facility: Shirur Sub-District Depot  │  │
 │   │ • Challenge: Spends 3 hrs/day manually │  │ • Challenge: Has 12,000 PCM units but  │  │
 │   │   counting blister packs and registers.│    no visibility into Koregaon's surge.   │  │
-│   │ • CareDOM: Snaps 1 photo of the logbook│  │ • CareDOM: Receives KMS-signed lateral │  │
+│   │ • KYZER: Snaps 1 photo of the logbook│  │ • KYZER: Receives KMS-signed lateral │  │
 │   │   ➔ Gemini Vision auto-digitizes stock.│    dispatch order within 18 minutes (9.8 km). │  │
 │   └────────────────────────────────────────┘  └────────────────────────────────────────┘  │
 │                                                                                           │
@@ -77,14 +77,14 @@
 ```
 
 ### 🗣️ Speaker Script (0:35 - 0:50)
-> *"Meet Sunita, an ASHA healthcare worker at Koregaon Bhima, and Dr. Patil at the Shirur Sub-District Hospital. Sunita snaps a single photo of her daily paper logbook on her mobile phone. CareDOM's client-side canvas compressor downscales it by 97%, and Gemini 1.5 Flash Vision extracts stock, beds, and staff attendance in under 2 seconds."*
+> *"Meet Sunita, an ASHA healthcare worker at Koregaon Bhima, and Dr. Patil at the Shirur Sub-District Hospital. Sunita snaps a single photo of her daily paper logbook on her mobile phone. KYZER's client-side canvas compressor downscales it by 97%, and Gemini 1.5 Flash Vision extracts stock, beds, and staff attendance in under 2 seconds."*
 
 ---
 
 <!-- SLIDE 4 -->
 ```
 ┌───────────────────────────────────────────────────────────────────────────────────────────┐
-│ [ SLIDE 04 / 12 ] · THE CAREDOM SOLUTION (5 PILLARS)                                      │
+│ [ SLIDE 04 / 12 ] · THE KYZER SOLUTION (5 PILLARS)                                      │
 ├───────────────────────────────────────────────────────────────────────────────────────────┤
 │                                                                                           │
 │   THE 5-TIER SOVEREIGN INTELLIGENCE CO-PILOT                                              │
@@ -101,7 +101,7 @@
 ```
 
 ### 🗣️ Speaker Script (0:50 - 1:10)
-> *"CareDOM is structured into 5 cohesive tiers: Gemini Vision for paper perception, LightGBM Tweedie for multi-horizon quantile forecasting, Isolation Forest for anomaly detection, PostGIS spatial KNN and Google OR-Tools for thermal cold-chain route optimization, and a DeepSeek Harness multi-agent governance loop that enforces clinical safety gates before any dispatch is signed."*
+> *"KYZER is structured into 5 cohesive tiers: Gemini Vision for paper perception, LightGBM Tweedie for multi-horizon quantile forecasting, Isolation Forest for anomaly detection, PostGIS spatial KNN and Google OR-Tools for thermal cold-chain route optimization, and a DeepSeek Harness multi-agent governance loop that enforces clinical safety gates before any dispatch is signed."*
 
 ---
 
@@ -173,7 +173,7 @@
 ```
 
 ### 🗣️ Speaker Script (1:45 - 2:00)
-> *"For demand forecasting, we deployed a LightGBM Tweedie Quantile model coupled with differential SEIR epidemic dynamics. Achieving 17.48% WAPE across 18 district facilities, CareDOM predicts stockouts 7 days in advance and explains its predictions to clinicians using TreeSHAP feature attributions."*
+> *"For demand forecasting, we deployed a LightGBM Tweedie Quantile model coupled with differential SEIR epidemic dynamics. Achieving 17.48% WAPE across 18 district facilities, KYZER predicts stockouts 7 days in advance and explains its predictions to clinicians using TreeSHAP feature attributions."*
 
 ---
 
@@ -196,7 +196,7 @@
 ```
 
 ### 🗣️ Speaker Script (2:00 - 2:15)
-> *"For emergency redistribution, CareDOM uses PostGIS spatial indexing to match stockout clinics with the nearest surplus facility in real-time—resolving Talegaon Dhamdhere at 9.8 km domestically, and Tshwane at 6,970 km for cross-border capacity. Google OR-Tools Guided Local Search solves multi-stop routing constrained by thermal cold-chain physics, guaranteeing vaccine arrival well before the WHO 240-minute ice pack melting threshold."*
+> *"For emergency redistribution, KYZER uses PostGIS spatial indexing to match stockout clinics with the nearest surplus facility in real-time—resolving Talegaon Dhamdhere at 9.8 km domestically, and Tshwane at 6,970 km for cross-border capacity. Google OR-Tools Guided Local Search solves multi-stop routing constrained by thermal cold-chain physics, guaranteeing vaccine arrival well before the WHO 240-minute ice pack melting threshold."*
 
 ---
 
@@ -220,7 +220,7 @@
 ```
 
 ### 🗣️ Speaker Script (2:15 - 2:25)
-> *"CareDOM's 5-agent governance loop uses a deterministic Worker-Critic architecture. The Supervisor Agent enforces a clinical safety gate: no donor clinic is allowed to transfer medicine if its own remaining buffer drops below 1.9 times emergency demand."*
+> *"KYZER's 5-agent governance loop uses a deterministic Worker-Critic architecture. The Supervisor Agent enforces a clinical safety gate: no donor clinic is allowed to transfer medicine if its own remaining buffer drops below 1.9 times emergency demand."*
 
 ---
 
@@ -243,7 +243,7 @@
 ```
 
 ### 🗣️ Speaker Script (2:25 - 2:35)
-> *"Engineered for government procurement, CareDOM adheres to Palantir Foundry B2G design standards, FedRAMP High Ready authorization, Strix SOC2 Type II container security, and ABDM FHIR R4 interoperability with an immutable KMS-signed audit trail."*
+> *"Engineered for government procurement, KYZER adheres to Palantir Foundry B2G design standards, FedRAMP High Ready authorization, Strix SOC2 Type II container security, and ABDM FHIR R4 interoperability with an immutable KMS-signed audit trail."*
 
 ---
 
@@ -292,4 +292,4 @@
 ```
 
 ### 🗣️ Speaker Script (2:45 - 3:00)
-> *"CareDOM is live and accessible right now at `atharveeee-netizen.github.io/KYZER`. Built by Team KYZER for Google Cloud Code for Communities Season 2. Thank you, and we are ready for your questions!"*
+> *"KYZER is live and accessible right now at `atharveeee-netizen.github.io/KYZER`. Built by Team KYZER for Google Cloud Code for Communities Season 2. Thank you, and we are ready for your questions!"*

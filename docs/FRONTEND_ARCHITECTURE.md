@@ -1,7 +1,7 @@
-# 🏛️ CAREDOM FRONTEND ARCHITECTURE SPECIFICATION (FINAL)
+# 🏛️ KYZER FRONTEND ARCHITECTURE SPECIFICATION (FINAL)
 ### *Definitive Technical Blueprint for Person 3 (Frontend Lead — Arnav)*
 
-**Project**: CareDOM — Smart Health Centre Management & Autonomous Supply Chain Co-Pilot  
+**Project**: KYZER — Smart Health Centre Management & Autonomous Supply Chain Co-Pilot  
 **Team**: KYZER | **Hackathon**: Build with AI: Code for Communities 2  
 **Target Platform**: Web SPA / Mobile-First PWA (Vite + React 19 + TypeScript)
 
@@ -9,7 +9,7 @@
 
 ## 🧭 1. EXECUTIVE SUMMARY & DESIGN PHILOSOPHY
 
-The CareDOM frontend is a **single-pane-of-glass public health command center** designed for district health officers, clinicians, and frontline health workers across low-connectivity BRICS regions.
+The KYZER frontend is a **single-pane-of-glass public health command center** designed for district health officers, clinicians, and frontline health workers across low-connectivity BRICS regions.
 
 ### Core Architectural Directives:
 1. **Zero Bloat, Maximum Speed**: Lightweight (~65 KB bundle) built with **Vite + React 19 + Tailwind CSS v4**. Fast TTI ($< 1.5\text{s}$) on budget laptops and tablets.
@@ -24,7 +24,7 @@ The CareDOM frontend is a **single-pane-of-glass public health command center** 
 
 ```
 ┌────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│ 🏥 CareDOM — Smart Health Centre Management & Supply Chain Co-Pilot         [ 🇮🇳 IND | 🇿🇦 ZAF | 🇧🇷 BRA ] │
+│ 🏥 KYZER — Smart Health Centre Management & Supply Chain Co-Pilot         [ 🇮🇳 IND | 🇿🇦 ZAF | 🇧🇷 BRA ] │
 ├────────────────────────┬───────────────────────────────────────────────┬───────────────────────────────┤
 │ 📊 DISTRICT HEALTH KPIs│ 🗺️ INTERACTIVE GIS MAP (MapLibre GL JS)       │ 📈 7-DAY DEMAND FORECAST      │
 │                        │                                               │                               │
@@ -155,7 +155,7 @@ frontend/
 
 ```json
 {
-  "name": "caredom-frontend",
+  "name": "kyzer-frontend",
   "private": true,
   "version": "1.0.0",
   "type": "module",

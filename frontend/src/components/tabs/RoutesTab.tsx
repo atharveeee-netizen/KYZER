@@ -225,7 +225,7 @@ export const RoutesTab: React.FC<RoutesTabProps> = ({ routingResult, isLive = fa
               <span className="text-[#0D8050]">6,970 KM</span>
             </div>
             <p className="text-xs text-[#A7B6C2] font-sans leading-relaxed">
-              When domestic reserves deplete, CareDOM's PostGIS KNN matches partner hospitals across BRICS nations.
+              When domestic reserves deplete, KYZER's PostGIS KNN matches partner hospitals across BRICS nations.
               Federated Learning aggregates demand gradient weights without raw patient data ever leaving sovereign soil.
             </p>
             <div className="border-t border-[#293742] pt-2 flex items-center justify-between text-[11px]">

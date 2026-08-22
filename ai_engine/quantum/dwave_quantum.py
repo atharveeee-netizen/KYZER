@@ -1,5 +1,5 @@
 """
-D-Wave Quantum Annealing Router for CareDOM.
+D-Wave Quantum Annealing Router for KYZER.
 Based on:
 - Holliday (2025) "Solving Real-World Optimization Problems using Near-Term Quantum Computing: HQTS for CVRPTW"
 - Mohammed et al. (2025) "Quantum Annealing in Transportation and Routing"

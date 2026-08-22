@@ -1,5 +1,5 @@
 """
-CareDOM Quantum Routing Engine — Parameterized QAOA on IBM Quantum Architecture.
+KYZER Quantum Routing Engine — Parameterized QAOA on IBM Quantum Architecture.
 Designed and Developed by Team KYZER for Build with AI: Code for Communities 2.
 Implements Hamiltonian Phase Separation U(C, gamma) and Transverse Field Mixers U(B, beta)
 optimized for 156-Qubit IBM Heron r2 Processors and Qiskit Quantum Co-Processors.

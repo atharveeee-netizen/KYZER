@@ -1,5 +1,5 @@
 """
-Real-World Dataset Ingestion & Preprocessing Pipeline for CareDOM.
+Real-World Dataset Ingestion & Preprocessing Pipeline for KYZER.
 Downloads, merges, and standardizes authentic public datasets:
 1. Real 2,106-Day Daily Pharmaceutical Consumption Time-Series (WHO ATC drug classes: N02BE, M01AE, R03, R06, M01AB)
 2. Real Historical Weather & Precipitation Archives (Open-Meteo Global API for Pune, Tshwane, Manaus)
@@ -25,14 +25,14 @@ from typing import Dict, Any, List
 
 from ai_engine.config import DATA_DIR
 
-# CareDOM Master Healthcare Dataset Ingestion Pipeline
+# KYZER Master Healthcare Dataset Ingestion Pipeline
 # Developed by Team KYZER for Autonomous Health Centre Logistics
 
 PHARMA_DATASET_URL = "https://raw.githubusercontent.com/datasets/pharma-sales-data/main/data/salesdaily.csv"
 EPIDEMIC_DATASET_URL = "https://raw.githubusercontent.com/datasets/covid-19/main/data/countries-aggregated.csv"
 
-# Mapping from WHO ATC Drug Classification to CareDOM Hospital Formulary
-ATC_TO_CAREDOM_MEDICINES = {
+# Mapping from WHO ATC Drug Classification to KYZER Hospital Formulary
+ATC_TO_KYZER_MEDICINES = {
     "N02BE": {"code": "MED-PCM-500", "name": "Paracetamol 500mg Tablets", "category": "Analgesic/Antipyretic"},
     "M01AE": {"code": "MED-IBU-400", "name": "Ibuprofen 400mg Tablets", "category": "NSAID Anti-inflammatory"},
     "M01AB": {"code": "MED-DIC-50",  "name": "Diclofenac 50mg Tablets", "category": "Anti-inflammatory"},
@@ -64,7 +64,7 @@ class RealHealthcareDatasetLoader:
             
         print(f"Downloading real pharmaceutical dataset from: {PHARMA_DATASET_URL}...")
         try:
-            req = urllib.request.Request(PHARMA_DATASET_URL, headers={"User-Agent": "CareDOM-Research-Agent"})
+            req = urllib.request.Request(PHARMA_DATASET_URL, headers={"User-Agent": "KYZER-Research-Agent"})
             with urllib.request.urlopen(req, timeout=15) as response:
                 csv_text = response.read().decode("utf-8")
             df_raw = pd.read_csv(io.StringIO(csv_text))
@@ -97,7 +97,7 @@ class RealHealthcareDatasetLoader:
             f"daily=temperature_2m_max,precipitation_sum&timezone=auto"
         )
         try:
-            req = urllib.request.Request(url, headers={"User-Agent": "CareDOM-Health-Research"})
+            req = urllib.request.Request(url, headers={"User-Agent": "KYZER-Health-Research"})
             with urllib.request.urlopen(req, timeout=10) as response:
                 raw_json = json.loads(response.read().decode("utf-8"))
             
@@ -127,7 +127,7 @@ class RealHealthcareDatasetLoader:
         """Downloads real epidemic incidence curves from WHO/JHU repository."""
         print(f"Downloading authentic epidemiological outbreak trends from: {EPIDEMIC_DATASET_URL}...")
         try:
-            req = urllib.request.Request(EPIDEMIC_DATASET_URL, headers={"User-Agent": "CareDOM-Research-Agent"})
+            req = urllib.request.Request(EPIDEMIC_DATASET_URL, headers={"User-Agent": "KYZER-Research-Agent"})
             with urllib.request.urlopen(req, timeout=15) as response:
                 csv_text = response.read().decode("utf-8")
             df_epi = pd.read_csv(io.StringIO(csv_text))
@@ -215,7 +215,7 @@ class RealHealthcareDatasetLoader:
             df_weather = weather_by_country.get(country, pd.DataFrame())
             df_epi = epidemic_by_country.get(country, pd.DataFrame())
 
-            for atc, med_info in ATC_TO_CAREDOM_MEDICINES.items():
+            for atc, med_info in ATC_TO_KYZER_MEDICINES.items():
                 if atc not in df_recent.columns:
                     continue
 

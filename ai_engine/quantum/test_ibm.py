@@ -22,7 +22,7 @@ def main():
     args = parser.parse_args()
 
     print("=" * 80)
-    print(f"⚛️ CareDOM IBM Quantum QAOA Router — Test Suite (N = {args.nodes})")
+    print(f"⚛️ KYZER IBM Quantum QAOA Router — Test Suite (N = {args.nodes})")
     print(f"Backend Target: {args.backend} (156-Qubit Heron r2 Processor)")
     print("Team KYZER | Build with AI: Code for Communities 2")
     print("=" * 80)

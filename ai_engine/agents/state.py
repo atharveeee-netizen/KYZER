@@ -11,7 +11,7 @@ from ai_engine.allocator.hybrid_quantum import HybridOptimizationBenchmark
 from ai_engine.explainer.shap_explainer import DecisionExplanationReport
 
 class AgentLifecycleState(str, Enum):
-    """Formal lifecycle states for the CareDOM multi-agent state machine."""
+    """Formal lifecycle states for the KYZER multi-agent state machine."""
     INITIALIZED = "INITIALIZED"
     INGESTING = "INGESTING"
     FORECASTING = "FORECASTING"

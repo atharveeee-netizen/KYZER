@@ -42,7 +42,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               C
             </div>
             <div className="flex items-center gap-2">
-              <span className="font-bold text-xs tracking-wider text-[#F5F8FA]">CAREDOM SOVEREIGN OS</span>
+              <span className="font-bold text-xs tracking-wider text-[#F5F8FA]">KYZER SOVEREIGN OS</span>
               <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded-[2px] bg-[#202B33] text-[#A7B6C2] border border-[#293742] hidden sm:inline-block">
                 CONFIDENTIAL // FEDRAMP HIGH
               </span>

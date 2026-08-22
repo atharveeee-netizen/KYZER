@@ -1,5 +1,5 @@
 """
-Master End-to-End AI Engine Pipeline for CareDOM (KYZER).
+Master End-to-End AI Engine Pipeline for KYZER (KYZER).
 Orchestrates:
 1. Google Gemini 1.5 Flash Vision OCR (Paper Register -> FHIR JSON)
 2. LightGBM & SEIR Demand Forecaster (P10/P50/P90 Multi-Horizon)
@@ -45,8 +45,8 @@ class PipelineExecutionSummary(BaseModel):
     narrative: Dict[str, str]
     total_pipeline_latency_ms: float
 
-class CareDOMAIPipeline:
-    """Production orchestrator unifying the complete CareDOM AI stack."""
+class KYZERAIPipeline:
+    """Production orchestrator unifying the complete KYZER AI stack."""
 
     def __init__(self):
         self.ocr_extractor = GeminiRegisterExtractor()

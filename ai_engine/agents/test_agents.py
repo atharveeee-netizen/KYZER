@@ -1,5 +1,5 @@
 """
-Verification & Test Suite for CareDOM Autonomous Multi-Agent System.
+Verification & Test Suite for KYZER Autonomous Multi-Agent System.
 Simulates a multi-agent diagnostic session and prints the full inter-agent message trace.
 """
 
@@ -17,12 +17,12 @@ import asyncio
 from ai_engine.agents.workflow import MultiAgentWorkflowEngine
 
 def main():
-    parser = argparse.ArgumentParser(description="Test CareDOM Multi-Agent System")
+    parser = argparse.ArgumentParser(description="Test KYZER Multi-Agent System")
     parser.add_argument("--async-mode", "--async", dest="async_mode", action="store_true", help="Execute in asynchronous parallel mode")
     args = parser.parse_args()
 
     print("=" * 85)
-    print(f"🤖 CareDOM Autonomous Multi-Agent Collaborative System — Execution Test ({'ASYNC' if args.async_mode else 'SYNC'})")
+    print(f"🤖 KYZER Autonomous Multi-Agent Collaborative System — Execution Test ({'ASYNC' if args.async_mode else 'SYNC'})")
     print("Team KYZER | Build with AI: Code for Communities 2")
     print("=" * 85)
 

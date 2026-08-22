@@ -1,5 +1,5 @@
 """
-Base Abstract Agent for CareDOM Multi-Agent System.
+Base Abstract Agent for KYZER Multi-Agent System.
 Defines agent interface, state mutation hooks, and communication protocols.
 """
 
@@ -11,7 +11,7 @@ from ai_engine.agents.state import MultiAgentBlackboardState, AgentMessage
 
 logger = logging.getLogger("ai_engine.agents")
 
-class BaseCareDOMAgent(ABC):
+class BaseKYZERAgent(ABC):
     """Abstract base class for domain-specific autonomous healthcare agents."""
 
     def __init__(self, agent_name: str, role_description: str):

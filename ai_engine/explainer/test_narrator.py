@@ -21,7 +21,7 @@ def main():
     args = parser.parse_args()
 
     print("=" * 80)
-    print("🗣️ CareDOM Dynamic Multilingual Narrator — Test Suite")
+    print("🗣️ KYZER Dynamic Multilingual Narrator — Test Suite")
     print("Testing dynamic Hindi & English briefings (Zero Hardcoded Text)")
     print("Team KYZER | Build with AI: Code for Communities 2")
     print("=" * 80)

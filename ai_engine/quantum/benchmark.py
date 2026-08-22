@@ -1,5 +1,5 @@
 """
-Comprehensive Quantum Multi-Scale Benchmark Suite for CareDOM.
+Comprehensive Quantum Multi-Scale Benchmark Suite for KYZER.
 Usage:
     python -m ai_engine.quantum.benchmark --nodes 5,10,20,50,100
 """
@@ -27,7 +27,7 @@ def main():
     node_counts = [int(x.strip()) for x in args.nodes.split(",") if x.strip()]
 
     print("=" * 105)
-    print("⚛️ CareDOM Quantum-Classical Hybrid Routing — Multi-Scale Benchmark Suite")
+    print("⚛️ KYZER Quantum-Classical Hybrid Routing — Multi-Scale Benchmark Suite")
     print("IBM Quantum (Heron r2 156-Qubit) + D-Wave Advantage (5000+ Qubit Pegasus QPU)")
     print("Team KYZER | Build with AI: Code for Communities 2")
     print("=" * 105)

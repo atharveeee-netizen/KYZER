@@ -1,5 +1,5 @@
 """
-CareDOM Master AI Engine — Unified Programmatic Interface (The Bridge).
+KYZER Master AI Engine — Unified Programmatic Interface (The Bridge).
 Provides the single, high-performance, plug-and-play entrypoint for:
 - Person 2 (FastAPI REST Backend)
 - Person 3 (Frontend Web Dashboard & GIS Map)
@@ -25,16 +25,16 @@ from pathlib import Path
 from typing import Dict, Any, List, Optional
 
 from ai_engine.config import AI_ENGINE_DIR, DATA_DIR, settings
-from ai_engine.pipeline import CareDOMAIPipeline, PipelineExecutionSummary
+from ai_engine.pipeline import KYZERAIPipeline, PipelineExecutionSummary
 from ai_engine.agents.workflow import MultiAgentWorkflowEngine
 from ai_engine.ocr.gemini_extractor import GeminiRegisterExtractor
 from ai_engine.quantum.check_env import get_quantum_mode, get_quantum_capabilities
 
 logger = logging.getLogger("ai_engine.bridge")
 
-class CareDOMEngine:
+class KYZEREngine:
     """
-    The Single Unified Entry Point for the CareDOM AI Engine.
+    The Single Unified Entry Point for the KYZER AI Engine.
     Person 2 (FastAPI) and Person 4 (Bots) instantiate this class once at application startup.
     """
 
@@ -50,7 +50,7 @@ class CareDOMEngine:
         self._loaded = False
         
         # Core Pipeline & Multi-Agent & Perception Engines
-        self.pipeline = CareDOMAIPipeline()
+        self.pipeline = KYZERAIPipeline()
         self.workflow_engine = MultiAgentWorkflowEngine()
         self.ocr_engine = GeminiRegisterExtractor()
         self.ocr_extractor = self.ocr_engine
@@ -86,7 +86,7 @@ class CareDOMEngine:
 
             self._loaded = True
             load_ms = (time.perf_counter() - t0) * 1000
-            logger.info(f"CareDOM AI Models loaded successfully in {load_ms:.2f}ms.")
+            logger.info(f"KYZER AI Models loaded successfully in {load_ms:.2f}ms.")
         except Exception as e:
             logger.warning(f"Model pre-loading notice ({e}). Pipeline will initialize lazily.")
             self._loaded = False

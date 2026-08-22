@@ -7,7 +7,7 @@ services:
   # run with WORKDIR /app containing ./app) is what makes `from app.config
   # import ...` resolve - no startCommand override needed or wanted here.
   - type: web
-    name: caredom-db-service
+    name: kyzer-db-service
     runtime: docker
     region: singapore
     plan: free
@@ -27,7 +27,7 @@ services:
   # point this at backend/Dockerfile (that would just duplicate Service A),
   # and do NOT add a startCommand override.
   - type: web
-    name: caredom-ai-service
+    name: kyzer-ai-service
     runtime: docker
     region: singapore
     plan: free

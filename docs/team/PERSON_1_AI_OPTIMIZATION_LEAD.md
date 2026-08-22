@@ -1,6 +1,6 @@
 # 🧠 PERSON 1: AI, PERCEPTION & QUANTUM OPTIMIZATION ARCHITECTURE
 **Role**: Atharve (Lead AI & Quantum Systems Architect)  
-**Project**: CareDOM — Autonomous Healthcare Supply Chain Platform  
+**Project**: KYZER — Autonomous Healthcare Supply Chain Platform  
 **Team**: KYZER | **Hackathon**: Build with AI: Code for Communities 2
 
 ---
@@ -65,6 +65,6 @@ Person 1 owns the **Perception, Cognition, Multi-Scale Optimization, and Explain
 ---
 
 ## 📦 3. INTERFACE CONTRACTS WITH PERSON 2, 3 & 4
-- **For Person 2 (Backend)**: Instantiates `CareDOMEngine` as a singleton at FastAPI startup. Exposes `engine.run()`, `engine.route_allocator.optimize_routes()`, and `engine.ocr_engine.extract_from_image()`.
+- **For Person 2 (Backend)**: Instantiates `KYZEREngine` as a singleton at FastAPI startup. Exposes `engine.run()`, `engine.route_allocator.optimize_routes()`, and `engine.ocr_engine.extract_from_image()`.
 - **For Person 3 (Frontend)**: Emits 9-clinic waypoint coordinates, stop timings, and risk scores for 3D MapLibre rendering.
 - **For Person 4 (Voice/Alerts)**: Returns Marathi/Hindi briefing strings and pre-formatted WhatsApp share links.

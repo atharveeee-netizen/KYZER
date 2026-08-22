@@ -1,5 +1,5 @@
 """
-Allocator and optimization module for CareDOM.
+Allocator and optimization module for KYZER.
 """
 
 from ai_engine.allocator.fefo_rules import (

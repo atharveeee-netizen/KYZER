@@ -1,5 +1,5 @@
 """
-CareDOM AI Engine (KYZER Edition)
+KYZER AI Engine (KYZER Edition)
 BRICS-Federated Smart Health Centre Management & Autonomous Supply Chain Platform
 """
 

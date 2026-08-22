@@ -1,5 +1,5 @@
 """
-Explainer module for CareDOM.
+Explainer module for KYZER.
 """
 
 from ai_engine.explainer.shap_explainer import (

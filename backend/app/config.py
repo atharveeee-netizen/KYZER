@@ -14,7 +14,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
-    database_url: str = "postgresql://caredom_user:caredom_pass@localhost:5432/caredom_db"
+    database_url: str = "postgresql://kyzer_user:kyzer_pass@localhost:5432/kyzer_db"
     allowed_origins: str = "http://localhost:3000,http://localhost:5173"
     api_key: str | None = None  # optional shared secret for mutating writes
 

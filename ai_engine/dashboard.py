@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Dict, Any, List
 import pandas as pd
 
-def build_caredom_copilot_html(
+def build_kyzer_copilot_html(
     output_path: str,
     pipeline_summary_dict: Dict[str, Any]
 ) -> str:
@@ -46,7 +46,7 @@ def build_caredom_copilot_html(
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CareDOM - AI Supply Chain Co-Pilot (Team KYZER)</title>
+  <title>KYZER - AI Supply Chain Co-Pilot (Team KYZER)</title>
   <style>
     :root {{
       --bg-primary: #0f172a;
@@ -121,7 +121,7 @@ def build_caredom_copilot_html(
   <div class="container">
     <header>
       <div>
-        <h1>🏥 CareDOM AI Supply Chain Co-Pilot</h1>
+        <h1>🏥 KYZER AI Supply Chain Co-Pilot</h1>
         <div class="subtitle">BRICS-Federated Autonomous Health Centre Management | Team KYZER</div>
       </div>
       <div>
@@ -189,7 +189,7 @@ def build_caredom_copilot_html(
     </div>
 
     <div class="footer">
-      CareDOM &copy; 2026 Team KYZER &bull; Build with AI: Code for Communities 2 &bull; Apache 2.0 License
+      KYZER &copy; 2026 Team KYZER &bull; Build with AI: Code for Communities 2 &bull; Apache 2.0 License
     </div>
   </div>
 </body>

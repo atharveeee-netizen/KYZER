@@ -1,4 +1,4 @@
-# 🏥 KYZER (CareDOM): Autonomous AI & Multi-Agent Healthcare Supply Chain Platform
+# 🏥 KYZER (KYZER): Autonomous AI & Multi-Agent Healthcare Supply Chain Platform
 
 ### *Built for Google Cloud — Build with AI: Code for Communities (Season 2)*
 
@@ -14,7 +14,7 @@
 
 ## 🌐 LIVE PLATFORM DEMO
 👉 **Live Web Application:** **[https://atharveeee-netizen.github.io/KYZER/](https://atharveeee-netizen.github.io/KYZER/)**  
-👉 **API Documentation (Swagger):** `https://caredom-db-service.onrender.com/docs`
+👉 **API Documentation (Swagger):** `https://kyzer-db-service.onrender.com/docs`
 
 ---
 

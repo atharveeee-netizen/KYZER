@@ -10,12 +10,12 @@ from pathlib import Path
 from typing import Dict, Any, List
 
 from ai_engine.config import DATA_DIR
-from ai_engine.agents.base import BaseCareDOMAgent
+from ai_engine.agents.base import BaseKYZERAgent
 from ai_engine.agents.state import MultiAgentBlackboardState, AgentLifecycleState
 from ai_engine.allocator.hybrid_quantum import HybridQuantumAllocator
 from ai_engine.allocator.adaptive_allocator import AdaptiveRouteAllocator
 
-class AllocatorAgent(BaseCareDOMAgent):
+class AllocatorAgent(BaseKYZERAgent):
     """Specialized Agent responsible for cold-chain routing & adaptive quantum resource allocation."""
 
     def __init__(self):

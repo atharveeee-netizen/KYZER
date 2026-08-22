@@ -1,5 +1,5 @@
 """
-Solomon CVRPTW Benchmark Suite for CareDOM Routing Engine.
+Solomon CVRPTW Benchmark Suite for KYZER Routing Engine.
 Implements standard Solomon (1987) benchmark instances (C101, R101, RC101)
 to validate vehicle routing algorithms against published operations research literature.
 """
@@ -28,7 +28,7 @@ SOLOMON_C101_SUBSET = [
 ]
 
 class SolomonBenchmarkRunner:
-    """Evaluates CareDOM Routing Solvers on international Solomon CVRPTW benchmarks."""
+    """Evaluates KYZER Routing Solvers on international Solomon CVRPTW benchmarks."""
 
     @staticmethod
     def run_benchmark() -> Dict[str, Any]:

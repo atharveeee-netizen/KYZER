@@ -1,5 +1,5 @@
 # 📋 PRODUCT REQUIREMENTS DOCUMENT (PRD) — Research-Backed Edition
-**Project Name:** CareDOM (BRICS Smart Health Centre Management & Autonomous Co-Pilot)  
+**Project Name:** KYZER (BRICS Smart Health Centre Management & Autonomous Co-Pilot)  
 **Team Name:** KYZER | **Hackathon:** Build with AI: Code for Communities 2  
 **Track:** Track 3 — Smart Health Centre Management & Supply Chain Resilience  
 **Target Users:** Primary Health Centre (PHC) administrators, District Health Officers (DHO), Frontline ASHA Workers, ANMs, Cold-Chain Logistics Drivers.
@@ -14,7 +14,7 @@ Rural and semi-urban Primary Health Centres (PHCs) and Community Health Centres 
 - **Absenteeism & Staffing Imbalance:** High doctor and nursing deficits in rural clinics lead to preventable mortality.
 - **Water-Damaged Paper Register Traps:** Frontline ASHA workers spend 35%+ of their clinical time maintaining physical paper logs, creating a 7–14 day latency before stockouts are reported.
 
-CareDOM acts as an **autonomous clinical supply chain co-pilot**, synthesizing real-time computer vision OCR, quantile demand forecasting, SEIR dynamical epidemic coupling, and hybrid quantum-classical vehicle routing.
+KYZER acts as an **autonomous clinical supply chain co-pilot**, synthesizing real-time computer vision OCR, quantile demand forecasting, SEIR dynamical epidemic coupling, and hybrid quantum-classical vehicle routing.
 
 ---
 
@@ -37,7 +37,7 @@ CareDOM acts as an **autonomous clinical supply chain co-pilot**, synthesizing r
 
 ## 3. Real-World Dataset Repository Grounding
 
-CareDOM is calibrated and benchmarked **exclusively on verified real-world public datasets**:
+KYZER is calibrated and benchmarked **exclusively on verified real-world public datasets**:
 
 | Dataset Name | Source Repository | Content & Metrics |
 |--------------|-------------------|-------------------|

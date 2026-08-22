@@ -1,5 +1,5 @@
-# 📋 CAREDOM: MASTER PROJECT HANDOVER & FUTURE ROADMAP
-**Project**: CareDOM — Autonomous Health Centre Supply Chain & Emergency Co-Pilot  
+# 📋 KYZER: MASTER PROJECT HANDOVER & FUTURE ROADMAP
+**Project**: KYZER — Autonomous Health Centre Supply Chain & Emergency Co-Pilot  
 **Team**: KYZER | **Hackathon**: Build with AI: Code for Communities 2  
 **Repository**: `https://github.com/atharveeee-netizen/KYZER.git`  
 **Live Hosted Platform**: [https://atharveeee-netizen.github.io/KYZER/](https://atharveeee-netizen.github.io/KYZER/)  
@@ -10,7 +10,7 @@
 ## 🌟 1. EXECUTIVE SUMMARY & MISSION
 In rural BRICS nations (India, South Africa, Brazil), over **74% of Primary Health Centres (PHCs)** manage inventory on paper registers. When localized epidemic surges (monsoon fever, encephalitis) strike, clinics experience critical medicine stockouts within 48 hours while neighbouring facilities sit on expiring surpluses.
 
-**CareDOM** solves this end-to-end with an autonomous multi-agent co-pilot:
+**KYZER** solves this end-to-end with an autonomous multi-agent co-pilot:
 1. **Perception**: Straightens tilted mobile phone register photos and extracts inventory into structured data.
 2. **Cognition**: Predicts 7-day demand spikes via LightGBM Tweedie regressors coupled to SEIR epidemic dynamics.
 3. **Quantum-Classical Optimization**: Solves multi-facility redistribution routing ensuring WHO's 4-hour cold-chain freshness SLA.
@@ -22,7 +22,7 @@ In rural BRICS nations (India, South Africa, Brazil), over **74% of Primary Heal
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────────────────────────┐
-│                                 CAREDOM PRODUCTION ECOSYSTEM                                    │
+│                                 KYZER PRODUCTION ECOSYSTEM                                    │
 ├────────────────────────┬────────────────────────┬───────────────────────┬───────────────────────┤
 │ 🧠 AI & QUANTUM ENGINE │ ⚡ FASTAPI REST API    │ 🗺️ 3D COMMAND CENTER  │ 🗣️ VOICE & WHATSAPP   │
 ├────────────────────────┼────────────────────────┼───────────────────────┼───────────────────────┤
@@ -131,7 +131,7 @@ uvicorn backend.app.main:app --host 0.0.0.0 --port 8000 --reload
 ```bash
 python -m ai_engine.train
 python -m ai_engine.allocator.hybrid_quantum
-python -c "from ai_engine.engine import CareDOMEngine; e = CareDOMEngine(); print(e.run('PHC-PUN-001'))"
+python -c "from ai_engine.engine import KYZEREngine; e = KYZEREngine(); print(e.run('PHC-PUN-001'))"
 ```
 
 ---

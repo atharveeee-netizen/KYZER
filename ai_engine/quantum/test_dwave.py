@@ -22,7 +22,7 @@ def main():
     args = parser.parse_args()
 
     print("=" * 80)
-    print(f"🌌 CareDOM D-Wave Quantum Annealer — Test Suite (N = {args.nodes})")
+    print(f"🌌 KYZER D-Wave Quantum Annealer — Test Suite (N = {args.nodes})")
     print(f"Solver Target: {args.solver} (5000+ Qubit Pegasus Architecture)")
     print("Team KYZER | Build with AI: Code for Communities 2")
     print("=" * 80)

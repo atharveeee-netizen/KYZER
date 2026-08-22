@@ -43,7 +43,7 @@ export const DemoGuideModal: React.FC<DemoGuideModalProps> = ({
       bullets: [
         'Staff nurse notices stock level has fallen to 130 units (under 3 days left).',
         'Traditional depot resupply takes 48 hours; patient demand is surging today.',
-        'CareDOM immediately identifies the shortage and searches nearby facilities.',
+        'KYZER immediately identifies the shortage and searches nearby facilities.',
       ],
       actionLabel: 'HIGHLIGHT SHORTAGE ON MAP',
       actionKey: 0,
@@ -56,7 +56,7 @@ export const DemoGuideModal: React.FC<DemoGuideModalProps> = ({
       icon: <TrendingUp className="w-5 h-5 text-[#10B981]" />,
       headline: 'Found 820 units available at Talegaon Dhamdhere (9.8 km away)',
       bullets: [
-        'Instead of placing a new central order, CareDOM checks regional clinic inventory.',
+        'Instead of placing a new central order, KYZER checks regional clinic inventory.',
         'PostGIS spatial search resolves Talegaon Dhamdhere at 9.8 km (18 min road transit).',
         'Map renders the exact transit corridor and validates cold-chain safety.',
       ],

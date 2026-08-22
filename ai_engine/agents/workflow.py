@@ -1,5 +1,5 @@
 """
-CareDOM Multi-Agent Execution Graph & Reactive Workflow Engine.
+KYZER Multi-Agent Execution Graph & Reactive Workflow Engine.
 Connects all 5 specialized agents into an asynchronous state-machine graph
 with dynamic conditional routing, message buses, and audit trace generation.
 """

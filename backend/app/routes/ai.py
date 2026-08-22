@@ -1,5 +1,5 @@
 """
-CareDOM AI & Quantum Engine Router — Person 1's routes, mounted by Person 2
+KYZER AI & Quantum Engine Router — Person 1's routes, mounted by Person 2
 as Service B (see backend/app/main_ai.py). Deliberately has no dependency
 on asyncpg/DATABASE_URL/app.database — it's fully self-contained (in-memory
 models + ai_engine/data/*.json on disk), which is exactly why it's split
@@ -20,7 +20,7 @@ from fastapi import APIRouter, HTTPException, UploadFile, File, Query
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
-from ai_engine.engine import CareDOMEngine
+from ai_engine.engine import KYZEREngine
 from ai_engine.config import settings
 from ai_engine.explainer.shap_explainer import HealthSHAPExplainer
 
@@ -30,13 +30,13 @@ logger = logging.getLogger("backend.routes.ai")
 ai_router = APIRouter(tags=["AI Engine & Quantum Routing"])
 
 # Singleton engine instance
-_engine: Optional[CareDOMEngine] = None
+_engine: Optional[KYZEREngine] = None
 
-def get_engine() -> CareDOMEngine:
+def get_engine() -> KYZEREngine:
     global _engine
     if _engine is None:
-        logger.info("Initializing CareDOM AI Engine Singleton...")
-        _engine = CareDOMEngine(pre_load_models=True)
+        logger.info("Initializing KYZER AI Engine Singleton...")
+        _engine = KYZEREngine(pre_load_models=True)
     return _engine
 
 # Request / Response Schemas

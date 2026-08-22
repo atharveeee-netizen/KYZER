@@ -53,7 +53,7 @@ def generate_benchmark_cluster(num_nodes: int, seed: int = 42) -> List[Dict[str,
     return facilities
 
 def main():
-    parser = argparse.ArgumentParser(description="CareDOM Multi-Scale Adaptive Routing Benchmark")
+    parser = argparse.ArgumentParser(description="KYZER Multi-Scale Adaptive Routing Benchmark")
     parser.add_argument("--num-nodes", type=int, default=20, help="Number of health facilities to route (e.g. 5, 20, 50, 100)")
     parser.add_argument("--expected-time-ms", type=int, default=5000, help="Maximum expected time budget in milliseconds")
     parser.add_argument("--quantum", action="store_true", help="Engage Quantum Hardware / Simulator Orchestrator")
@@ -61,7 +61,7 @@ def main():
 
     N = args.num_nodes
     print("=" * 85)
-    print(f"🚀 CareDOM Adaptive Multi-Scale Routing Engine — Benchmark Suite (N = {N})")
+    print(f"🚀 KYZER Adaptive Multi-Scale Routing Engine — Benchmark Suite (N = {N})")
     print(f"Mode: {'⚛️ QUANTUM-POWERED (IBM QAOA / D-Wave)' if args.quantum else '⚙️ CLASSICAL-ADAPTIVE'}")
     print("Team KYZER | Build with AI: Code for Communities 2")
     print("=" * 85)

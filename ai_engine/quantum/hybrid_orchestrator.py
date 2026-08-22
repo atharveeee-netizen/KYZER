@@ -1,5 +1,5 @@
 """
-Unified Hybrid Quantum-Classical Orchestrator for CareDOM.
+Unified Hybrid Quantum-Classical Orchestrator for KYZER.
 Coordinates:
 - IBM Quantum QAOA (N <= 20)
 - D-Wave Quantum Annealing (21 <= N <= 100)

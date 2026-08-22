@@ -118,7 +118,7 @@ def _split_batches(qty: int) -> list[int]:
     return parts
 
 # Transcribed verbatim from ai_engine/data/real_data_loader.py's
-# ATC_TO_CAREDOM_MEDICINES (the canonical 7-item formulary used to generate
+# ATC_TO_KYZER_MEDICINES (the canonical 7-item formulary used to generate
 # the consumption CSV). Not imported directly because that module has an
 # unrelated pandas/DATA_DIR import-time bug and pulls in heavy ML deps that
 # backend/ has no other need for — see requirements.txt, which stays light.

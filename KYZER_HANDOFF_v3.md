@@ -1,4 +1,4 @@
-# CareDOM — Person 2 Handoff (v3, 20 Aug)
+# KYZER — Person 2 Handoff (v3, 20 Aug)
 
 Supersedes v2 (morning of 20 Aug). Upload at the start of a new chat.
 
@@ -6,7 +6,7 @@ Supersedes v2 (morning of 20 Aug). Upload at the start of a new chat.
 
 ## Who and what
 
-I'm **Kavin**, Person 2 (Backend & Database) on **Team KYZER**, building **CareDOM** —
+I'm **Kavin**, Person 2 (Backend & Database) on **Team KYZER**, building **KYZER** —
 a BRICS-federated rural healthcare supply chain platform for the **Build with AI:
 Code for Communities 2** hackathon on Hack2skill.
 
@@ -32,14 +32,14 @@ Evaluations 25–28, top 20 announced, virtual finale 29 Aug, Demo Day 4 Sept.
 
 ## STATUS: backend — six routers, all live-verified
 
-**Live: https://caredom-db-service.onrender.com** — Swagger at `/docs`
+**Live: https://kyzer-db-service.onrender.com** — Swagger at `/docs`
 
 Verified against the deployed URL (not just locally), and against real browser CORS
 for the ones the frontend actually calls, not just curl (curl ignores CORS entirely):
 
 | Endpoint | File | Verified behaviour |
 |---|---|---|
-| `GET /health`, `/api/v1/health` | `main.py` | `{"status":"ok","service":"caredom-backend"}` |
+| `GET /health`, `/api/v1/health` | `main.py` | `{"status":"ok","service":"kyzer-backend"}` |
 | `GET /api/v1/inventory?country_code=IND` | `dashboard_routes.py` | One row per facility: beds, latest staff attendance, in-stock inventory (json_agg) |
 | `GET /api/v1/facilities` | `facilities_routes.py` | One row per facility shaped for the frontend's `HealthFacility`: `days_to_stockout`, `risk_tier`, `cascade_risk_score` (heuristic, see below) |
 | `GET /api/v1/alerts` | `alerts_routes.py` | `{"count", "alerts"}` — any facility in P0_CRITICAL/P1_WARNING for MED-PCM-500. Shares risk-tier thresholds with `/facilities` via `_risk_tier_sql.py` (see Design decisions) |
@@ -62,7 +62,7 @@ path is byte-identical to before this was added.
 
 **Infrastructure**
 - Neon Postgres + PostGIS 3.5, region `ap-southeast-1` (Singapore)
-- Render web service `caredom-db-service`, Docker, build context `backend/`, Singapore, free tier.
+- Render web service `kyzer-db-service`, Docker, build context `backend/`, Singapore, free tier.
 - **Auto-Deploy is set to "On Commit" in Render's settings but has never actually fired** —
   every deploy so far (checked the Deploys tab, all show Trigger: Manual) was triggered by
   hand via the "Manual Deploy" button. **A `git push` to main does NOT deploy.** After every
@@ -243,7 +243,7 @@ was on mock data. Not malice; fast AI-generated output mistaken for finished wor
 **Verify claims against running code before building on them.** Every real bug found
 this week surfaced only from actually running things — the original list still holds
 (`ST_Distance` returning degrees not metres, `ai_router` crashing a Service-A-only
-image, `CareDOMEngine` missing `ocr_engine`, CORS rejecting the frontend origin while
+image, `KYZEREngine` missing `ocr_engine`, CORS rejecting the frontend origin while
 curl passed) — and this week added three more of the same shape:
 
 - Render's "Auto-Deploy: On Commit" setting doing nothing — every deploy this week was

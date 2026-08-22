@@ -7,13 +7,13 @@ complex optimization decisions into human-readable clinical narratives (English 
 import pandas as pd
 from typing import Dict, Any, List
 
-from ai_engine.agents.base import BaseCareDOMAgent
+from ai_engine.agents.base import BaseKYZERAgent
 from ai_engine.agents.state import MultiAgentBlackboardState, AgentLifecycleState
 from ai_engine.explainer.shap_explainer import HealthSHAPExplainer
 from ai_engine.explainer.gemini_narrator import GeminiDecisionNarrator
 from ai_engine.forecaster.lightgbm_model import MultiHorizonDemandForecaster
 
-class ExplainerAgent(BaseCareDOMAgent):
+class ExplainerAgent(BaseKYZERAgent):
     """Specialized Agent responsible for clinical explainability & natural language synthesis."""
 
     def __init__(self):

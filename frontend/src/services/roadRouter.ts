@@ -1,5 +1,5 @@
 /**
- * CareDOM OSRM (Open Source Routing Machine) Real-Time Road Router
+ * KYZER OSRM (Open Source Routing Machine) Real-Time Road Router
  * Directly connects to OSRM API (https://router.project-osrm.org)
  * Computes exact real-world driving routes on the street network with zero building collisions.
  */
@@ -136,7 +136,7 @@ export async function fetchOSRMShortestRoute(
       };
     }
   } catch (err) {
-    console.warn('[CareDOM Router] OSRM live API timeout/error, using resilient OSRM cache:', err);
+    console.warn('[KYZER Router] OSRM live API timeout/error, using resilient OSRM cache:', err);
   }
 
   // Fallback to precomputed OSRM route

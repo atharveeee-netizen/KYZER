@@ -1,5 +1,5 @@
 """
-Quantum Computing module for CareDOM.
+Quantum Computing module for KYZER.
 Supports IBM Quantum (QAOA) and D-Wave (Quantum Annealing).
 """
 

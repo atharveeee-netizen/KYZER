@@ -1,5 +1,5 @@
 """
-OCR module for CareDOM.
+OCR module for KYZER.
 """
 
 from ai_engine.ocr.schema import (

@@ -19,7 +19,7 @@ from ai_engine.quantum.ibm_quantum import IBMQuantumRouter
 
 def synthesize_and_visualize_quantum_circuit(nodes_count: int = 3):
     print("=" * 80)
-    print(f"⚛️ CAREDOM IBM QUANTUM QAOA CIRCUIT SYNTHESIZER (N = {nodes_count} Nodes)")
+    print(f"⚛️ KYZER IBM QUANTUM QAOA CIRCUIT SYNTHESIZER (N = {nodes_count} Nodes)")
     print("Target Architecture: IBM Heron r2 Processor (156 Physical Qubits)")
     print("=" * 80)
 

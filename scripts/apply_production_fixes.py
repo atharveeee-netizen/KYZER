@@ -89,7 +89,7 @@ print('Updated DigitalTwin.tsx')
 
 # 4. Update api.ts
 write('frontend/src/services/api.ts', '''/**
- * CareDOM Production API Client Layer
+ * KYZER Production API Client Layer
  * Handles communication with Service A (Database Backend) and Service B (AI/Quantum Engine).
  * Gracefully falls back to local cached seed data if backend is unreachable (Offline-First).
  */
@@ -104,8 +104,8 @@ import {
   MOCK_SHAP_DRIVERS 
 } from '../data/mockData';
 
-const DB_API_URL = ((import.meta as any).env?.VITE_API_URL_DB) || 'https://caredom-db-service.onrender.com/api/v1';
-const AI_API_URL = ((import.meta as any).env?.VITE_API_URL_AI) || 'https://caredom-ai-service.onrender.com/api/v1';
+const DB_API_URL = ((import.meta as any).env?.VITE_API_URL_DB) || 'https://kyzer-db-service.onrender.com/api/v1';
+const AI_API_URL = ((import.meta as any).env?.VITE_API_URL_AI) || 'https://kyzer-ai-service.onrender.com/api/v1';
 
 export const apiClient = {
   // 1. Fetch Health Facilities (Service A - PostGIS / Neon DB)
@@ -117,7 +117,7 @@ export const apiClient = {
       const data = await res.json();
       return data.facilities || data;
     } catch (err) {
-      console.warn('[CareDOM API] Service A offline or spinning up, using local facility cache:', err);
+      console.warn('[KYZER API] Service A offline or spinning up, using local facility cache:', err);
       return BRICS_FACILITIES;
     }
   },
@@ -135,7 +135,7 @@ export const apiClient = {
       }
       return [];
     } catch (err) {
-      console.warn('[CareDOM API] Service A offline, using local alerts cache:', err);
+      console.warn('[KYZER API] Service A offline, using local alerts cache:', err);
       return MOCK_ALERTS;
     }
   },
@@ -156,7 +156,7 @@ export const apiClient = {
       if (!res.ok) throw new Error(`HTTP error ${res.status}`);
       return await res.json();
     } catch (err) {
-      console.warn('[CareDOM API] FEFO allocate offline, simulated local drawdown:', err);
+      console.warn('[KYZER API] FEFO allocate offline, simulated local drawdown:', err);
       return { status: 'RESERVED', facility_id: facilityId, item_code: itemCode, quantity };
     }
   },
@@ -169,7 +169,7 @@ export const apiClient = {
       if (!res.ok) throw new Error(`HTTP error ${res.status}`);
       return await res.json();
     } catch (err) {
-      console.warn('[CareDOM API] Redistribution suggest offline, simulated fallback:', err);
+      console.warn('[KYZER API] Redistribution suggest offline, simulated fallback:', err);
       return {
         donor_facility_id: 'PHC-PUN-004',
         donor_name: 'Talegaon Dhamdhere PHC',
@@ -195,7 +195,7 @@ export const apiClient = {
       }
       throw new Error('Empty forecast payload');
     } catch (err) {
-      console.warn('[CareDOM API] Service B forecast offline, using local LightGBM model cache:', err);
+      console.warn('[KYZER API] Service B forecast offline, using local LightGBM model cache:', err);
       return {
         daily_forecast: MOCK_FORECAST_SERIES,
         shap_drivers: MOCK_SHAP_DRIVERS,
@@ -234,7 +234,7 @@ export const apiClient = {
       }
       throw new Error('Empty routing payload');
     } catch (err) {
-      console.warn('[CareDOM API] Service B routing offline, using local quantum routing cache:', err);
+      console.warn('[KYZER API] Service B routing offline, using local quantum routing cache:', err);
       return {
         ...MOCK_ROUTING_RESULT,
         is_live: false,
@@ -264,7 +264,7 @@ export const apiClient = {
         extraction_mode: json.extraction_mode === 'gemini' ? 'gemini' : 'simulated',
       };
     } catch (err) {
-      console.warn('[CareDOM API] Service B OCR offline, fallback simulated response');
+      console.warn('[KYZER API] Service B OCR offline, fallback simulated response');
       return {
         entries: MOCK_OCR_ITEMS,
         narrative: 'Extracted 3 line items from register photo with 98.4% confidence (Offline Local Verification Mode).',
@@ -285,7 +285,7 @@ export const apiClient = {
       if (!res.ok) throw new Error(`HTTP error ${res.status}`);
       return await res.json();
     } catch (err) {
-      console.warn('[CareDOM API] Commit register offline, local acknowledgement');
+      console.warn('[KYZER API] Commit register offline, local acknowledgement');
       return { status: 'COMMITTED', updated_rows: 3 };
     }
   },

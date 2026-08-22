@@ -9,11 +9,11 @@ import numpy as np
 from pathlib import Path
 
 from ai_engine.config import DATA_DIR
-from ai_engine.agents.base import BaseCareDOMAgent
+from ai_engine.agents.base import BaseKYZERAgent
 from ai_engine.agents.state import MultiAgentBlackboardState, AgentLifecycleState
 from ai_engine.forecaster.lightgbm_model import MultiHorizonDemandForecaster
 
-class ForecasterAgent(BaseCareDOMAgent):
+class ForecasterAgent(BaseKYZERAgent):
     """Specialized Agent responsible for probabilistic medicine demand forecasting."""
 
     def __init__(self):

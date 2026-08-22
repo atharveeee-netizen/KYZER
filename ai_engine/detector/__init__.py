@@ -1,5 +1,5 @@
 """
-Detector module for CareDOM.
+Detector module for KYZER.
 """
 
 from ai_engine.detector.isolation_forest import (

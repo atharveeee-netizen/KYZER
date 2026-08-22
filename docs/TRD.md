@@ -1,5 +1,5 @@
 # ⚙️ TECHNICAL REQUIREMENTS DOCUMENT (TRD) — Research-Backed Edition
-**Project Name:** CareDOM (BRICS Smart Health Centre Management & Autonomous Co-Pilot)  
+**Project Name:** KYZER (BRICS Smart Health Centre Management & Autonomous Co-Pilot)  
 **Team Name:** KYZER | **Hackathon:** Build with AI: Code for Communities 2  
 
 ---
@@ -8,7 +8,7 @@
 
 ```
                                     ┌────────────────────────────────────────────────────────┐
-                                    │               CAREDOM SYSTEM ARCHITECTURE              │
+                                    │               KYZER SYSTEM ARCHITECTURE              │
                                     └───────────────────────────┬────────────────────────────┘
                                                                 │
                  ┌──────────────────────────────────────────────┼──────────────────────────────────────────────┐
@@ -23,7 +23,7 @@
                                                                 ▼
                                     ┌────────────────────────────────────────────────────────┐
                                     │             AI & QUANTUM ENGINE (PERSON 1)             │
-                                    │             ai_engine/engine.py: CareDOMEngine         │
+                                    │             ai_engine/engine.py: KYZEREngine         │
                                     └───────────────────────────┬────────────────────────────┘
                                                                 │
                  ┌───────────────────────┬──────────────────────┼───────────────────────┬────────────────────────┐
@@ -65,7 +65,7 @@ where $\tau_{\text{Pune}} = 1.38, \tau_{\text{Satara}} = 1.45, \tau_{\text{Defau
 
 ```
 ╔═══════════════════════╦═════════════════════════════════════╦═══════════════════════════════════════════════════════╗
-║ HTTP ROUTE            ║ INPUT PAYLOAD                       ║ OUTPUT SCHEMA (CareDOMEngine Response)                ║
+║ HTTP ROUTE            ║ INPUT PAYLOAD                       ║ OUTPUT SCHEMA (KYZEREngine Response)                ║
 ╠═══════════════════════╬═════════════════════════════════════╬═══════════════════════════════════════════════════════╣
 ║ POST /api/v1/ai/run   ║ {                                   ║ {                                                     ║
 ║                       ║   "facility_id": "PHC-PUN-002",     ║   "status": "SUCCESS",                                ║

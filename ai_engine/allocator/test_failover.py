@@ -15,7 +15,7 @@ from ai_engine.allocator.benchmark import generate_benchmark_cluster
 
 def main():
     print("=" * 80)
-    print("🛡️ CareDOM Adaptive Route Allocator — Failover & Resilience Test")
+    print("🛡️ KYZER Adaptive Route Allocator — Failover & Resilience Test")
     print("Team KYZER | Build with AI: Code for Communities 2")
     print("=" * 80)
 

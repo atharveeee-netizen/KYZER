@@ -1,4 +1,4 @@
-# 🚀 KYZER (CareDOM) — Master Linux VM Deployment Guide
+# 🚀 KYZER (KYZER) — Master Linux VM Deployment Guide
 
 This guide details how to launch and host the full **KYZER Backend, AI Engine, and PostGIS Database** on a Linux Virtual Machine (Google Cloud Compute Engine, AWS EC2, DigitalOcean Droplet, or Hetzner).
 
@@ -71,10 +71,10 @@ Once `deploy_vm.sh` finishes, your endpoints will be available at:
 
 ```bash
 # View live container logs in real time
-sudo docker logs -f caredom-api
+sudo docker logs -f kyzer-api
 
 # View PostGIS database logs
-sudo docker logs -f caredom-postgres
+sudo docker logs -f kyzer-postgres
 
 # Restart all services
 sudo docker-compose restart

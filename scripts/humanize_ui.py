@@ -67,7 +67,7 @@ export const TacticalHeader: React.FC<TacticalHeaderProps> = ({
           </div>
           <div className="flex flex-col">
             <span className="font-semibold text-sm tracking-tight text-[#F8FAFC] leading-none">
-              CareDOM
+              KYZER
             </span>
             <span className="text-[10px] text-[#94A3B8] leading-none mt-0.5">
               Healthcare supply, without the guesswork

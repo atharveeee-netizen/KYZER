@@ -15,7 +15,7 @@ from ai_engine.detector.cascade_detector import SystemicCascadeAnalyzer
 
 def main():
     print("=" * 80)
-    print("🏥 CareDOM 3-Pillar Non-Linear Cascade Risk Evaluation")
+    print("🏥 KYZER 3-Pillar Non-Linear Cascade Risk Evaluation")
     print("Meds + Beds + Staff Failure Mode Dynamics: 1 - ∏(1 - x)")
     print("Team KYZER | Build with AI: Code for Communities 2")
     print("=" * 80)

@@ -1,5 +1,5 @@
 """
-Configuration settings for the CareDOM AI Engine.
+Configuration settings for the KYZER AI Engine.
 Loads environment variables and sets operational defaults.
 """
 

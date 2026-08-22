@@ -22,7 +22,7 @@ def main():
     args = parser.parse_args()
 
     print("=" * 90)
-    print(f"🌌 CareDOM Full Quantum Hybrid Pipeline (N = {args.nodes} Facilities)")
+    print(f"🌌 KYZER Full Quantum Hybrid Pipeline (N = {args.nodes} Facilities)")
     print("Graph Coarsening + Regional Quantum Optimization + Feasibility Repair")
     print("Team KYZER | Build with AI: Code for Communities 2")
     print("=" * 90)

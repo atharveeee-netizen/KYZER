@@ -6,8 +6,8 @@ def write(path, content):
         f.write(content.strip() + '\n')
     print(f'Wrote {path}')
 
-# 1. Update docs/CAREDOM_PITCH_DECK.md
-with open('docs/CAREDOM_PITCH_DECK.md', 'r', encoding='utf-8') as f:
+# 1. Update docs/KYZER_PITCH_DECK.md
+with open('docs/KYZER_PITCH_DECK.md', 'r', encoding='utf-8') as f:
     deck = f.read()
 
 # Slide 1 Update
@@ -63,7 +63,7 @@ new_slide_8 = '''<!-- SLIDE 8 -->
 ```
 
 ### 🗣️ Speaker Script (2:00 - 2:15)
-> *"For emergency redistribution, CareDOM uses PostGIS spatial indexing to match stockout clinics with the nearest surplus facility in real-time—resolving Talegaon Dhamdhere at 9.8 km domestically, and Tshwane at 6,970 km for cross-border capacity. Google OR-Tools Guided Local Search solves multi-stop routing constrained by thermal cold-chain physics, guaranteeing vaccine arrival well before the WHO 240-minute ice pack melting threshold."*'''
+> *"For emergency redistribution, KYZER uses PostGIS spatial indexing to match stockout clinics with the nearest surplus facility in real-time—resolving Talegaon Dhamdhere at 9.8 km domestically, and Tshwane at 6,970 km for cross-border capacity. Google OR-Tools Guided Local Search solves multi-stop routing constrained by thermal cold-chain physics, guaranteeing vaccine arrival well before the WHO 240-minute ice pack melting threshold."*'''
 
 if old_slide_8 in deck:
     deck = deck.replace(old_slide_8, new_slide_8)
@@ -72,7 +72,7 @@ else:
     deck = deck.replace('QUANTUM-CLASSICAL HYBRID ALLOCATION & VRP', 'SPATIAL POSTGIS REDISTRIBUTION & THERMAL VRP')
     deck = deck.replace('PARAMETERIZED QAOA & OR-TOOLS HYBRID LOGISTICS', 'POSTGIS SPATIAL KNN & OR-TOOLS GUIDED LOCAL SEARCH')
 
-write('docs/CAREDOM_PITCH_DECK.md', deck)
+write('docs/KYZER_PITCH_DECK.md', deck)
 
 # 2. Update frontend/src/App.tsx
 with open('frontend/src/App.tsx', 'r', encoding='utf-8') as f:

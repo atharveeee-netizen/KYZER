@@ -43,7 +43,7 @@ class NumberedCanvas(canvas.Canvas):
         # Header text
         self.setFont("Helvetica-Bold", 8)
         self.setFillColor(colors.HexColor('#f54e00'))
-        self.drawString(40, self._pagesize[1] - 32, "CAREDOM SOVEREIGN OS")
+        self.drawString(40, self._pagesize[1] - 32, "KYZER SOVEREIGN OS")
         
         self.setFont("Helvetica", 8)
         self.setFillColor(colors.HexColor('#807d72'))
@@ -159,7 +159,7 @@ def build_pdf(output_path):
         # Slide 1
         {
             "tag": "SLIDE 01 / 12  ·  EXECUTIVE HOOK",
-            "title": "CareDOM Sovereign OS",
+            "title": "KYZER Sovereign OS",
             "sub": "Autonomous Public Health Supply Chain & Epidemic Intelligence Co-Pilot",
             "content": [
                 [
@@ -195,15 +195,15 @@ def build_pdf(output_path):
             "sub": "From 3 hours of manual paperwork to instant autonomous co-piloting",
             "content": [
                 [
-                    Paragraph("<b>Sunita — ASHA Field Nurse</b><br/><i>Koregaon Bhima Primary Health Centre</i><br/>• <b>Before:</b> Spends 3 hours daily manually counting blister packs & paper logbooks.<br/>• <b>With CareDOM:</b> Snaps 1 photo of the clinic register. Gemini 1.5 Flash automatically extracts stock, ICU beds, and attendance in 1.8 seconds.", body_style),
-                    Paragraph("<b>Dr. Patil — District Medical Officer</b><br/><i>Shirur Sub-District Hospital & Depot</i><br/>• <b>Before:</b> Manages 12,000 Paracetamol units but has zero visibility into neighboring outbreak spikes.<br/>• <b>With CareDOM:</b> Receives automated, KMS-signed lateral redistribution dispatches saving 13.5 km transit.", body_style)
+                    Paragraph("<b>Sunita — ASHA Field Nurse</b><br/><i>Koregaon Bhima Primary Health Centre</i><br/>• <b>Before:</b> Spends 3 hours daily manually counting blister packs & paper logbooks.<br/>• <b>With KYZER:</b> Snaps 1 photo of the clinic register. Gemini 1.5 Flash automatically extracts stock, ICU beds, and attendance in 1.8 seconds.", body_style),
+                    Paragraph("<b>Dr. Patil — District Medical Officer</b><br/><i>Shirur Sub-District Hospital & Depot</i><br/>• <b>Before:</b> Manages 12,000 Paracetamol units but has zero visibility into neighboring outbreak spikes.<br/>• <b>With KYZER:</b> Receives automated, KMS-signed lateral redistribution dispatches saving 13.5 km transit.", body_style)
                 ]
             ]
         },
         # Slide 4
         {
             "tag": "SLIDE 04 / 12  ·  THE SOLUTION",
-            "title": "The 5-Tier CareDOM Sovereign Architecture",
+            "title": "The 5-Tier KYZER Sovereign Architecture",
             "sub": "Deterministic, cryptographically auditable intelligence—not generative guesswork",
             "content": [
                 [
@@ -292,7 +292,7 @@ def build_pdf(output_path):
             "content": [
                 [
                     Paragraph("<b>5-Agent Collaborative Graph:</b><br/>• <b>Planner (34.2ms):</b> Decomposes epidemic surge trajectory.<br/>• <b>Detector (18.1ms):</b> Isolation Forest flags 1.4-day buffer.<br/>• <b>Allocator (12.7ms):</b> Matches donor via PostGIS & QPU.<br/>• <b>Explainer (22.4ms):</b> Computes TreeSHAP clinical rationale.<br/>• <b>Supervisor (8.3ms):</b> Validates clinical consensus gate.", body_style),
-                    Paragraph("<b>Deterministic Safety Gate ($\ge 1.9\\times$):</b><br/>CareDOM enforces that donor clinics must retain at least 1.9x their own emergency demand buffer. The Critic Agent rejects any dispatch that jeopardizes donor safety (Verified 2.1x buffer).", body_style)
+                    Paragraph("<b>Deterministic Safety Gate ($\ge 1.9\\times$):</b><br/>KYZER enforces that donor clinics must retain at least 1.9x their own emergency demand buffer. The Critic Agent rejects any dispatch that jeopardizes donor safety (Verified 2.1x buffer).", body_style)
                 ]
             ]
         },
@@ -381,5 +381,5 @@ def build_pdf(output_path):
 
 if __name__ == '__main__':
     desktop_dir = r"C:\Users\25beevdt047\Desktop"
-    output_pdf = os.path.join(desktop_dir, "CAREDOM_PITCH_DECK.pdf")
+    output_pdf = os.path.join(desktop_dir, "KYZER_PITCH_DECK.pdf")
     build_pdf(output_pdf)

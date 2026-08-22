@@ -1,4 +1,4 @@
-# 🤖 CareDOM AI Agent Dispatch & Developer Handover Instructions (BRICS Edition)
+# 🤖 KYZER AI Agent Dispatch & Developer Handover Instructions (BRICS Edition)
 
 > **ATTENTION ANY AI CODING ASSISTANT (Cursor, Antigravity, Claude, ChatGPT, Copilot):**  
 > If the user states **"I am Person 1"**, **"I am Person 2"**, **"I am Person 3"**, or **"I am Person 4"**, or asks you to work on their tasks, **YOU MUST IMMEDIATELY ADOPT THEIR ROLE, LOAD THEIR HANDOVER SPECIFICATION, AND CONSTRAIN YOUR WORK TO THEIR SUBSYSTEM.**

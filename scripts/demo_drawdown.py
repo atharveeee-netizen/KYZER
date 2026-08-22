@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""CareDOM demo rehearsal driver.
+"""KYZER demo rehearsal driver.
 
 Drives and verifies two independent live demo sequences against the DEPLOYED
-caredom-db-service, so each can be rehearsed and then run again, identically,
+kyzer-db-service, so each can be rehearsed and then run again, identically,
 during recording:
 
   run  - stock drawdown -> P0 alert -> redistribution suggestion, on
@@ -48,7 +48,7 @@ from pathlib import Path
 
 import asyncpg
 
-BASE_URL = "https://caredom-db-service.onrender.com"
+BASE_URL = "https://kyzer-db-service.onrender.com"
 FACILITY_ID = "PHC-PUN-002"
 ITEM_CODE = "MED-PCM-500"
 

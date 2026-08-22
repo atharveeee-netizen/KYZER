@@ -24,9 +24,9 @@ def create_pptx(output_path):
     slides_data = [
         {
             "tag": "SLIDE 01 / 12  ·  EXECUTIVE HOOK",
-            "title": "CareDOM Sovereign OS",
+            "title": "KYZER Sovereign OS",
             "subtitle": "Autonomous Public Health Supply Chain & Epidemic Intelligence Co-Pilot",
-            "script": "Judges, in rural public health centres across India and BRICS nations, 1 in 4 essential vaccine batches are lost to stockouts or cold-chain melting. Today, Team KYZER presents CareDOM—the sovereign multi-agent intelligence platform that automates paper register perception, epidemic demand forecasting, and quantum-optimized lateral redistribution before clinical stockouts occur.",
+            "script": "Judges, in rural public health centres across India and BRICS nations, 1 in 4 essential vaccine batches are lost to stockouts or cold-chain melting. Today, Team KYZER presents KYZER—the sovereign multi-agent intelligence platform that automates paper register perception, epidemic demand forecasting, and quantum-optimized lateral redistribution before clinical stockouts occur.",
             "cards": [
                 {
                     "title": "The Mission & Problem Scope",
@@ -75,13 +75,13 @@ def create_pptx(output_path):
             "tag": "SLIDE 03 / 12  ·  USER PERSONAS",
             "title": "Empowering Frontline Health Workers & Officers",
             "subtitle": "From 3 hours of manual paperwork to instant autonomous co-piloting",
-            "script": "Meet Sunita, an ASHA healthcare worker at Koregaon Bhima, and Dr. Patil at the Shirur Sub-District Hospital. Sunita snaps a single photo of her daily paper logbook on her mobile phone. CareDOM's client-side canvas compressor downscales it by 97%, and Gemini 1.5 Flash Vision extracts stock, beds, and staff attendance in under 2 seconds.",
+            "script": "Meet Sunita, an ASHA healthcare worker at Koregaon Bhima, and Dr. Patil at the Shirur Sub-District Hospital. Sunita snaps a single photo of her daily paper logbook on her mobile phone. KYZER's client-side canvas compressor downscales it by 97%, and Gemini 1.5 Flash Vision extracts stock, beds, and staff attendance in under 2 seconds.",
             "cards": [
                 {
                     "title": "Sunita — ASHA Field Nurse (Koregaon Bhima PHC)",
                     "points": [
                         "Before: Spends 3 hours daily manually counting blister packs & handwriting registers.",
-                        "With CareDOM: Snaps 1 photo of the clinic register. Gemini 1.5 Flash auto-digitizes stock, ICU beds, and attendance in 1.8s.",
+                        "With KYZER: Snaps 1 photo of the clinic register. Gemini 1.5 Flash auto-digitizes stock, ICU beds, and attendance in 1.8s.",
                         "97% Bandwidth Reduction: Uploads smoothly even on 2G/3G edge connections."
                     ]
                 },
@@ -89,7 +89,7 @@ def create_pptx(output_path):
                     "title": "Dr. Patil — Medical Officer (Shirur Depot)",
                     "points": [
                         "Before: Manages 12,000 Paracetamol units but has zero visibility into neighboring outbreak spikes.",
-                        "With CareDOM: Receives automated, KMS-signed lateral redistribution dispatches saving 13.5 km transit.",
+                        "With KYZER: Receives automated, KMS-signed lateral redistribution dispatches saving 13.5 km transit.",
                         "100% Audit Compliance: Full FHIR R4 MedicationRequest standard adherence."
                     ]
                 }
@@ -97,9 +97,9 @@ def create_pptx(output_path):
         },
         {
             "tag": "SLIDE 04 / 12  ·  THE SOLUTION",
-            "title": "The 5-Tier CareDOM Sovereign Architecture",
+            "title": "The 5-Tier KYZER Sovereign Architecture",
             "subtitle": "Deterministic, cryptographically auditable intelligence—not generative guesswork",
-            "script": "CareDOM is structured into 5 cohesive tiers: Gemini Vision for paper perception, LightGBM Tweedie for multi-horizon quantile forecasting, Isolation Forest for anomaly detection, IBM Quantum QPU for multi-facility route optimization, and a DeepSeek Harness multi-agent governance loop that enforces clinical safety gates before any dispatch is signed.",
+            "script": "KYZER is structured into 5 cohesive tiers: Gemini Vision for paper perception, LightGBM Tweedie for multi-horizon quantile forecasting, Isolation Forest for anomaly detection, IBM Quantum QPU for multi-facility route optimization, and a DeepSeek Harness multi-agent governance loop that enforces clinical safety gates before any dispatch is signed.",
             "cards": [
                 {
                     "title": "Perception, Forecasting & Risk (Tiers 1-3)",
@@ -171,7 +171,7 @@ def create_pptx(output_path):
             "tag": "SLIDE 07 / 12  ·  PREDICTIVE DEMAND",
             "title": "Epidemiological Forecasting (LightGBM Tweedie)",
             "subtitle": "Coupling machine learning with SEIR epidemic dynamics for zero-stockout planning",
-            "script": "For demand forecasting, we deployed a LightGBM Tweedie Quantile model coupled with differential SEIR epidemic dynamics. Achieving 17.48% WAPE across 18 district facilities, CareDOM predicts stockouts 7 days in advance and explains its predictions to clinicians using TreeSHAP feature attributions.",
+            "script": "For demand forecasting, we deployed a LightGBM Tweedie Quantile model coupled with differential SEIR epidemic dynamics. Achieving 17.48% WAPE across 18 district facilities, KYZER predicts stockouts 7 days in advance and explains its predictions to clinicians using TreeSHAP feature attributions.",
             "cards": [
                 {
                     "title": "Tweedie Quantile Loss & SEIR Dynamics",
@@ -219,7 +219,7 @@ def create_pptx(output_path):
             "tag": "SLIDE 09 / 12  ·  MULTI-AGENT GOVERNANCE",
             "title": "DeepSeek Harness 5-Agent Consensus Engine",
             "subtitle": "Deterministic Worker-Critic pipeline with 2-way clinical safety verification",
-            "script": "CareDOM's 5-agent governance loop uses a deterministic Worker-Critic architecture. The Supervisor Agent enforces a clinical safety gate: no donor clinic is allowed to transfer medicine if its own remaining buffer drops below 1.9 times emergency demand.",
+            "script": "KYZER's 5-agent governance loop uses a deterministic Worker-Critic architecture. The Supervisor Agent enforces a clinical safety gate: no donor clinic is allowed to transfer medicine if its own remaining buffer drops below 1.9 times emergency demand.",
             "cards": [
                 {
                     "title": "5-Agent Collaborative Topology",
@@ -245,7 +245,7 @@ def create_pptx(output_path):
             "tag": "SLIDE 10 / 12  ·  SECURITY & COMPLIANCE",
             "title": "Sovereign B2G Security & Auditability",
             "subtitle": "Palantir Foundry Blueprint UI, FedRAMP High Ready, and Strix SOC2 Type II verification",
-            "script": "Engineered for government procurement, CareDOM adheres to Palantir Foundry B2G design standards, FedRAMP High Ready authorization, Strix SOC2 Type II container security, and ABDM FHIR R4 interoperability with an immutable KMS-signed audit trail.",
+            "script": "Engineered for government procurement, KYZER adheres to Palantir Foundry B2G design standards, FedRAMP High Ready authorization, Strix SOC2 Type II container security, and ABDM FHIR R4 interoperability with an immutable KMS-signed audit trail.",
             "cards": [
                 {
                     "title": "Strix Security & KMS Cryptographic Signatures",
@@ -293,7 +293,7 @@ def create_pptx(output_path):
             "tag": "SLIDE 12 / 12  ·  TEAM & LIVE DEMO",
             "title": "Team KYZER — Production Live Today",
             "subtitle": "Built for Google Cloud: Build with AI — Code for Communities Season 2",
-            "script": "CareDOM is live and accessible right now at atharveeee-netizen.github.io/KYZER. Built by Team KYZER for Google Cloud Code for Communities Season 2. Thank you, and we are ready for your questions!",
+            "script": "KYZER is live and accessible right now at atharveeee-netizen.github.io/KYZER. Built by Team KYZER for Google Cloud Code for Communities Season 2. Thank you, and we are ready for your questions!",
             "cards": [
                 {
                     "title": "Team KYZER Multidisciplinary Leads",
@@ -400,7 +400,7 @@ def create_pptx(output_path):
         footer_box = slide.shapes.add_textbox(Inches(0.8), Inches(6.9), Inches(11.7), Inches(0.3))
         tf_footer = footer_box.text_frame
         p_footer = tf_footer.paragraphs[0]
-        p_footer.text = f"CareDOM Sovereign OS  ·  Team KYZER  ·  Slide {s_idx + 1} of {len(slides_data)}"
+        p_footer.text = f"KYZER Sovereign OS  ·  Team KYZER  ·  Slide {s_idx + 1} of {len(slides_data)}"
         p_footer.font.size = Pt(9)
         p_footer.font.color.rgb = c_body
 
@@ -409,5 +409,5 @@ def create_pptx(output_path):
 
 if __name__ == '__main__':
     desktop_dir = r"C:\Users\25beevdt047\Desktop"
-    output_pptx = os.path.join(desktop_dir, "CAREDOM_PITCH_DECK.pptx")
+    output_pptx = os.path.join(desktop_dir, "KYZER_PITCH_DECK.pptx")
     create_pptx(output_pptx)

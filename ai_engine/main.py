@@ -1,5 +1,5 @@
 """
-Main CLI entrypoint and benchmark suite for the CareDOM AI Engine (KYZER).
+Main CLI entrypoint and benchmark suite for the KYZER AI Engine (KYZER).
 Demonstrates end-to-end execution of all 5 AI components with benchmarks.
 """
 
@@ -13,18 +13,18 @@ if hasattr(sys.stdout, 'reconfigure'):
 import json
 import time
 import pandas as pd
-from ai_engine.pipeline import CareDOMAIPipeline
+from ai_engine.pipeline import KYZERAIPipeline
 from ai_engine.allocator.scaling_test import run_logistics_scaling_benchmark
 from ai_engine.allocator.robustness_test import run_monte_carlo_disruption_test
-from ai_engine.dashboard import build_caredom_copilot_html
+from ai_engine.dashboard import build_kyzer_copilot_html
 
 def main():
     print("=" * 80)
-    print("CareDOM AI Engine - Autonomous Health Centre & Supply Chain System")
+    print("KYZER AI Engine - Autonomous Health Centre & Supply Chain System")
     print("Team KYZER | Build with AI: Code for Communities 2")
     print("=" * 80)
     
-    pipeline = CareDOMAIPipeline()
+    pipeline = KYZERAIPipeline()
     
     print("\n[Step 1/6] Ingesting Register via Google Gemini 1.5 Flash Vision OCR...")
     print("[Step 2/6] Running Multi-Horizon Quantile Demand Forecaster (P10/P50/P90)...")
@@ -112,7 +112,7 @@ def main():
     print(f"  - Robustness Index: {rob_res.robustness_index:.4f} (Cold-Chain Compliance: {rob_res.cold_chain_compliance_rate_pct:.1f}%)")
 
     # Build Interactive HTML Co-Pilot Dashboard
-    dash_file = build_caredom_copilot_html("outputs/caredom_copilot_dashboard.html", summary.model_dump())
+    dash_file = build_kyzer_copilot_html("outputs/kyzer_copilot_dashboard.html", summary.model_dump())
     print(f"\n[DASHBOARD GENERATED] Interactive HTML Report rendered at: {dash_file}")
 
     print("\n" + "=" * 80)

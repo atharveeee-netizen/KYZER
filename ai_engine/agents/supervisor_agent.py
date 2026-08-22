@@ -1,8 +1,8 @@
 from typing import Dict, Any, List
-from ai_engine.agents.base import BaseCareDOMAgent
+from ai_engine.agents.base import BaseKYZERAgent
 from ai_engine.agents.state import MultiAgentBlackboardState, AgentLifecycleState
 
-class SupervisorAgent(BaseCareDOMAgent):
+class SupervisorAgent(BaseKYZERAgent):
     """Lead Meta-Agent responsible for agent graph routing and clinical consensus."""
 
     def __init__(self):

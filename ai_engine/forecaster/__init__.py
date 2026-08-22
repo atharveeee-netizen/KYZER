@@ -1,5 +1,5 @@
 """
-Forecaster module for CareDOM.
+Forecaster module for KYZER.
 """
 
 from ai_engine.forecaster.seir_coupling import (

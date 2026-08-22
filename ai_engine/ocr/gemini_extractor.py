@@ -1,5 +1,5 @@
 """
-Google Gemini 1.5 Flash Vision OCR Extractor for CareDOM.
+Google Gemini 1.5 Flash Vision OCR Extractor for KYZER.
 Transcribes handwritten clinic registers into structured FHIR-compatible JSON.
 Supports both Google GenerativeAI SDK and zero-dependency direct HTTPS REST calls.
 """

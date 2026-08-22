@@ -89,8 +89,8 @@ inv = inv.replace(
 
 write('frontend/src/components/tabs/InventoryTab.tsx', inv)
 
-# 4. Update docs/CAREDOM_PITCH_DECK.md
-with open('docs/CAREDOM_PITCH_DECK.md', 'r', encoding='utf-8') as f:
+# 4. Update docs/KYZER_PITCH_DECK.md
+with open('docs/KYZER_PITCH_DECK.md', 'r', encoding='utf-8') as f:
     deck = f.read()
 
 deck = deck.replace(
@@ -119,6 +119,6 @@ deck = deck.replace(
     '• Person 1 (Atharve): AI Engine, SEIR LightGBM, TreeSHAP & Spatial OR-Tools'
 )
 
-write('docs/CAREDOM_PITCH_DECK.md', deck)
+write('docs/KYZER_PITCH_DECK.md', deck)
 
 print('All 4 leftovers updated successfully!')

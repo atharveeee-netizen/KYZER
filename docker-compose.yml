@@ -2,19 +2,19 @@ version: '3.8'
 
 services:
   # ============================================================================
-  # 🚀 CAREDOM FASTAPI REST API & AI ENGINE SERVICE
+  # 🚀 KYZER FASTAPI REST API & AI ENGINE SERVICE
   # ============================================================================
   api:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: caredom-api
+    container_name: kyzer-api
     restart: unless-stopped
     ports:
       - "8000:8000"
     environment:
       - PORT=8000
-      - DATABASE_URL=postgresql://caredom_user:caredom_pass@db:5432/caredom_db
+      - DATABASE_URL=postgresql://kyzer_user:kyzer_pass@db:5432/kyzer_db
       - GEMINI_API_KEY=${GEMINI_API_KEY:-}
       - IBM_QUANTUM_TOKEN=${IBM_QUANTUM_TOKEN:-}
       - ENVIRONMENT=production
@@ -22,7 +22,7 @@ services:
       db:
         condition: service_healthy
     networks:
-      - caredom_net
+      - kyzer_net
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 15s
@@ -34,26 +34,26 @@ services:
   # ============================================================================
   db:
     image: postgis/postgis:16-3.4-alpine
-    container_name: caredom-postgres
+    container_name: kyzer-postgres
     restart: unless-stopped
     ports:
       - "5432:5432"
     environment:
-      - POSTGRES_USER=caredom_user
-      - POSTGRES_PASSWORD=caredom_pass
-      - POSTGRES_DB=caredom_db
+      - POSTGRES_USER=kyzer_user
+      - POSTGRES_PASSWORD=kyzer_pass
+      - POSTGRES_DB=kyzer_db
     volumes:
       - pgdata:/var/lib/postgresql/data
     networks:
-      - caredom_net
+      - kyzer_net
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U caredom_user -d caredom_db"]
+      test: ["CMD-SHELL", "pg_isready -U kyzer_user -d kyzer_db"]
       interval: 10s
       timeout: 5s
       retries: 5
 
 networks:
-  caredom_net:
+  kyzer_net:
     driver: bridge
 
 volumes:

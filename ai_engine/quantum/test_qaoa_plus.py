@@ -22,7 +22,7 @@ def main():
     args = parser.parse_args()
 
     print("=" * 80)
-    print(f"🔬 CareDOM Constraint-Aware QAOA+ — Test Suite (N = {args.nodes})")
+    print(f"🔬 KYZER Constraint-Aware QAOA+ — Test Suite (N = {args.nodes})")
     print("Mixer: Column-Wise CSWAP Permutation Mixer (Feasibility-Preserving)")
     print("Team KYZER | Build with AI: Code for Communities 2")
     print("=" * 80)

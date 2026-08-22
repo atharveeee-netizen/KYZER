@@ -36,11 +36,13 @@ This audit establishes the baseline for transforming the existing KYZER frontend
 
 ### 2.1 Entry Points & State Hierarchy
 * **rontend/src/main.tsx:** Standard Vite React 18 entrypoint mounting <App />.
-* **rontend/src/App.tsx:** Manages global state (acilities, selectedFacility, lerts, orecastData, shapDrivers, outingResult, ocrItems, 	heme). Currently switches full-page tabs via conditional rendering (ctiveTab === 'map' && <MapTab />), which unmounts the 3D map when viewing forecasts or inventory.
+* **rontend/src/App.tsx:** Manages global state (acilities, selectedFacility, lerts, orecastData, shapDrivers, 
+outingResult, ocrItems, 	heme). Currently switches full-page tabs via conditional rendering (ctiveTab === 'map' && <MapTab />), which unmounts the 3D map when viewing forecasts or inventory.
 * **rontend/src/index.css:** Implements dark Palantir Foundry design tokens (#111418, #202b33, #293742, #106ba3, #0d8050, #d9822b, #c23030), JetBrains Mono monospace typography, 3px blueprint border radius, and tactile SVG noise overlay.
 
 ### 2.2 Protected 3D Digital Twin Architecture (rontend/src/components/tabs/MapTab.tsx)
-* **Core Technology:** @deck.gl/react 9.3 + eact-map-gl/maplibre 7.1 + maplibre-gl 4.1.
+* **Core Technology:** @deck.gl/react 9.3 + 
+eact-map-gl/maplibre 7.1 + maplibre-gl 4.1.
 * **3D Building Meshes:** Tile3DLayer loading ArcGIS I3S 3D SceneServer (SanFrancisco_Bldgs/SceneServer/layers/0) via @loaders.gl/i3s.
 * **Lighting & Shading:** LightingEffect with AmbientLight (intensity 1.1) and directional PointLight (intensity 2.2).
 * **Road-Snapped Ribbons:** Dual PathLayer (18m glowing cyan underlay + 6m crisp centerline) strictly bound to OSRM road coordinates (zero sky arcs).
@@ -50,8 +52,8 @@ This audit establishes the baseline for transforming the existing KYZER frontend
 
 ### 2.3 Backend API Integration (rontend/src/services/api.ts)
 * **Dual-Service Architecture:**
-  * **Service A (https://caredom-db-service.onrender.com/api/v1):** PostgreSQL/PostGIS endpoints (/facilities, /inventory/allocate, /redistribution/suggest, /ocr/commit-register, /alerts).
-  * **Service B (https://caredom-ai-service.onrender.com/api/v1):** ML & Quantum endpoints (/forecast/{id}, /routing/plan, /ocr/extract, /ocr/upload, /alerts/stream).
+  * **Service A (https://kyzer-db-service.onrender.com/api/v1):** PostgreSQL/PostGIS endpoints (/facilities, /inventory/allocate, /redistribution/suggest, /ocr/commit-register, /alerts).
+  * **Service B (https://kyzer-ai-service.onrender.com/api/v1):** ML & Quantum endpoints (/forecast/{id}, /routing/plan, /ocr/extract, /ocr/upload, /alerts/stream).
 * **Resilience:** 60-second timeouts (AbortSignal.timeout(60000)) to handle Render free-tier cold starts, paired with offline-safe cache fallbacks.
 
 ---
@@ -60,7 +62,8 @@ This audit establishes the baseline for transforming the existing KYZER frontend
 
 | Feature Area | Implementation Status | Source Files | Transformation Target |
 |---|---|---|---|
-| **3D Digital Twin** | 🟢 FULLY IMPLEMENTED (PROTECTED) | MapTab.tsx, oadRouter.ts | Permanent Canvas Stage |
+| **3D Digital Twin** | 🟢 FULLY IMPLEMENTED (PROTECTED) | MapTab.tsx, 
+oadRouter.ts | Permanent Canvas Stage |
 | **Quantile Forecast** | 🟢 FULLY IMPLEMENTED | ForecastTab.tsx, lightgbm_model.py | Intelligence Right Panel |
 | **TreeSHAP Drivers** | 🟢 FULLY IMPLEMENTED | ForecastTab.tsx, shap_explainer.py | Explainability Sub-Panel |
 | **FEFO Inventory Draw**| 🟢 FULLY IMPLEMENTED | InventoryTab.tsx, inventory_routes.py| Operations Drawer / Panel |

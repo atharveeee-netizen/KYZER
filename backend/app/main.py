@@ -23,7 +23,7 @@ async def lifespan(app: FastAPI):
     await close_db()
 
 
-app = FastAPI(title="CareDOM Backend API", version="0.1.0", lifespan=lifespan)
+app = FastAPI(title="KYZER Backend API", version="0.1.0", lifespan=lifespan)
 
 # allow_origins=["*"] (not settings.cors_origins, which only ever held
 # localhost:3000/5173 for local dev): this API has no auth and judges/
@@ -57,4 +57,4 @@ app.include_router(redistribution_routes.router)
 @app.get("/health")
 @app.get("/api/v1/health")
 async def health():
-    return {"status": "ok", "service": "caredom-backend"}
+    return {"status": "ok", "service": "kyzer-backend"}

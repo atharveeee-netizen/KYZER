@@ -1,5 +1,5 @@
 """
-Adaptive N=1 to 100+ Multi-Scale Routing Engine for CareDOM.
+Adaptive N=1 to 100+ Multi-Scale Routing Engine for KYZER.
 Dynamically routes across Micro (1-15), Meso (16-40), Macro (41-100), and Nation (101+) scales
 with guaranteed cold-chain compliance and seamless failover to Google OR-Tools.
 """
@@ -207,7 +207,7 @@ class AdaptiveRouteAllocator:
             f"&travelmode=driving"
         )
 
-        msg = f"🚚 *CareDOM Emergency Dispatch Route*\n📍 Stops: {len(coords)}\n🔗 Start GPS Navigation: {gmaps_url}"
+        msg = f"🚚 *KYZER Emergency Dispatch Route*\n📍 Stops: {len(coords)}\n🔗 Start GPS Navigation: {gmaps_url}"
         whatsapp_url = f"https://api.whatsapp.com/send?text={urllib.parse.quote(msg)}"
         return gmaps_url, whatsapp_url
 

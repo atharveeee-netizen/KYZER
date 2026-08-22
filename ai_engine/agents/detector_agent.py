@@ -9,12 +9,12 @@ import numpy as np
 from pathlib import Path
 
 from ai_engine.config import DATA_DIR
-from ai_engine.agents.base import BaseCareDOMAgent
+from ai_engine.agents.base import BaseKYZERAgent
 from ai_engine.agents.state import MultiAgentBlackboardState
 from ai_engine.detector.isolation_forest import HealthInventoryAnomalyDetector
 from ai_engine.detector.cascade_detector import SystemicCascadeAnalyzer
 
-class DetectorAgent(BaseCareDOMAgent):
+class DetectorAgent(BaseKYZERAgent):
     """Specialized Agent responsible for operational risk and anomaly detection."""
 
     def __init__(self):

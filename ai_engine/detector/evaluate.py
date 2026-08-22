@@ -25,7 +25,7 @@ def main():
     args = parser.parse_args()
 
     print("=" * 80)
-    print("🔬 CareDOM Anomaly Detection Precision Evaluation")
+    print("🔬 KYZER Anomaly Detection Precision Evaluation")
     print("Testing Per-Facility Isolation Forest Models against Clinical Surges")
     print("Team KYZER | Build with AI: Code for Communities 2")
     print("=" * 80)

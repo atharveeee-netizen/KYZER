@@ -1,6 +1,6 @@
 # ⚡ PERSON 2: BACKEND, API GATEWAY & DATABASE ARCHITECTURE
 **Role**: Person 2 (Lead Backend & Systems Infrastructure Engineer)  
-**Project**: CareDOM — Autonomous Healthcare Supply Chain Platform  
+**Project**: KYZER — Autonomous Healthcare Supply Chain Platform  
 **Team**: KYZER | **Hackathon**: Build with AI: Code for Communities 2
 
 ---
@@ -15,7 +15,7 @@ Person 2 owns the **FastAPI REST API, PostgreSQL + PostGIS Database, SSE Real-Ti
 │ 🚀 1. FASTAPI CORE     │ 🗄️ 2. POSTGRESQL + GIS │ 🚨 3. REAL-TIME SSE   │ ☁️ 4. DEPLOYMENT      │
 ├────────────────────────┼────────────────────────┼───────────────────────┼───────────────────────┤
 │ • Async Uvicorn Server │ • 18 Seeded BRICS      │ • EventSource Stream  │ • Single Bundled      │
-│ • Singleton CareDOM-     Facilities (10 IND)    │   (/api/v1/alerts/    │   Container Docker    │
+│ • Singleton KYZER-     Facilities (10 IND)    │   (/api/v1/alerts/    │   Container Docker    │
 │   Engine Pre-Warmup    │ • PostGIS Spatial      │    stream)            │ • Cloud Run Auto-Scale│
 │ • Pydantic v2 Schemas  │   Distance Queries     │ • Webhook Emitters    │   (--min-instances 1) │
 │ • Auto OpenAPI /docs   │ • FEFO Expiry Queue    │ • Real-time P0 Audio  │ • Cloud SQL Postgres  │

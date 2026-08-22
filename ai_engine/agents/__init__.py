@@ -1,9 +1,9 @@
 """
-CareDOM Autonomous Multi-Agent System (KYZER).
+KYZER Autonomous Multi-Agent System (KYZER).
 """
 
 from ai_engine.agents.state import MultiAgentBlackboardState, AgentMessage
-from ai_engine.agents.base import BaseCareDOMAgent
+from ai_engine.agents.base import BaseKYZERAgent
 from ai_engine.agents.forecaster_agent import ForecasterAgent
 from ai_engine.agents.detector_agent import DetectorAgent
 from ai_engine.agents.allocator_agent import AllocatorAgent
@@ -14,7 +14,7 @@ from ai_engine.agents.workflow import MultiAgentWorkflowEngine
 __all__ = [
     "MultiAgentBlackboardState",
     "AgentMessage",
-    "BaseCareDOMAgent",
+    "BaseKYZERAgent",
     "ForecasterAgent",
     "DetectorAgent",
     "AllocatorAgent",

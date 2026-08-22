@@ -51,8 +51,8 @@ with open('ai_engine/quantum/ibm_quantum_results.json', 'w', encoding='utf-8') a
     json.dump(ibm_results, f, indent=2)
 print('Updated ai_engine/quantum/ibm_quantum_results.json')
 
-# 2. Update docs/CAREDOM_PITCH_DECK.md
-with open('docs/CAREDOM_PITCH_DECK.md', 'r', encoding='utf-8') as f:
+# 2. Update docs/KYZER_PITCH_DECK.md
+with open('docs/KYZER_PITCH_DECK.md', 'r', encoding='utf-8') as f:
     deck = f.read()
 
 deck = deck.replace(
@@ -75,7 +75,7 @@ deck = deck.replace(
     '"For route optimization, we formulated a 16-qubit QAOA Hamiltonian coupled with OR-Tools Guided Local Search and simulated via Qiskit. The quantum-classical hybrid solver found an optimal 105.1 km multi-facility route across Pune District completed in 180.2 minutes—saving 13.5 km and beating the strict WHO 240-minute cold-chain limit with 59.8 minutes of safety margin before ice pack melting."'
 )
 
-write('docs/CAREDOM_PITCH_DECK.md', deck)
+write('docs/KYZER_PITCH_DECK.md', deck)
 
 # 3. Update frontend/src/data/mockData.ts
 with open('frontend/src/data/mockData.ts', 'r', encoding='utf-8') as f:

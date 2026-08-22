@@ -1,5 +1,5 @@
 """
-Master Training & Model Calibration Suite for CareDOM AI Engine.
+Master Training & Model Calibration Suite for KYZER AI Engine.
 Trains and empirically validates:
 1. Multi-Horizon Quantile Demand Forecaster (Temporal Train/Test Split, Pinball Loss, WAPE)
 2. Multivariate Isolation Forest (Evaluated on injected anomaly ground truth via sklearn.metrics)
@@ -328,13 +328,13 @@ def calibrate_seir_dynamics(df_history: pd.DataFrame) -> Dict[str, Any]:
 
 def main():
     import argparse
-    parser = argparse.ArgumentParser(description="CareDOM AI Engine Training & Evaluation Suite")
+    parser = argparse.ArgumentParser(description="KYZER AI Engine Training & Evaluation Suite")
     parser.add_argument("--eval-only", action="store_true", help="Run empirical evaluation only on held-out test data")
     parser.add_argument("--real-data-only", action="store_true", help="Train/evaluate exclusively on real-world datasets")
     args = parser.parse_args()
 
     print("=" * 80)
-    print("🚀 CareDOM AI Engine — Multi-Agent Training & Model Calibration Suite")
+    print("🚀 KYZER AI Engine — Multi-Agent Training & Model Calibration Suite")
     print("Team KYZER | Build with AI: Code for Communities 2")
     print("=" * 80)
 

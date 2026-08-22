@@ -1,6 +1,6 @@
 # 🗺️ PERSON 3: FRONTEND & 3D GIS DASHBOARD ARCHITECTURE
 **Role**: Arnav (Lead Frontend & Geospatial Systems Engineer)  
-**Project**: CareDOM — Autonomous Healthcare Supply Chain Platform  
+**Project**: KYZER — Autonomous Healthcare Supply Chain Platform  
 **Team**: KYZER | **Hackathon**: Build with AI: Code for Communities 2
 
 ---
