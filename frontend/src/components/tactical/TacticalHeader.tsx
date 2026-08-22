@@ -20,6 +20,7 @@ interface TacticalHeaderProps {
   onOpenAlertsDrawer?: () => void;
   onOpenDemoGuide?: () => void;
   onExitToPublic?: () => void;
+  onLogout?: () => void;
   activeAlertCount?: number;
   isScenarioActive?: boolean;
   onResetScenario?: () => void;
@@ -34,6 +35,7 @@ export const TacticalHeader: React.FC<TacticalHeaderProps> = ({
   onOpenAlertsDrawer,
   onOpenDemoGuide,
   onExitToPublic,
+  onLogout,
   activeAlertCount = 4,
   isScenarioActive = false,
   onResetScenario,
@@ -125,15 +127,27 @@ export const TacticalHeader: React.FC<TacticalHeaderProps> = ({
           </button>
         ) : null}
 
-        {/* Exit to Public Portal */}
+        {/* Return to Public Portal */}
         {onExitToPublic && (
           <button
             onClick={onExitToPublic}
             title="Return to Public Portal"
-            className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-[#A7B6C2] hover:text-white bg-[#262626] hover:bg-[#393939] border border-[#393939] rounded-[2px] transition-colors"
+            className="flex items-center gap-1 px-2.5 py-1.5 text-xs text-[#A7B6C2] hover:text-white bg-[#262626] hover:bg-[#393939] border border-[#393939] rounded-[2px] transition-colors"
           >
             <Home className="w-3.5 h-3.5" />
-            <span className="hidden xl:inline">Public Portal</span>
+            <span className="hidden xl:inline">Portal</span>
+          </button>
+        )}
+
+        {/* Logout */}
+        {onLogout && (
+          <button
+            onClick={onLogout}
+            title="Logout from KYZER"
+            className="flex items-center gap-1 px-2.5 py-1.5 text-xs text-[#FA4D56] hover:text-white hover:bg-[#DA1E28]/20 border border-[#DA1E28]/30 rounded-[2px] transition-colors"
+          >
+            <LogOut className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Logout</span>
           </button>
         )}
       </div>
