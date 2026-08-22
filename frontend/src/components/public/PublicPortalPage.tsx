@@ -36,10 +36,10 @@ export const PublicPortalPage: React.FC<PublicPortalPageProps> = ({
         </div>
 
         {/* Simple Navigation */}
-        <div className="flex items-center gap-6 text-xs">
-          <nav className="hidden sm:flex items-center gap-5 text-[#5F6368] font-medium">
-            <a href="#hero" className="text-[#174A7C] font-semibold">Home</a>
+        <div className="flex items-center gap-5 text-xs">
+          <nav className="hidden sm:flex items-center gap-4 text-[#5F6368] font-medium">
             <a href="#about" className="hover:text-[#174A7C] transition-colors">About</a>
+            <a href="#about" className="hover:text-[#174A7C] transition-colors">Help</a>
           </nav>
 
           <button
