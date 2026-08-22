@@ -8,13 +8,15 @@ on:
 
 permissions:
   contents: write
+  pages: write
+  id-token: write
 
 concurrency:
   group: 'pages'
   cancel-in-progress: true
 
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -33,10 +35,26 @@ jobs:
           touch dist/.nojekyll
           cp dist/index.html dist/404.html
 
-      - name: Deploy to gh-pages branch
+      - name: Deploy to gh-pages branch (Branch Mode Fallback)
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./frontend/dist
           publish_branch: gh-pages
           force_orphan: true
+
+      - name: Upload GitHub Pages Artifact (Actions Mode)
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./frontend/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
