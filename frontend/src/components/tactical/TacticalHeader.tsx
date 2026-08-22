@@ -48,7 +48,7 @@ export const TacticalHeader: React.FC<TacticalHeaderProps> = ({
 
   return (
     <header className="h-12 bg-[#161616] border-b border-[#393939] px-4 flex items-center justify-between select-none z-30 shrink-0 text-[#F4F4F4] font-sans">
-      {/* Left: Carbon Brand Logomark & Operational Subtitle */}
+      {/* Left: Product Name & Human Purpose */}
       <div className="flex items-center gap-4">
         <div className="flex items-center gap-2.5">
           <div className="w-6 h-6 rounded-none bg-[#0F62FE] flex items-center justify-center font-mono font-bold text-white text-xs">
@@ -59,7 +59,7 @@ export const TacticalHeader: React.FC<TacticalHeaderProps> = ({
               KYZER
             </span>
             <span className="text-[11px] text-[#C6C6C6] font-light leading-none mt-0.5">
-              Healthcare Supply Chain & Logistics
+              Healthcare supply, where it matters.
             </span>
           </div>
         </div>
