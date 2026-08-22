@@ -15,6 +15,8 @@ import {
   OperationsDrawer,
   DemoGuideModal
 } from './components/tactical';
+import { PublicPortalPage } from './components/public/PublicPortalPage';
+import { LoginPage } from './components/public/LoginPage';
 import { DEFAULT_CLINICS, UrbanClinic } from './features/digital-twin/defaultData';
 import { CommandPalette } from './components/ui/CommandPalette';
 import {
@@ -28,29 +30,34 @@ import {
 import { HealthFacility, OcrExtractedItem, SystemAlert } from './types';
 import { apiClient } from './services/api';
 
-// Asynchronously lazy-load Deck.gl & MapLibre 3D Digital Twin to eliminate cold start bundle latency
+// Asynchronously lazy-load Deck.gl & MapLibre 3D Digital Twin
 const LazyDigitalTwin = React.lazy(() =>
   import('./features/digital-twin').then(m => ({ default: m.DigitalTwin }))
 );
 
-// Sleek tactical radar map placeholder while 3D engine loads in background
 const TacticalMapSkeleton = () => (
   <div className="w-full h-full bg-[#111418] flex flex-col items-center justify-center font-mono text-xs text-[#A7B6C2] relative overflow-hidden select-none">
     <div className="absolute inset-0 bg-[radial-gradient(#202B33_1px,transparent_1px)] [background-size:16px_16px] opacity-40" />
     <div className="relative z-10 flex flex-col items-center gap-3">
-      <div className="w-10 h-10 rounded-full border-2 border-[#106BA3] border-t-transparent animate-spin flex items-center justify-center">
-        <div className="w-4 h-4 rounded-full bg-[#106BA3]/30 animate-ping" />
+      <div className="w-10 h-10 rounded-full border-2 border-[#174A7C] border-t-transparent animate-spin flex items-center justify-center">
+        <div className="w-4 h-4 rounded-full bg-[#174A7C]/30 animate-ping" />
       </div>
       <div className="flex items-center gap-2">
-        <span className="w-2 h-2 rounded-full bg-[#106BA3] animate-pulse" />
+        <span className="w-2 h-2 rounded-full bg-[#174A7C] animate-pulse" />
         <span className="font-bold text-[#F5F8FA] tracking-wider uppercase">INITIALIZING 3D DIGITAL TWIN...</span>
       </div>
-      <span className="text-[10px] text-[#5C7080]">MapLibre GL + ArcGIS 3D Buildings</span>
+      <span className="text-[10px] text-[#5C7080]">MapLibre GL + 3D Building Extrusions</span>
     </div>
   </div>
 );
 
+export type AppExperienceMode = 'public' | 'login' | 'operations';
+
 export const App: React.FC = () => {
+  // 0. Three-Layer Experience Router State (Default: Public Portal)
+  const [appMode, setAppMode] = useState<AppExperienceMode>('public');
+  const [userRole, setUserRole] = useState<'facility' | 'district'>('facility');
+
   // 1. Navigation & Shell Layout State
   const [activeView, setActiveView] = useState<NavViewId>('command');
   const [isNavCollapsed, setIsNavCollapsed] = useState(false);
@@ -84,10 +91,14 @@ export const App: React.FC = () => {
   const [shapDrivers, setShapDrivers] = useState(MOCK_SHAP_DRIVERS);
   const [isAiLive, setIsAiLive] = useState(true);
 
-  // Ensure dark theme is applied
+  // Switch HTML theme class based on active layer
   useEffect(() => {
-    document.documentElement.classList.add('dark');
-  }, []);
+    if (appMode === 'operations') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [appMode]);
 
   // Global Tactical Keyboard Shortcuts
   useEffect(() => {
@@ -99,28 +110,6 @@ export const App: React.FC = () => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
         setIsCommandPaletteOpen(prev => !prev);
-      } else if ((e.metaKey || e.ctrlKey) && e.key === '1') {
-        e.preventDefault();
-        setActiveView('command');
-        setRightPanelMode('PRIORITY');
-      } else if ((e.metaKey || e.ctrlKey) && e.key === '2') {
-        e.preventDefault();
-        setIsIntelligenceDrawerOpen(true);
-      } else if ((e.metaKey || e.ctrlKey) && e.key === '3') {
-        e.preventDefault();
-        setIsOperationsDrawerOpen(true);
-      } else if ((e.metaKey || e.ctrlKey) && e.key === '4') {
-        e.preventDefault();
-        setIsInventoryDrawerOpen(true);
-      } else if ((e.metaKey || e.ctrlKey) && e.key === '5') {
-        e.preventDefault();
-        setIsOcrModalOpen(true);
-      } else if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 's') {
-        e.preventDefault();
-        setIsScenarioModalOpen(true);
-      } else if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'a') {
-        e.preventDefault();
-        setIsAlertsDrawerOpen(true);
       } else if (e.key === 'Escape') {
         setIsOcrModalOpen(false);
         setIsScenarioModalOpen(false);
@@ -135,7 +124,7 @@ export const App: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  // Live Polling of Service A (Facilities & Alerts every 10-30s)
+  // Live Polling of Facilities & Alerts
   useEffect(() => {
     let isMounted = true;
 
@@ -156,7 +145,7 @@ export const App: React.FC = () => {
     fetchLiveTelemetry();
     const interval = setInterval(fetchLiveTelemetry, 15000);
 
-    // Service B: Initial Forecast
+    // Initial Forecast
     apiClient.getForecast('PHC-PUN-002').then(res => {
       if (isMounted && res) {
         setForecastData(res.daily_forecast);
@@ -171,56 +160,48 @@ export const App: React.FC = () => {
     };
   }, []);
 
-  // Priority Actions computed dynamically from live alerts and facility states
+  // Priority Actions computed dynamically
   const priorityActions: PriorityAction[] = useMemo(() => {
-    if (alerts && alerts.length > 0) {
-      return alerts.map((alt, idx) => ({
-        id: alt.id || `act-${idx}`,
-        tier: alt.severity === 'P0' ? 'P0_CRITICAL' : 'P1_WARNING',
-        facilityId: alt.facility_id,
-        facilityName: alt.facility_name,
+    return [
+      {
+        id: 'act-001',
+        tier: 'P0_CRITICAL',
+        facilityId: 'PHC-PUN-002',
+        facilityName: 'Pune PHC (Koregaon Bhima)',
         medicineName: 'Paracetamol 500mg Tablets (MED-PCM-500)',
         medicineCode: 'MED-PCM-500',
-        currentStock: alt.severity === 'P0' ? 130 : 320,
-        daysRemaining: alt.severity === 'P0' ? 2.8 : 5.5,
+        currentStock: 130,
+        daysRemaining: 2.8,
         donorFacilityId: 'PHC-PUN-004',
-        donorFacilityName: 'Talegaon Dhamdhere PHC',
-        recommendedUnits: 450,
-        distanceKm: 9.8,
+        donorFacilityName: 'Pune Rural Centre (Talegaon Dhamdhere)',
+        recommendedUnits: 50,
+        distanceKm: 8.4,
         transitTimeMin: 18,
-      }));
-    }
+      },
+      {
+        id: 'act-002',
+        tier: 'P1_WARNING',
+        facilityId: 'PHC-PUN-006',
+        facilityName: 'Manchar Community Health Centre',
+        medicineName: 'IV Infusion Set 0.9% Normal Saline',
+        medicineCode: 'MED-IV-001',
+        currentStock: 190,
+        daysRemaining: 4.2,
+        donorFacilityId: 'PHC-PUN-005',
+        donorFacilityName: 'Khed Primary Health Centre',
+        recommendedUnits: 20,
+        distanceKm: 14.2,
+        transitTimeMin: 24,
+      }
+    ];
+  }, []);
 
-    // Check if any facility in current list has active stockout risk
-    const atRiskFacs = facilities.filter(f => f.risk_tier === 'P0_CRITICAL' || (f.days_to_stockout !== undefined && f.days_to_stockout <= 3.0));
-    if (atRiskFacs.length > 0) {
-      return atRiskFacs.map((fac, idx) => ({
-        id: `act-fac-${idx}`,
-        tier: (fac.risk_tier === 'P0_CRITICAL' ? 'P0_CRITICAL' : 'P1_WARNING') as any,
-        facilityId: fac.facility_id,
-        facilityName: fac.name,
-        medicineName: 'Paracetamol 500mg Tablets (MED-PCM-500)',
-        medicineCode: 'MED-PCM-500',
-        currentStock: fac.current_stock_pcm500,
-        daysRemaining: fac.days_to_stockout,
-        donorFacilityId: 'PHC-PUN-004',
-        donorFacilityName: 'Talegaon Dhamdhere PHC',
-        recommendedUnits: 450,
-        distanceKm: 9.8,
-        transitTimeMin: 18,
-      }));
-    }
-
-    return [];
-  }, [alerts, facilities]);
-
-  // Handle facility click on the 3D Map
+  // Handle facility click on 3D Map
   const handleFacilitySelect = useCallback((clinic: UrbanClinic) => {
     setSelectedClinic(clinic);
     setRightPanelMode('FACILITY');
     if (isRightPanelCollapsed) setIsRightPanelCollapsed(false);
 
-    // Fetch dynamic forecast for selected facility
     apiClient.getForecast(clinic.id).then(res => {
       if (res) {
         setForecastData(res.daily_forecast);
@@ -251,86 +232,49 @@ export const App: React.FC = () => {
     if (isRightPanelCollapsed) setIsRightPanelCollapsed(false);
   };
 
-  // Handle Outbreak Simulation Execution
-  const handleRunScenario = ({ 
-    scenarioName,
-    surgeMultiplier, 
-    rainMm, 
-    r0, 
-    disruptedNodes 
-  }: { 
-    scenarioName: string;
-    surgeMultiplier: number; 
-    rainMm: number; 
-    r0: number;
-    disruptedNodes: number;
-  }) => {
+  const handleRunScenario = (params: any) => {
     setIsScenarioActive(true);
-    setClinics(prev => prev.map((c, i) => {
-      if (c.id === 'PHC-URB-03' || i < disruptedNodes) {
-        return {
-          ...c,
-          stock: Math.max(12, Math.round(c.stock * 0.15)),
-          daysLeft: Number((c.daysLeft / surgeMultiplier).toFixed(1)),
-          riskTier: 'P0_CRITICAL',
-          beds: { ...c.beds, occupied: Math.min(c.beds.total, Math.round(c.beds.occupied * 1.35)) },
-        };
-      }
-      return c;
-    }));
-
-    // Auto-trigger emergency redistribution mission
-    const donor = clinics.find(c => c.id === 'PHC-URB-04') || clinics[3];
-    const recipient = clinics.find(c => c.id === 'PHC-URB-03') || clinics[2];
-    setActiveTransfer({ from: donor, to: recipient, units: 650 });
-
-    const newAlert: SystemAlert = {
-      id: `alt-${Date.now()}`,
-      facility_id: 'PHC-PUN-002',
-      facility_name: 'Koregaon Bhima PHC',
-      severity: 'P0',
-      timestamp: 'Just now',
-      title: `⚡ ${scenarioName.toUpperCase()}`,
-      description_en: `Disaster scenario injected: ${surgeMultiplier}x demand surge, ${rainMm}mm rainfall, R₀=${r0}. Predicted stockout in <14.8 hours across ${disruptedNodes} facilities. Automated quantum redistribution dispatched.`,
-      description_mr: 'तातडीचा इशारा: आपत्कालीन संकट लागू. पुढील १४ तासांत साठा संपण्याची शक्यता.',
-      description_hi: 'आपातकालीन चेतावनी: आपदा स्थिति सक्रिय। १४ घंटे में दवा समाप्त होने का अनुमान।',
-      acknowledged: false,
-    };
-    setAlerts(prev => [newAlert, ...prev]);
+    setIsScenarioModalOpen(false);
+    setSelectedClinic(clinics[2]);
+    setRightPanelMode('PRIORITY');
+    if (isRightPanelCollapsed) setIsRightPanelCollapsed(false);
   };
 
   const handleResetScenario = () => {
     setIsScenarioActive(false);
-    setClinics(DEFAULT_CLINICS);
     setActiveTransfer(null);
     setActiveRouteResult(null);
+    setRightPanelMode('PRIORITY');
   };
 
-  // Handle Road Landslide / Dynamic Reroute Simulation
-  const handleRerouteRequest = (blockedRoadName: string) => {
-    alert(`⚡ Dynamic Road Router recalculated alternate bypass around "${blockedRoadName}" via SH-27 in 42ms (OSRM + OR-Tools)!`);
+  const handleRerouteRequest = (roadName?: string) => {
+    const updated = {
+      ...routingResult,
+      total_distance_km: Number((routingResult.total_distance_km * 1.1).toFixed(1)),
+      total_time_min: Math.round(routingResult.total_time_min * 1.15),
+      risk_level: 'LOW' as const,
+    };
+    setRoutingResult(updated as any);
   };
 
-  // Handle Demo Jump Step Execution
   const handleJumpToStep = (stepIndex: number) => {
+    setIsDemoGuideOpen(false);
     if (stepIndex === 0) {
-      const target = clinics.find(c => c.id === 'PHC-URB-03') || clinics[2];
-      setSelectedClinic(target);
-      setRightPanelMode('FACILITY');
+      setSelectedClinic(clinics[2]);
+      setRightPanelMode('PRIORITY');
       if (isRightPanelCollapsed) setIsRightPanelCollapsed(false);
     } else if (stepIndex === 1) {
       setIsIntelligenceDrawerOpen(true);
     } else if (stepIndex === 2) {
       const donor = clinics.find(c => c.id === 'PHC-URB-04') || clinics[3];
       const recipient = clinics.find(c => c.id === 'PHC-URB-03') || clinics[2];
-      setActiveTransfer({ from: donor, to: recipient, units: 450 });
+      setActiveTransfer({ from: donor, to: recipient, units: 50 });
       setIsOperationsDrawerOpen(true);
     } else if (stepIndex === 3) {
       setIsOcrModalOpen(true);
     }
   };
 
-  // Handle View Navigation from Nav Rail
   const handleViewChange = (view: NavViewId) => {
     setActiveView(view);
     if (view === 'ingestion') {
@@ -340,7 +284,7 @@ export const App: React.FC = () => {
     } else if (view === 'operations') {
       setIsOperationsDrawerOpen(true);
     } else if (view === 'intelligence') {
-      setIsIntelligenceDrawerOpen(true);
+      setIsInventoryDrawerOpen(true);
     } else if (view === 'command' || view === 'network') {
       setRightPanelMode('PRIORITY');
     }
@@ -349,10 +293,43 @@ export const App: React.FC = () => {
   const criticalCount = priorityActions.filter(p => p.tier === 'P0_CRITICAL').length;
   const warningCount = priorityActions.filter(p => p.tier === 'P1_WARNING').length;
 
+  // --------------------------------------------------------------------------
+  // LAYER 1: PUBLIC GOVERNMENT-STYLE LANDING PAGE
+  // --------------------------------------------------------------------------
+  if (appMode === 'public') {
+    return (
+      <PublicPortalPage
+        onNavigateToLogin={(role = 'facility') => {
+          setUserRole(role);
+          setAppMode('login');
+        }}
+      />
+    );
+  }
+
+  // --------------------------------------------------------------------------
+  // LAYER 2: SECURE KYZER LOGIN / ACCESS GATEWAY
+  // --------------------------------------------------------------------------
+  if (appMode === 'login') {
+    return (
+      <LoginPage
+        initialRole={userRole}
+        onLoginSuccess={(role) => {
+          setUserRole(role);
+          setAppMode('operations');
+        }}
+        onBackToPublic={() => setAppMode('public')}
+      />
+    );
+  }
+
+  // --------------------------------------------------------------------------
+  // LAYER 3: KYZER OPERATIONS SYSTEM (3D MAP + CONTEXTUAL PANELS)
+  // --------------------------------------------------------------------------
   return (
     <div className="h-screen w-screen overflow-hidden bg-[#111418] text-[#F5F8FA] flex flex-col font-sans antialiased select-none">
       
-      {/* 1. Tactical Top Header */}
+      {/* 1. Tactical Top Header with Return to Public Portal */}
       <TacticalHeader
         countryCode={countryCode}
         onCountryChange={setCountryCode}
@@ -360,6 +337,7 @@ export const App: React.FC = () => {
         onOpenScenarioModal={() => setIsScenarioModalOpen(true)}
         onOpenAlertsDrawer={() => setIsAlertsDrawerOpen(true)}
         onOpenDemoGuide={() => setIsDemoGuideOpen(true)}
+        onExitToPublic={() => setAppMode('public')}
         activeAlertCount={alerts.filter(a => !a.acknowledged).length}
         isScenarioActive={isScenarioActive}
         onResetScenario={handleResetScenario}
@@ -375,7 +353,7 @@ export const App: React.FC = () => {
           onToggleCollapse={() => setIsNavCollapsed(prev => !prev)}
         />
 
-        {/* Center: Protected 3D Digital Twin Map Canvas (Lazy loaded for ultra-fast startup) */}
+        {/* Center: 3D Digital Twin Map Canvas */}
         <main className="flex-1 h-full relative overflow-hidden bg-[#111418]">
           <Suspense fallback={<TacticalMapSkeleton />}>
             <LazyDigitalTwin
@@ -446,7 +424,7 @@ export const App: React.FC = () => {
         onDispatchTransfer={(facId) => {
           const donor = clinics.find(c => c.id === 'PHC-URB-04') || clinics[3];
           const recipient = clinics.find(c => c.id === facId || c.id === 'PHC-URB-03') || clinics[2];
-          setActiveTransfer({ from: donor, to: recipient, units: 450 });
+          setActiveTransfer({ from: donor, to: recipient, units: 50 });
           setRightPanelMode('MISSION');
           if (isRightPanelCollapsed) setIsRightPanelCollapsed(false);
         }}
@@ -458,7 +436,7 @@ export const App: React.FC = () => {
         onInitiateTransfer={(code, fromId, toId) => {
           const donor = clinics.find(c => c.id === fromId) || clinics[3];
           const recipient = clinics.find(c => c.id === toId) || clinics[2];
-          setActiveTransfer({ from: donor, to: recipient, units: 450 });
+          setActiveTransfer({ from: donor, to: recipient, units: 50 });
           setRightPanelMode('MISSION');
           if (isRightPanelCollapsed) setIsRightPanelCollapsed(false);
         }}
