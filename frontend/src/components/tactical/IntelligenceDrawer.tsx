@@ -66,7 +66,7 @@ export const IntelligenceDrawer: React.FC<IntelligenceDrawerProps> = ({
       isOpen={isOpen}
       onClose={onClose}
       title="Intelligence & Explainability Suite"
-      subtitle={`${facilityName} (${facilityId}) — LightGBM Tweedie Quantile Forecaster + TreeSHAP`}
+      subtitle={`${facilityName} (${facilityId}) - LightGBM Tweedie Quantile Forecaster + TreeSHAP`}
       badge={
         <Badge variant={isAiLive ? "success" : "warning"} size="xs">
           {isAiLive ? "LIVE SERVICE B (17.48% WAPE)" : "LOCAL SEED CACHE"}

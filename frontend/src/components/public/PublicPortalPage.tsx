@@ -92,7 +92,7 @@ export const PublicPortalPage: React.FC<PublicPortalPageProps> = ({
                   </div>
                   <div className="border-t border-[#F0F0F0] pt-2 space-y-1.5">
                     <p className="text-xs font-medium text-[#202124] leading-relaxed">
-                      “स्वस्थ भारत, सशक्त भारत — हर नागरिक तक सुलभ और उत्तम स्वास्थ्य सेवाएं पहुंचाना हमारा संकल्प है।”
+                      “स्वस्थ भारत, सशक्त भारत - हर नागरिक तक सुलभ और उत्तम स्वास्थ्य सेवाएं पहुंचाना हमारा संकल्प है।”
                     </p>
                     <p className="text-[11px] text-[#5F6368] italic leading-relaxed">
                       “Affordable and quality healthcare for every citizen, reaching the last mile.”
