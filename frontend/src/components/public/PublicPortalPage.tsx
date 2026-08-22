@@ -125,29 +125,23 @@ export const PublicPortalPage: React.FC<PublicPortalPageProps> = ({
             <div className="lg:col-span-6 relative">
               <div className="relative rounded-[2px] overflow-hidden border border-[#D6D6D6] bg-white shadow-xs">
                 
-                {/* Visual Composite representing Public Health Delivery */}
+                {/* Visual Composite representing Public Health Delivery (Natural lighting, 0 gradients) */}
                 <div className="relative h-72 sm:h-80 w-full overflow-hidden bg-[#E9EEF3]">
                   <img
                     src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c4/Prime_Minister_of_India_Narendra_Modi.jpg/640px-Prime_Minister_of_India_Narendra_Modi.jpg"
                     alt="Indian Public Health Leadership & Delivery"
                     className="w-full h-full object-cover object-top"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
                 </div>
 
-                {/* Floating Institutional Caption Card */}
+                {/* Neutral Institutional Caption Card */}
                 <div className="p-4 bg-white border-t border-[#D6D6D6] space-y-1">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="text-xs font-bold text-[#202124]">Shri Narendra Modi</h3>
-                      <p className="text-[11px] text-[#5F6368]">Prime Minister of India</p>
-                    </div>
-                    <span className="text-[10px] text-[#174A7C] font-semibold bg-[#174A7C]/10 px-2 py-0.5 rounded-[2px]">
-                      National Health Mission
-                    </span>
+                  <div>
+                    <h3 className="text-xs font-bold text-[#202124]">Shri Narendra Modi</h3>
+                    <p className="text-[11px] text-[#5F6368]">Prime Minister of India</p>
                   </div>
                   <p className="text-xs text-[#5F6368] leading-relaxed pt-1">
-                    Building a healthier India through strong public health infrastructure, supply chain visibility, and universal primary healthcare delivery.
+                    India's public health system connects national policy, state health departments, district administration and frontline health centres.
                   </p>
                 </div>
 
@@ -158,7 +152,7 @@ export const PublicPortalPage: React.FC<PublicPortalPageProps> = ({
         </div>
       </section>
 
-      {/* 4. National Health Programmes Section */}
+      {/* 4. National Health Programmes Section (Neutral Grey Icons) */}
       <section id="programmes" className="py-10 bg-white border-b border-[#D6D6D6]">
         <div className="max-w-7xl mx-auto px-4 sm:px-8 space-y-5">
           <div className="flex items-center justify-between pb-3 border-b border-[#E5E5E5]">
@@ -175,12 +169,12 @@ export const PublicPortalPage: React.FC<PublicPortalPageProps> = ({
             
             {/* Card 1: Ayushman Bharat */}
             <div className="p-4 bg-white border border-[#D6D6D6] rounded-[2px] space-y-2 hover:border-[#174A7C] transition-colors">
-              <div className="w-8 h-8 rounded-[2px] bg-[#174A7C]/10 flex items-center justify-center text-[#174A7C]">
+              <div className="w-8 h-8 rounded-[2px] bg-[#F0F0F0] flex items-center justify-center text-[#7A7A7A]">
                 <ShieldCheck className="w-4 h-4" />
               </div>
               <h3 className="text-sm font-bold text-[#202124]">Ayushman Bharat (PM-JAY)</h3>
               <p className="text-xs text-[#5F6368] leading-relaxed">
-                Health coverage and financial protection for millions of families across India.
+                Health coverage and financial protection for families across India.
               </p>
               <a href="#programmes" className="text-xs text-[#174A7C] font-medium hover:underline inline-flex items-center gap-1 pt-1">
                 <span>Learn more</span>
@@ -190,12 +184,12 @@ export const PublicPortalPage: React.FC<PublicPortalPageProps> = ({
 
             {/* Card 2: National Health Mission */}
             <div className="p-4 bg-white border border-[#D6D6D6] rounded-[2px] space-y-2 hover:border-[#174A7C] transition-colors">
-              <div className="w-8 h-8 rounded-[2px] bg-[#D9381E]/10 flex items-center justify-center text-[#D9381E]">
+              <div className="w-8 h-8 rounded-[2px] bg-[#F0F0F0] flex items-center justify-center text-[#7A7A7A]">
                 <HeartHandshake className="w-4 h-4" />
               </div>
               <h3 className="text-sm font-bold text-[#202124]">National Health Mission (NHM)</h3>
               <p className="text-xs text-[#5F6368] leading-relaxed">
-                Strengthening healthcare systems and improving health outcomes in rural and urban areas.
+                Strengthening public healthcare delivery and essential medicine supply.
               </p>
               <a href="#programmes" className="text-xs text-[#174A7C] font-medium hover:underline inline-flex items-center gap-1 pt-1">
                 <span>Learn more</span>
@@ -205,12 +199,12 @@ export const PublicPortalPage: React.FC<PublicPortalPageProps> = ({
 
             {/* Card 3: eSanjeevani */}
             <div className="p-4 bg-white border border-[#D6D6D6] rounded-[2px] space-y-2 hover:border-[#174A7C] transition-colors">
-              <div className="w-8 h-8 rounded-[2px] bg-[#0A70F5]/10 flex items-center justify-center text-[#0A70F5]">
+              <div className="w-8 h-8 rounded-[2px] bg-[#F0F0F0] flex items-center justify-center text-[#7A7A7A]">
                 <Stethoscope className="w-4 h-4" />
               </div>
               <h3 className="text-sm font-bold text-[#202124]">eSanjeevani Telemedicine</h3>
               <p className="text-xs text-[#5F6368] leading-relaxed">
-                Consult doctors online from the comfort of your home and local health centres.
+                Consult doctors online from local health centres and clinics.
               </p>
               <a href="#programmes" className="text-xs text-[#174A7C] font-medium hover:underline inline-flex items-center gap-1 pt-1">
                 <span>Learn more</span>
@@ -220,12 +214,12 @@ export const PublicPortalPage: React.FC<PublicPortalPageProps> = ({
 
             {/* Card 4: Digital Health Mission */}
             <div className="p-4 bg-white border border-[#D6D6D6] rounded-[2px] space-y-2 hover:border-[#174A7C] transition-colors">
-              <div className="w-8 h-8 rounded-[2px] bg-[#2F6B45]/10 flex items-center justify-center text-[#2F6B45]">
+              <div className="w-8 h-8 rounded-[2px] bg-[#F0F0F0] flex items-center justify-center text-[#7A7A7A]">
                 <Activity className="w-4 h-4" />
               </div>
               <h3 className="text-sm font-bold text-[#202124]">Digital Health Mission (ABDM)</h3>
               <p className="text-xs text-[#5F6368] leading-relaxed">
-                Building digital infrastructure for seamless healthcare delivery and health records.
+                Digital health registries and facility-level health records.
               </p>
               <a href="#programmes" className="text-xs text-[#174A7C] font-medium hover:underline inline-flex items-center gap-1 pt-1">
                 <span>Learn more</span>
