@@ -87,15 +87,15 @@ export const PublicPortalPage: React.FC<PublicPortalPageProps> = ({
                 </div>
                 <div className="p-3.5 bg-white border-t border-[#D6D6D6] space-y-2">
                   <div>
-                    <div className="text-xs font-bold text-[#202124]">Shri Narendra Modi</div>
-                    <div className="text-[11px] text-[#5F6368]">Prime Minister of India</div>
+                    <div className="text-sm font-bold text-[#202124]">श्री नरेन्द्र मोदी <span className="text-xs font-normal text-[#5F6368]">(Shri Narendra Modi)</span></div>
+                    <div className="text-xs text-[#5F6368]">प्रधानमंत्री, भारत <span className="text-[11px] font-normal text-[#70757A]">/ Prime Minister of India</span></div>
                   </div>
-                  <div className="border-t border-[#F0F0F0] pt-1.5 space-y-1">
+                  <div className="border-t border-[#F0F0F0] pt-2 space-y-1.5">
                     <p className="text-xs font-medium text-[#202124] leading-relaxed">
-                      “हर नागरिक को सुलभ और उत्तम स्वास्थ्य सेवाएं मिले, यही हमारा संकल्प है।”
+                      “स्वस्थ भारत, सशक्त भारत — हर नागरिक तक सुलभ और उत्तम स्वास्थ्य सेवाएं पहुंचाना हमारा संकल्प है।”
                     </p>
                     <p className="text-[11px] text-[#5F6368] italic leading-relaxed">
-                      “Ensuring affordable and quality healthcare reaches every citizen in the last mile.”
+                      “Affordable and quality healthcare for every citizen, reaching the last mile.”
                     </p>
                   </div>
                 </div>
