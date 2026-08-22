@@ -13,14 +13,7 @@ export const PublicPortalPage: React.FC<PublicPortalPageProps> = ({
   return (
     <div className="min-h-screen bg-[#FFFFFF] text-[#202124] font-sans antialiased selection:bg-[#174A7C]/15 selection:text-[#174A7C]">
       
-      {/* 1. Small Government-Style Utility Header */}
-      <div className="h-7 bg-[#F0F0F0] border-b border-[#E0E0E0] px-4 sm:px-8 flex items-center text-xs text-[#5F6368]">
-        <span className="font-medium text-[#5F6368]">
-          Government Health Services
-        </span>
-      </div>
-
-      {/* 2. Main KYZER Header */}
+      {/* 1. Main KYZER Header */}
       <header className="h-16 bg-[#FFFFFF] border-b border-[#D6D6D6] px-4 sm:px-8 flex items-center justify-between sticky top-0 z-30">
         <div className="flex items-center gap-3">
           <div className="w-7 h-7 rounded-[2px] bg-[#174A7C] flex items-center justify-center font-bold text-white text-sm">

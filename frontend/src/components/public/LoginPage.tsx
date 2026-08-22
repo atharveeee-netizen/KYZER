@@ -48,15 +48,15 @@ export const LoginPage: React.FC<LoginPageProps> = ({
   return (
     <div className="min-h-screen bg-[#F7F7F7] text-[#202124] font-sans antialiased flex flex-col justify-between selection:bg-[#174A7C]/15 selection:text-[#174A7C]">
       
-      {/* 1. Top Government Context Ribbon */}
+      {/* 1. Top Bar */}
       <div className="h-7 bg-[#0A3A6B] text-white px-4 sm:px-8 flex items-center justify-between text-xs font-normal">
         <div className="flex items-center gap-3">
           <span className="font-medium text-white">
-            (2) KYZER ACCESS GATEWAY / LOGIN
+            KYZER
           </span>
           <span className="hidden sm:inline opacity-60">|</span>
           <span className="hidden sm:inline text-white/90">
-            District Operations Portal
+            District Operations Access
           </span>
         </div>
         <button
@@ -82,11 +82,11 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                   KYZER
                 </span>
                 <span className="text-xs text-[#5F6368]">
-                  Healthcare Supply Management System
+                  Healthcare Supply Management
                 </span>
               </div>
               <h1 className="text-xl font-bold text-[#202124] tracking-tight mt-3">
-                KYZER Access Portal
+                Access KYZER
               </h1>
               <p className="text-xs text-[#5F6368] mt-0.5">
                 Sign in to access healthcare supply and district operations.
@@ -143,7 +143,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                     if (errorMsg) setErrorMsg('');
                   }}
                   required
-                  placeholder="admin"
+                  placeholder="User ID"
                   className="w-full p-2.5 bg-white border border-[#D6D6D6] rounded-[2px] text-xs text-[#202124] focus:outline-none focus:border-[#0A3A6B]"
                 />
               </div>
@@ -160,7 +160,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                       if (errorMsg) setErrorMsg('');
                     }}
                     required
-                    placeholder="1234"
+                    placeholder="Password"
                     className="w-full p-2.5 pr-9 bg-white border border-[#D6D6D6] rounded-[2px] text-xs text-[#202124] font-mono focus:outline-none focus:border-[#0A3A6B]"
                   />
                   <button
@@ -187,9 +187,9 @@ export const LoginPage: React.FC<LoginPageProps> = ({
               </button>
             </form>
 
-            {/* Demo Access Notice */}
+            {/* Demo Account Notice */}
             <div className="pt-2 text-center text-[11px] text-[#70757A]">
-              Demo access for project demonstration (admin / 1234)
+              Demo account
             </div>
 
             <div className="pt-1">
@@ -204,7 +204,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
 
           </div>
 
-          {/* Right Column: Secure Access Info (Tinted Background) */}
+          {/* Right Column: Secure Access Info */}
           <div className="lg:col-span-5 bg-[#F0F5FA] border-t lg:border-t-0 lg:border-l border-[#D6D6D6] p-6 sm:p-8 flex flex-col justify-center space-y-5">
             <div className="w-12 h-12 rounded-full bg-[#0A3A6B]/10 flex items-center justify-center text-[#0A3A6B]">
               <ShieldCheck className="w-6 h-6" />
@@ -224,11 +224,11 @@ export const LoginPage: React.FC<LoginPageProps> = ({
               </div>
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-[#0A3A6B] shrink-0" />
-                <span>Secure & encrypted</span>
+                <span>Secure access</span>
               </div>
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-[#0A3A6B] shrink-0" />
-                <span>Authorized access only</span>
+                <span>Authorized personnel</span>
               </div>
             </div>
           </div>
@@ -236,9 +236,9 @@ export const LoginPage: React.FC<LoginPageProps> = ({
         </div>
       </main>
 
-      {/* 3. Simple Government Footer */}
+      {/* 3. Simple Footer */}
       <footer className="py-4 text-center text-[11px] text-[#70757A] border-t border-[#D6D6D6]">
-        KYZER Healthcare Supply Management System · Pune District Operations
+        KYZER · Healthcare Supply Management
       </footer>
 
     </div>

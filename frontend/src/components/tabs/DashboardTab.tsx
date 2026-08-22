@@ -15,6 +15,7 @@ import {
   ShieldCheck,
   Activity
 } from 'lucide-react';
+import modiHeroImage from '../../assets/modi_public_health.jpg';
 import { apiClient } from '../../services/api';
 import { SystemAlert, HealthFacility } from '../../types';
 
@@ -317,33 +318,16 @@ export const DashboardTab: React.FC<DashboardTabProps> = ({
           {/* National Level: Prime Minister */}
           <div className="p-3.5 bg-[#F7F7F7] dark:bg-[#1B1B1B] border border-[#D6D6D6] dark:border-[#3A3A3A] rounded-[2px] flex items-start gap-3.5">
             <img
-              src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c4/Prime_Minister_of_India_Narendra_Modi.jpg/330px-Prime_Minister_of_India_Narendra_Modi.jpg"
+              src={modiHeroImage}
               alt="Shri Narendra Modi"
               className="w-16 h-20 object-cover object-top border border-[#D6D6D6] dark:border-[#3A3A3A] rounded-[2px] shrink-0 bg-white"
             />
             <div className="space-y-1">
-              <div className="text-[10px] font-bold uppercase text-[#174A7C] dark:text-[#6EA8D8]">National Leadership</div>
+              <div className="text-[10px] font-bold uppercase text-[#174A7C] dark:text-[#6EA8D8]">National Context</div>
               <div className="text-sm font-bold text-[#202124] dark:text-[#F2F2F2]">Shri Narendra Modi</div>
-              <div className="text-xs text-[#5F6368] dark:text-[#B8B8B8]">Hon'ble Prime Minister of India</div>
+              <div className="text-xs text-[#5F6368] dark:text-[#B8B8B8]">Prime Minister of India</div>
               <p className="text-[11px] text-[#5F6368] dark:text-[#B8B8B8] leading-relaxed pt-1">
-                National digital health programmes increasingly rely on real-time data and coordinated delivery across healthcare facilities.
-              </p>
-            </div>
-          </div>
-
-          {/* Health Ministry Level */}
-          <div className="p-3.5 bg-[#F7F7F7] dark:bg-[#1B1B1B] border border-[#D6D6D6] dark:border-[#3A3A3A] rounded-[2px] flex items-start gap-3.5">
-            <img
-              src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/J_P_Nadda_official_portrait.jpg/330px-J_P_Nadda_official_portrait.jpg"
-              alt="Shri Jagat Prakash Nadda"
-              className="w-16 h-20 object-cover object-top border border-[#D6D6D6] dark:border-[#3A3A3A] rounded-[2px] shrink-0 bg-white"
-            />
-            <div className="space-y-1">
-              <div className="text-[10px] font-bold uppercase text-[#174A7C] dark:text-[#6EA8D8]">Health Administration</div>
-              <div className="text-sm font-bold text-[#202124] dark:text-[#F2F2F2]">Shri Jagat Prakash Nadda</div>
-              <div className="text-xs text-[#5F6368] dark:text-[#B8B8B8]">Hon'ble Union Minister of Health & Family Welfare</div>
-              <p className="text-[11px] text-[#5F6368] dark:text-[#B8B8B8] leading-relaxed pt-1">
-                Ministry of Health & Family Welfare policy prioritizes zero-stockout delivery at primary health centres through regional supply coordination.
+                Public health supply coordination across district health facilities and frontline clinics.
               </p>
             </div>
           </div>
