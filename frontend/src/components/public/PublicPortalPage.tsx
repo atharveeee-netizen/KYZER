@@ -1,5 +1,6 @@
 import React from 'react';
 import { ArrowRight } from 'lucide-react';
+import modiHeroImage from '../../assets/modi_public_health.jpg';
 
 interface PublicPortalPageProps {
   onNavigateToLogin: (role?: 'facility' | 'district') => void;
@@ -86,8 +87,8 @@ export const PublicPortalPage: React.FC<PublicPortalPageProps> = ({
               <div className="bg-white border border-[#D6D6D6] rounded-[2px] overflow-hidden">
                 <div className="h-64 sm:h-72 w-full overflow-hidden bg-[#E9EEF3]">
                   <img
-                    src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c4/Prime_Minister_of_India_Narendra_Modi.jpg/640px-Prime_Minister_of_India_Narendra_Modi.jpg"
-                    alt="Public Health Context"
+                    src={modiHeroImage}
+                    alt="Shri Narendra Modi at a public health event"
                     className="w-full h-full object-cover object-top"
                   />
                 </div>
